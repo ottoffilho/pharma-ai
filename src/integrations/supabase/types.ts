@@ -9,7 +9,45 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      receitas_raw: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          file_mime_type: string
+          file_name: string
+          file_url: string
+          id: string
+          input_type: string
+          metadata: Json | null
+          status: string
+          uploaded_by_user_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          file_mime_type: string
+          file_name: string
+          file_url: string
+          id?: string
+          input_type: string
+          metadata?: Json | null
+          status?: string
+          uploaded_by_user_id: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          file_mime_type?: string
+          file_name?: string
+          file_url?: string
+          id?: string
+          input_type?: string
+          metadata?: Json | null
+          status?: string
+          uploaded_by_user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
