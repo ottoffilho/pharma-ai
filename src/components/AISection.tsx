@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Brain, Flask, FileSearch, ChartPie } from 'lucide-react';
+import { Brain, FlaskConical, FileSearch, ChartPie } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 
 const aiFeatures = [
@@ -10,7 +10,7 @@ const aiFeatures = [
     description: 'Reconhecimento e análise de receitas homeopáticas manuscritas com precisão superior a 98%.'
   },
   {
-    icon: <Flask className="h-8 w-8 text-homeo-accent" />,
+    icon: <FlaskConical className="h-8 w-8 text-homeo-accent" />,
     title: 'Cálculos de Diluição',
     description: 'Automatização de cálculos complexos de diluições, potências e dosagens homeopáticas.'
   },
