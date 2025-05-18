@@ -1,7 +1,10 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { UploadCloud, FileText, Image, FileArchive, File, X, Loader2, CheckCircle, AlertTriangle, Calendar, Split, Eye } from 'lucide-react';
+import { 
+  UploadCloud, FileText, Image, FileArchive, File, X, Loader2, 
+  CheckCircle, AlertTriangle, Calendar, Split, Eye, Plus, Trash
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -16,6 +19,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
@@ -42,6 +46,7 @@ interface IAExtractedData {
   prescriber_identifier?: string;
 }
 
+// Mock data to simulate IA response
 const mockIAResponse: IAExtractedData = {
   medications: [
     {
@@ -75,10 +80,9 @@ const NovaReceitaPage: React.FC = () => {
   const [processStatus, setProcessStatus] = useState<'idle' | 'processing' | 'success' | 'error'>('idle');
   const [extractedData, setExtractedData] = useState<IAExtractedData | null>(null);
   const [uploadedRecipeId, setUploadedRecipeId] = useState<string | null>(null);
-  const [showReviewSheet, setShowReviewSheet] = useState(false);
-  const [showMobilePreview, setShowMobilePreview] = useState(false);
   const [showValidationArea, setShowValidationArea] = useState(false);
   const [validationView, setValidationView] = useState<'split' | 'preview'>('split');
+  const [validationProgress, setValidationProgress] = useState(0);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -89,6 +93,7 @@ const NovaReceitaPage: React.FC = () => {
     setExtractedData(null);
     setUploadedRecipeId(null);
     setShowValidationArea(false);
+    setValidationProgress(0);
   };
 
   const removeFile = (index: number) => {
@@ -155,8 +160,18 @@ const NovaReceitaPage: React.FC = () => {
       
       setUploadedRecipeId(lastUploadedRecipeId);
       
-      // Simulate AI processing with a delay
+      // Simulate AI processing with progress updates
+      const progressInterval = setInterval(() => {
+        setValidationProgress(prev => {
+          const newProgress = prev + (5 + Math.random() * 10);
+          return newProgress >= 100 ? 100 : newProgress;
+        });
+      }, 200);
+      
+      // Simulate AI processing completion after a delay
       setTimeout(() => {
+        clearInterval(progressInterval);
+        setValidationProgress(100);
         setIsProcessing(false);
         setProcessStatus('success');
         setExtractedData(mockIAResponse);
@@ -166,7 +181,7 @@ const NovaReceitaPage: React.FC = () => {
           title: "Processamento concluído",
           description: "A IA extraiu os dados da receita com sucesso.",
         });
-      }, 1500);
+      }, 2500);
       
     } catch (error: any) {
       setProcessStatus('error');
@@ -242,10 +257,6 @@ const NovaReceitaPage: React.FC = () => {
         variant: "destructive",
       });
     }
-  };
-
-  const toggleMobilePreview = () => {
-    setShowMobilePreview(!showMobilePreview);
   };
 
   const toggleValidationView = () => {
@@ -332,24 +343,35 @@ const NovaReceitaPage: React.FC = () => {
                     
                     {processStatus !== 'idle' && (
                       <div className="mt-6 p-4 border rounded-md bg-muted">
-                        <div className="flex items-center gap-2">
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2">
+                            {processStatus === 'processing' && (
+                              <>
+                                <Loader2 className="h-5 w-5 animate-spin text-homeo-accent" />
+                                <span>Processando receita com IA...</span>
+                              </>
+                            )}
+                            {processStatus === 'success' && (
+                              <>
+                                <CheckCircle className="h-5 w-5 text-homeo-green" />
+                                <span>Processamento concluído com sucesso!</span>
+                              </>
+                            )}
+                            {processStatus === 'error' && (
+                              <>
+                                <AlertTriangle className="h-5 w-5 text-destructive" />
+                                <span>Erro ao processar a receita. Tente novamente.</span>
+                              </>
+                            )}
+                          </div>
+                          
                           {processStatus === 'processing' && (
-                            <>
-                              <Loader2 className="h-5 w-5 animate-spin text-homeo-accent" />
-                              <span>Processando receita com IA...</span>
-                            </>
-                          )}
-                          {processStatus === 'success' && (
-                            <>
-                              <CheckCircle className="h-5 w-5 text-homeo-green" />
-                              <span>Processamento concluído com sucesso!</span>
-                            </>
-                          )}
-                          {processStatus === 'error' && (
-                            <>
-                              <AlertTriangle className="h-5 w-5 text-destructive" />
-                              <span>Erro ao processar a receita. Tente novamente.</span>
-                            </>
+                            <div className="w-full">
+                              <Progress value={validationProgress} className="h-2" />
+                              <p className="text-xs text-right mt-1 text-muted-foreground">
+                                {Math.round(validationProgress)}% concluído
+                              </p>
+                            </div>
                           )}
                         </div>
                       </div>
@@ -572,8 +594,10 @@ const NovaReceitaPage: React.FC = () => {
                               ];
                               setExtractedData(updatedData);
                             }}
+                            className="flex items-center gap-1"
                           >
-                            <span className="mr-1">+</span> Adicionar Medicamento
+                            <Plus className="h-4 w-4" />
+                            <span>Adicionar Medicamento</span>
                           </Button>
                         </div>
                         
@@ -592,9 +616,9 @@ const NovaReceitaPage: React.FC = () => {
                                         updatedData.medications = updatedData.medications.filter((_, i) => i !== index);
                                         setExtractedData(updatedData);
                                       }}
-                                      className="h-8 w-8 p-0"
+                                      className="h-8 w-8 p-0 text-destructive hover:text-destructive"
                                     >
-                                      <X className="h-4 w-4 text-destructive" />
+                                      <Trash className="h-4 w-4" />
                                     </Button>
                                   )}
                                 </div>
@@ -604,7 +628,12 @@ const NovaReceitaPage: React.FC = () => {
                                     <Label htmlFor={`med_name_${index}`}>Nome <span className="text-red-500">*</span></Label>
                                     <Input 
                                       id={`med_name_${index}`}
-                                      defaultValue={med.name} 
+                                      value={med.name}
+                                      onChange={(e) => {
+                                        const updatedData = { ...extractedData };
+                                        updatedData.medications[index].name = e.target.value;
+                                        setExtractedData(updatedData);
+                                      }}
                                       placeholder="Nome do medicamento"
                                     />
                                   </div>
@@ -613,18 +642,29 @@ const NovaReceitaPage: React.FC = () => {
                                     <Label htmlFor={`med_dinamization_${index}`}>Dinamização</Label>
                                     <Input 
                                       id={`med_dinamization_${index}`}
-                                      defaultValue={med.dinamization} 
+                                      value={med.dinamization || ''}
+                                      onChange={(e) => {
+                                        const updatedData = { ...extractedData };
+                                        updatedData.medications[index].dinamization = e.target.value;
+                                        setExtractedData(updatedData);
+                                      }}
                                       placeholder="Ex: 30CH, 6X, LM1"
                                       list="dinamizacoes"
                                     />
                                     <datalist id="dinamizacoes">
+                                      <option value="1X" />
+                                      <option value="2X" />
+                                      <option value="3X" />
                                       <option value="6X" />
                                       <option value="12X" />
                                       <option value="30X" />
+                                      <option value="200X" />
+                                      <option value="1C" />
                                       <option value="6CH" />
                                       <option value="12CH" />
                                       <option value="30CH" />
                                       <option value="200CH" />
+                                      <option value="M" />
                                       <option value="LM1" />
                                       <option value="LM3" />
                                     </datalist>
@@ -634,7 +674,12 @@ const NovaReceitaPage: React.FC = () => {
                                     <Label htmlFor={`med_form_${index}`}>Forma Farmacêutica</Label>
                                     <Input 
                                       id={`med_form_${index}`}
-                                      defaultValue={med.form} 
+                                      value={med.form || ''}
+                                      onChange={(e) => {
+                                        const updatedData = { ...extractedData };
+                                        updatedData.medications[index].form = e.target.value;
+                                        setExtractedData(updatedData);
+                                      }}
                                       placeholder="Ex: Glóbulos, Gotas, Tabletes"
                                       list="formas"
                                     />
@@ -645,6 +690,10 @@ const NovaReceitaPage: React.FC = () => {
                                       <option value="Comprimidos" />
                                       <option value="Pomada" />
                                       <option value="Creme" />
+                                      <option value="Gel" />
+                                      <option value="Solução Aquosa" />
+                                      <option value="Solução Alcoólica" />
+                                      <option value="Pó" />
                                     </datalist>
                                   </div>
                                   
@@ -654,7 +703,12 @@ const NovaReceitaPage: React.FC = () => {
                                       <Input 
                                         id={`med_quantity_${index}`}
                                         type="number" 
-                                        defaultValue={med.quantity} 
+                                        value={med.quantity || 1}
+                                        onChange={(e) => {
+                                          const updatedData = { ...extractedData };
+                                          updatedData.medications[index].quantity = parseInt(e.target.value);
+                                          setExtractedData(updatedData);
+                                        }}
                                         min="1"
                                       />
                                     </div>
@@ -662,16 +716,25 @@ const NovaReceitaPage: React.FC = () => {
                                       <Label htmlFor={`med_unit_${index}`}>Unidade</Label>
                                       <Input 
                                         id={`med_unit_${index}`}
-                                        defaultValue={med.unit || 'unidades'} 
+                                        value={med.unit || 'unidades'}
+                                        onChange={(e) => {
+                                          const updatedData = { ...extractedData };
+                                          updatedData.medications[index].unit = e.target.value;
+                                          setExtractedData(updatedData);
+                                        }}
                                         placeholder="Ex: ml, g, unidades"
                                         list="unidades"
                                       />
                                       <datalist id="unidades">
                                         <option value="ml" />
                                         <option value="g" />
+                                        <option value="mg" />
                                         <option value="unidades" />
                                         <option value="gotas" />
                                         <option value="glóbulos" />
+                                        <option value="cápsulas" />
+                                        <option value="frascos" />
+                                        <option value="potes" />
                                       </datalist>
                                     </div>
                                   </div>
@@ -680,7 +743,12 @@ const NovaReceitaPage: React.FC = () => {
                                     <Label htmlFor={`med_instructions_${index}`}>Posologia / Instruções</Label>
                                     <Textarea 
                                       id={`med_instructions_${index}`}
-                                      defaultValue={med.dosage_instructions} 
+                                      value={med.dosage_instructions || ''}
+                                      onChange={(e) => {
+                                        const updatedData = { ...extractedData };
+                                        updatedData.medications[index].dosage_instructions = e.target.value;
+                                        setExtractedData(updatedData);
+                                      }}
                                       placeholder="Instruções de uso"
                                       className="min-h-[80px]"
                                     />
@@ -712,7 +780,7 @@ const NovaReceitaPage: React.FC = () => {
                                 }}
                                 className="mt-2"
                               >
-                                <span className="mr-1">+</span> Adicionar Medicamento
+                                <Plus className="h-4 w-4 mr-1" /> Adicionar Medicamento
                               </Button>
                             </div>
                           )}
