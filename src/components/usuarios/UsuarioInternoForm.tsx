@@ -86,9 +86,18 @@ const UsuarioInternoForm: React.FC<UsuarioInternoFormProps> = ({
         });
       } else {
         // Criar novo usuário
+        // Certifique-se de que todos os campos obrigatórios estão presentes
+        const novoUsuario = {
+          nome_completo: data.nome_completo,
+          email_contato: data.email_contato,
+          cargo_perfil: data.cargo_perfil,
+          telefone_contato: data.telefone_contato || null,
+          ativo: data.ativo
+        };
+        
         const { error } = await supabase
           .from("usuarios_internos")
-          .insert([data]);
+          .insert(novoUsuario);
 
         if (error) throw error;
 
