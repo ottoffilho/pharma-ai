@@ -15,6 +15,7 @@ import PrescriptionDetailsPage from "./pages/admin/pedidos/detalhes";
 import InsumosPage from "./pages/admin/estoque/insumos/index";
 import NovoInsumoPage from "./pages/admin/estoque/insumos/novo";
 import EditarInsumoPage from "./pages/admin/estoque/insumos/editar";
+import EmbalagensListPage from "./pages/admin/estoque/embalagens/index"; // New import
 import PrivateRoute from "./components/Auth/PrivateRoute";
 
 const queryClient = new QueryClient();
@@ -43,6 +44,9 @@ const App = () => (
               <Route path="/admin/estoque/insumos" element={<InsumosPage />} />
               <Route path="/admin/estoque/insumos/novo" element={<NovoInsumoPage />} />
               <Route path="/admin/estoque/insumos/editar/:id" element={<EditarInsumoPage />} />
+              
+              {/* Embalagens Routes - new */}
+              <Route path="/admin/estoque/embalagens" element={<EmbalagensListPage />} />
             </Route>
 
             {/* Catch-all route - must be last */}

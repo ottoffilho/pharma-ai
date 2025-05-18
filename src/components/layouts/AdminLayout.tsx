@@ -67,16 +67,40 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
               >
                 Pedidos
               </Link>
-              <Link 
-                to="/admin/estoque/insumos" 
-                className={`px-3 py-2 rounded-md text-sm font-medium ${
-                  isActive('/admin/estoque') 
-                    ? 'text-homeo-green bg-homeo-green bg-opacity-10' 
-                    : 'text-gray-700 hover:text-homeo-green'
-                }`}
-              >
-                Estoque
-              </Link>
+              <div className="relative group">
+                <Link 
+                  to="/admin/estoque/insumos" 
+                  className={`px-3 py-2 rounded-md text-sm font-medium ${
+                    isActive('/admin/estoque') 
+                      ? 'text-homeo-green bg-homeo-green bg-opacity-10' 
+                      : 'text-gray-700 hover:text-homeo-green'
+                  }`}
+                >
+                  Estoque
+                </Link>
+                <div className="absolute hidden group-hover:block bg-white shadow-md rounded-md mt-1 py-1 w-48 z-10">
+                  <Link 
+                    to="/admin/estoque/insumos" 
+                    className={`block px-4 py-2 text-sm ${
+                      isActive('/admin/estoque/insumos') 
+                        ? 'bg-gray-100 text-homeo-green' 
+                        : 'text-gray-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    Insumos
+                  </Link>
+                  <Link 
+                    to="/admin/estoque/embalagens" 
+                    className={`block px-4 py-2 text-sm ${
+                      isActive('/admin/estoque/embalagens') 
+                        ? 'bg-gray-100 text-homeo-green' 
+                        : 'text-gray-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    Embalagens
+                  </Link>
+                </div>
+              </div>
             </nav>
           </div>
           <div className="flex items-center">
