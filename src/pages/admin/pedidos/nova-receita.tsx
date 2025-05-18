@@ -241,6 +241,11 @@ const NovaReceitaPage: React.FC = () => {
     setIsSaving(true);
     
     try {
+      // Basic validation
+      if (!validatePrescriptionData(extractedData)) {
+        return;
+      }
+      
       // Get current user ID - for development purposes using a mock ID
       // In production, this would be fetched from Supabase Auth
       const mockUserId = '00000000-0000-0000-0000-000000000000'; // Mock user ID for dev
@@ -312,7 +317,7 @@ const NovaReceitaPage: React.FC = () => {
           source: 'prescription_validation',
           patient_name: extractedData.patient_name,
           medications_count: extractedData.medications.length
-        }
+        } as unknown as Json // Cast to Json type for TypeScript
       };
 
       const { data: newOrder, error: orderError } = await supabase
@@ -347,8 +352,76 @@ const NovaReceitaPage: React.FC = () => {
     }
   };
 
-  const toggleValidationView = () => {
-    setValidationView(validationView === 'split' ? 'preview' : 'split');
+  // Function to validate prescription data before saving
+  const validatePrescriptionData = (data: IAExtractedData): boolean => {
+    // Check if we have at least one medication
+    if (!data.medications || data.medications.length === 0) {
+      toast({
+        title: "Validação falhou",
+        description: "É necessário adicionar pelo menos um medicamento à receita.",
+        variant: "destructive",
+      });
+      setIsSaving(false);
+      return false;
+    }
+
+    // Check each medication for required fields
+    for (let i = 0; i < data.medications.length; i++) {
+      const med = data.medications[i];
+      
+      if (!med.name || med.name.trim() === '') {
+        toast({
+          title: "Validação falhou",
+          description: `O medicamento #${i + 1} precisa ter um nome.`,
+          variant: "destructive",
+        });
+        setIsSaving(false);
+        return false;
+      }
+
+      if (!med.dinamization || med.dinamization.trim() === '') {
+        toast({
+          title: "Validação falhou",
+          description: `O medicamento ${med.name} precisa ter uma dinamização especificada.`,
+          variant: "destructive",
+        });
+        setIsSaving(false);
+        return false;
+      }
+
+      if (!med.form || med.form.trim() === '') {
+        toast({
+          title: "Validação falhou",
+          description: `O medicamento ${med.name} precisa ter uma forma farmacêutica especificada.`,
+          variant: "destructive",
+        });
+        setIsSaving(false);
+        return false;
+      }
+
+      // Ensure quantity is a number
+      if (!med.quantity || isNaN(Number(med.quantity))) {
+        toast({
+          title: "Validação falhou",
+          description: `O medicamento ${med.name} precisa ter uma quantidade válida.`,
+          variant: "destructive",
+        });
+        setIsSaving(false);
+        return false;
+      }
+    }
+
+    // Check for patient name (optional validation, can be removed if not required)
+    if (!data.patient_name || data.patient_name.trim() === '') {
+      toast({
+        title: "Aviso",
+        description: "O nome do paciente não foi informado. Deseja continuar?",
+        variant: "default",
+      });
+      // We return true anyway since this is just a warning
+    }
+
+    return true;
   };
 
   const handleCancelValidation = () => {
