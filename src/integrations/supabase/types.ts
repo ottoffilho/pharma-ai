@@ -102,6 +102,7 @@ export type Database = {
           estoque_minimo: number
           fornecedor_id: string | null
           id: string
+          is_deleted: boolean
           nome: string
           tipo: string
           unidade_medida: string
@@ -116,6 +117,7 @@ export type Database = {
           estoque_minimo?: number
           fornecedor_id?: string | null
           id?: string
+          is_deleted?: boolean
           nome: string
           tipo: string
           unidade_medida: string
@@ -130,6 +132,7 @@ export type Database = {
           estoque_minimo?: number
           fornecedor_id?: string | null
           id?: string
+          is_deleted?: boolean
           nome?: string
           tipo?: string
           unidade_medida?: string
