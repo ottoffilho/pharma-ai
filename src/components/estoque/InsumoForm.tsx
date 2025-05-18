@@ -305,7 +305,8 @@ export default function InsumoForm({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">Nenhum fornecedor</SelectItem>
+                      {/* The issue is here - replaced empty string with a non-empty value */}
+                      <SelectItem value="none">Nenhum fornecedor</SelectItem>
                       {fornecedores?.map((fornecedor) => (
                         <SelectItem
                           key={fornecedor.id}
