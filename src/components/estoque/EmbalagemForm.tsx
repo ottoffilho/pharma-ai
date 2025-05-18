@@ -247,7 +247,7 @@ const EmbalagemForm: React.FC<EmbalagemFormProps> = ({
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="">Nenhum</SelectItem>
+                    <SelectItem value="null">Nenhum</SelectItem>
                     {fornecedores?.map((fornecedor) => (
                       <SelectItem key={fornecedor.id} value={fornecedor.id}>
                         {fornecedor.nome}
