@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   UploadCloud, FileText, Image, FileArchive, File, X, Loader2, 
@@ -89,6 +88,7 @@ const NovaReceitaPage: React.FC = () => {
   const [validationProgress, setValidationProgress] = useState(0);
   const [validationNotes, setValidationNotes] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [rawRecipeId, setRawRecipeId] = useState<string>('mock-recipe-id-' + Date.now());
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -240,29 +240,101 @@ const NovaReceitaPage: React.FC = () => {
     setIsSaving(true);
     
     try {
-      // Modo de desenvolvimento - simular salvamento
+      // Get current user ID - for development purposes using a mock ID
+      // In production, this would be fetched from Supabase Auth
+      const mockUserId = '00000000-0000-0000-0000-000000000000'; // Mock user ID for dev
+      
+      // Prepare data for receitas_processadas
+      const processedRecipeData = {
+        raw_recipe_id: rawRecipeId,
+        processed_by_user_id: mockUserId,
+        medications: extractedData.medications,
+        patient_name: extractedData.patient_name || null,
+        patient_dob: extractedData.patient_dob || null,
+        prescriber_name: extractedData.prescriber_name || null,
+        prescriber_identifier: extractedData.prescriber_identifier || null,
+        validation_status: 'validated',
+        validation_notes: validationNotes || null
+      };
+
+      // Check if a processed recipe already exists for this raw recipe ID
+      const { data: existingProcessedRecipe, error: fetchError } = await supabase
+        .from('receitas_processadas')
+        .select('id')
+        .eq('raw_recipe_id', rawRecipeId)
+        .maybeSingle();
+
+      let processedRecipeId;
+      
+      if (fetchError) {
+        throw new Error(`Error checking for existing processed recipe: ${fetchError.message}`);
+      }
+
+      // Update or insert the processed recipe
+      if (existingProcessedRecipe?.id) {
+        // Update existing record
+        const { error: updateError } = await supabase
+          .from('receitas_processadas')
+          .update(processedRecipeData)
+          .eq('id', existingProcessedRecipe.id);
+
+        if (updateError) {
+          throw new Error(`Error updating processed recipe: ${updateError.message}`);
+        }
+        
+        processedRecipeId = existingProcessedRecipe.id;
+      } else {
+        // Insert new record
+        const { data: newProcessedRecipe, error: insertError } = await supabase
+          .from('receitas_processadas')
+          .insert(processedRecipeData)
+          .select('id')
+          .single();
+
+        if (insertError) {
+          throw new Error(`Error creating processed recipe: ${insertError.message}`);
+        }
+        
+        processedRecipeId = newProcessedRecipe.id;
+      }
+
+      // Create a draft order linked to the processed recipe
+      const orderData = {
+        processed_recipe_id: processedRecipeId,
+        created_by_user_id: mockUserId,
+        channel: 'web',
+        status: 'draft',
+        payment_status: 'pending',
+        notes: validationNotes || null,
+        metadata: {
+          source: 'prescription_validation',
+          patient_name: extractedData.patient_name,
+          medications_count: extractedData.medications.length
+        }
+      };
+
+      const { data: newOrder, error: orderError } = await supabase
+        .from('pedidos')
+        .insert(orderData)
+        .select('id')
+        .single();
+
+      if (orderError) {
+        throw new Error(`Error creating draft order: ${orderError.message}`);
+      }
+
+      toast({
+        title: "Receita validada com sucesso",
+        description: "Um rascunho de pedido foi criado e está pronto para orçamentação.",
+      });
+
+      // Navigate to orders page after a short delay to show the success message
       setTimeout(() => {
-        toast({
-          title: "Receita validada com sucesso",
-          description: "Os dados foram salvos e um pedido foi criado.",
-        });
-
-        // Reset states
-        setTimeout(() => {
-          if (!devMode) {
-            setFiles([]);
-            setExtractedData(null);
-            setProcessStatus('idle');
-            setUploadedRecipeId(null);
-            setShowValidationArea(false);
-          }
-
-          // Navigate to the orders page (commented for dev mode)
-          // navigate('/admin/pedidos');
-        }, 1500);
-      }, 1000);
+        navigate('/admin/pedidos');
+      }, 1500);
       
     } catch (error: any) {
+      console.error('Error saving validated prescription:', error);
       toast({
         title: "Erro ao salvar dados validados",
         description: error.message || "Ocorreu um erro ao salvar os dados validados.",
@@ -277,6 +349,11 @@ const NovaReceitaPage: React.FC = () => {
     setValidationView(validationView === 'split' ? 'preview' : 'split');
   };
 
+  const handleCancelValidation = () => {
+    // Navigate back to the orders list
+    navigate('/admin/pedidos');
+  };
+
   // Generate preview URL for the first file if it's an image
   const previewUrl = React.useMemo(() => {
     if (files.length > 0 && files[0].type.includes('image')) {
@@ -284,6 +361,16 @@ const NovaReceitaPage: React.FC = () => {
     }
     return null;
   }, [files]);
+
+  // Simulate processing on mount for development mode
+  useEffect(() => {
+    if (devMode) {
+      setRawRecipeId('mock-recipe-id-' + Date.now());
+      setExtractedData(mockIAResponse);
+      setShowValidationArea(true);
+      setProcessStatus('success');
+    }
+  }, [devMode]);
 
   return (
     <AdminLayout>
@@ -535,14 +622,9 @@ const NovaReceitaPage: React.FC = () => {
                         validationNotes={validationNotes}
                         onValidationNotesChange={(value) => setValidationNotes(value)}
                         onSubmit={handleSaveProcessedRecipe}
-                        onCancel={() => {
-                          if (!devMode) {
-                            setShowValidationArea(false);
-                            setProcessStatus('idle');
-                          }
-                        }}
+                        onCancel={handleCancelValidation}
                         isSaving={isSaving}
-                        disableSubmit={false}
+                        disableSubmit={extractedData.medications.length === 0}
                       />
                     </div>
                   </div>

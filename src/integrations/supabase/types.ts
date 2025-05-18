@@ -9,6 +9,59 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      pedidos: {
+        Row: {
+          channel: string
+          client_id: string | null
+          created_at: string
+          created_by_user_id: string
+          estimated_delivery_date: string | null
+          id: string
+          metadata: Json | null
+          notes: string | null
+          payment_status: string
+          processed_recipe_id: string
+          status: string
+          total_amount: number | null
+        }
+        Insert: {
+          channel: string
+          client_id?: string | null
+          created_at?: string
+          created_by_user_id: string
+          estimated_delivery_date?: string | null
+          id?: string
+          metadata?: Json | null
+          notes?: string | null
+          payment_status?: string
+          processed_recipe_id: string
+          status?: string
+          total_amount?: number | null
+        }
+        Update: {
+          channel?: string
+          client_id?: string | null
+          created_at?: string
+          created_by_user_id?: string
+          estimated_delivery_date?: string | null
+          id?: string
+          metadata?: Json | null
+          notes?: string | null
+          payment_status?: string
+          processed_recipe_id?: string
+          status?: string
+          total_amount?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pedidos_processed_recipe_id_fkey"
+            columns: ["processed_recipe_id"]
+            isOneToOne: false
+            referencedRelation: "receitas_processadas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       receitas_processadas: {
         Row: {
           client_id: string | null
