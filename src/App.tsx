@@ -11,6 +11,7 @@ import Login from "./pages/Login";
 import AdminDashboard from "./pages/admin/index";
 import PedidosPage from "./pages/admin/pedidos/index";
 import NovaReceitaPage from "./pages/admin/pedidos/nova-receita";
+import PrescriptionDetailsPage from "./pages/admin/pedidos/detalhes";
 
 const queryClient = new QueryClient();
 
@@ -28,6 +29,7 @@ const App = () => (
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/pedidos" element={<PedidosPage />} />
             <Route path="/admin/pedidos/nova-receita" element={<NovaReceitaPage />} />
+            <Route path="/admin/pedidos/:id" element={<PrescriptionDetailsPage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
