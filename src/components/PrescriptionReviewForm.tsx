@@ -1,24 +1,18 @@
 
 import React, { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { PlusCircle, Trash2, Save, ArrowRight, FileText, Image, CheckCircle, Eye } from 'lucide-react';
+import { Save, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { CheckCircle } from 'lucide-react';
 
-interface Medication {
-  name: string;
-  dinamization?: string;
-  form?: string;
-  quantity?: number;
-  unit?: string;
-  dosage_instructions?: string;
-}
+// Import our new components
+import OriginalPrescriptionPreview from './prescription/OriginalPrescriptionPreview';
+import PatientPrescriberInfo from './prescription/PatientPresciberInfo';
+import MedicationsSection from './prescription/MedicationsSection';
+import { Medication } from './prescription/MedicationForm';
 
 interface PrescriptionData {
   medications: Medication[];
@@ -50,6 +44,7 @@ const PrescriptionReviewForm: React.FC<PrescriptionReviewFormProps> = ({
     })),
     validation_notes: ''
   });
+  
   const [isSaving, setIsSaving] = useState(false);
   const [reviewComplete, setReviewComplete] = useState(false);
   const { toast } = useToast();
@@ -107,7 +102,14 @@ const PrescriptionReviewForm: React.FC<PrescriptionReviewFormProps> = ({
     });
   };
 
-  const handleChange = (field: keyof Omit<PrescriptionData, 'medications'>, value: any) => {
+  const handlePatientChange = (field: string, value: string) => {
+    setFormData({
+      ...formData,
+      [field]: value
+    });
+  };
+
+  const handlePrescriberChange = (field: string, value: string) => {
     setFormData({
       ...formData,
       [field]: value
@@ -183,246 +185,44 @@ const PrescriptionReviewForm: React.FC<PrescriptionReviewFormProps> = ({
         {/* Original prescription preview - hidden on mobile unless toggled */}
         {(!showMobilePreview && window.innerWidth < 768) ? null : (
           <div className="order-2 md:order-1">
-            <h3 className="text-lg font-medium mb-2">Receita Original</h3>
-            
-            {previewUrl ? (
-              <div className="border rounded-md overflow-hidden h-64 bg-gray-50">
-                <img 
-                  src={previewUrl} 
-                  alt="Receita" 
-                  className="w-full h-full object-contain"
-                />
-              </div>
-            ) : (
-              <div className="flex items-center justify-center border rounded-md h-64 bg-gray-50">
-                {originalFiles.length > 0 && (
-                  <div className="flex flex-col items-center text-muted-foreground">
-                    <FileText className="h-8 w-8 mb-2" />
-                    <span>{originalFiles[0].name}</span>
-                    <a 
-                      href={URL.createObjectURL(originalFiles[0])}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm text-homeo-blue mt-2"
-                    >
-                      Abrir arquivo
-                    </a>
-                  </div>
-                )}
-              </div>
-            )}
-
-            <div className="mt-4">
-              <p className="text-sm text-muted-foreground">
-                {originalFiles.length > 1 && (
-                  <>Mais {originalFiles.length - 1} arquivo(s) anexado(s)</>
-                )}
-              </p>
-            </div>
+            <OriginalPrescriptionPreview 
+              previewUrl={previewUrl}
+              originalFiles={originalFiles}
+            />
           </div>
         )}
 
         {/* Patient and prescriber info */}
         <div className="order-1 md:order-2">
-          <h3 className="text-lg font-medium mb-2">Informações Gerais</h3>
-          
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 gap-3">
-              <div>
-                <label className="text-sm font-medium">Nome do Paciente</label>
-                <Input 
-                  value={formData.patient_name || ''}
-                  onChange={(e) => handleChange('patient_name', e.target.value)}
-                  placeholder="Nome completo do paciente"
-                />
-              </div>
-              
-              <div>
-                <label className="text-sm font-medium">Data de Nascimento</label>
-                <Input 
-                  type="date" 
-                  value={formData.patient_dob || ''}
-                  onChange={(e) => handleChange('patient_dob', e.target.value)}
-                />
-              </div>
-            </div>
-          </div>
-
-          <Separator className="my-4" />
-          
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 gap-3">
-              <div>
-                <label className="text-sm font-medium">Nome do Prescritor</label>
-                <Input 
-                  value={formData.prescriber_name || ''}
-                  onChange={(e) => handleChange('prescriber_name', e.target.value)}
-                  placeholder="Nome do médico/prescritor"
-                />
-              </div>
-              
-              <div>
-                <label className="text-sm font-medium">Identificação do Prescritor (CRM)</label>
-                <Input 
-                  value={formData.prescriber_identifier || ''}
-                  onChange={(e) => handleChange('prescriber_identifier', e.target.value)}
-                  placeholder="Ex: CRM 12345-SP"
-                />
-              </div>
-            </div>
-          </div>
+          <PatientPrescriberInfo 
+            patientName={formData.patient_name || ''}
+            patientDob={formData.patient_dob || ''}
+            prescriberName={formData.prescriber_name || ''}
+            prescriberIdentifier={formData.prescriber_identifier || ''}
+            onPatientChange={handlePatientChange}
+            onPrescriberChange={handlePrescriberChange}
+          />
         </div>
       </div>
 
       <Separator />
 
       {/* Medications section */}
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-medium">Medicamentos</h3>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={handleAddMedication}
-            type="button"
-          >
-            <PlusCircle className="h-4 w-4 mr-1" />
-            Adicionar Medicamento
-          </Button>
-        </div>
-        
-        <div className="space-y-4">
-          {formData.medications.map((medication, index) => (
-            <Card key={index}>
-              <CardContent className="pt-6">
-                <div className="flex justify-between items-start mb-3">
-                  <h4 className="font-medium">Medicamento {index + 1}</h4>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => handleRemoveMedication(index)}
-                    className="h-8 w-8 p-0"
-                  >
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-sm font-medium">Nome <span className="text-red-500">*</span></label>
-                    <Input 
-                      value={medication.name}
-                      onChange={(e) => handleMedicationChange(index, 'name', e.target.value)}
-                      placeholder="Nome do medicamento"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="text-sm font-medium">Dinamização</label>
-                    <Input 
-                      value={medication.dinamization || ''}
-                      onChange={(e) => handleMedicationChange(index, 'dinamization', e.target.value)}
-                      placeholder="Ex: 30CH, 6X, LM1"
-                      list="dinamizacoes"
-                    />
-                    <datalist id="dinamizacoes">
-                      <option value="6X" />
-                      <option value="12X" />
-                      <option value="30X" />
-                      <option value="6CH" />
-                      <option value="12CH" />
-                      <option value="30CH" />
-                      <option value="200CH" />
-                      <option value="LM1" />
-                      <option value="LM3" />
-                    </datalist>
-                  </div>
-                  
-                  <div>
-                    <label className="text-sm font-medium">Forma Farmacêutica</label>
-                    <Input 
-                      value={medication.form || ''}
-                      onChange={(e) => handleMedicationChange(index, 'form', e.target.value)}
-                      placeholder="Ex: Glóbulos, Gotas, Tabletes"
-                      list="formas"
-                    />
-                    <datalist id="formas">
-                      <option value="Glóbulos" />
-                      <option value="Gotas" />
-                      <option value="Tabletes" />
-                      <option value="Comprimidos" />
-                      <option value="Pomada" />
-                      <option value="Creme" />
-                    </datalist>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="text-sm font-medium">Quantidade</label>
-                      <Input 
-                        type="number" 
-                        value={medication.quantity || ''}
-                        onChange={(e) => handleMedicationChange(index, 'quantity', parseInt(e.target.value) || undefined)}
-                        placeholder="Quantidade"
-                        min="1"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium">Unidade</label>
-                      <Input 
-                        value={medication.unit || 'unidades'}
-                        onChange={(e) => handleMedicationChange(index, 'unit', e.target.value)}
-                        placeholder="Ex: ml, g, unidades"
-                        list="unidades"
-                      />
-                      <datalist id="unidades">
-                        <option value="ml" />
-                        <option value="g" />
-                        <option value="unidades" />
-                        <option value="gotas" />
-                        <option value="glóbulos" />
-                      </datalist>
-                    </div>
-                  </div>
-                  
-                  <div className="md:col-span-2">
-                    <label className="text-sm font-medium">Posologia / Instruções</label>
-                    <Textarea 
-                      value={medication.dosage_instructions || ''}
-                      onChange={(e) => handleMedicationChange(index, 'dosage_instructions', e.target.value)}
-                      placeholder="Instruções de uso"
-                      className="min-h-[80px]"
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+      <MedicationsSection 
+        medications={formData.medications}
+        onMedicationChange={handleMedicationChange}
+        onAddMedication={handleAddMedication}
+        onRemoveMedication={handleRemoveMedication}
+      />
 
-          {formData.medications.length === 0 && (
-            <div className="text-center py-8 border border-dashed rounded-md">
-              <p className="text-muted-foreground">Nenhum medicamento adicionado</p>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={handleAddMedication}
-                type="button"
-                className="mt-2"
-              >
-                <PlusCircle className="h-4 w-4 mr-1" />
-                Adicionar Medicamento
-              </Button>
-            </div>
-          )}
-        </div>
-      </div>
+      <Separator />
 
       {/* Validation notes */}
       <div>
         <label className="text-sm font-medium">Notas Adicionais da Validação</label>
         <Textarea 
           value={formData.validation_notes || ''}
-          onChange={(e) => handleChange('validation_notes', e.target.value)}
+          onChange={(e) => handlePatientChange('validation_notes', e.target.value)}
           placeholder="Observações adicionais sobre esta receita (opcional)"
           className="min-h-[80px]"
         />
