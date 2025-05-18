@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -422,6 +421,11 @@ const NovaReceitaPage: React.FC = () => {
     }
 
     return true;
+  };
+
+  // Add the missing toggleValidationView function
+  const toggleValidationView = () => {
+    setValidationView(validationView === 'split' ? 'preview' : 'split');
   };
 
   const handleCancelValidation = () => {
