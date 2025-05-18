@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { Json } from '@/integrations/supabase/types';
 
 interface Medication {
   name: string;
@@ -58,7 +59,33 @@ const PrescriptionDetailsPage: React.FC = () => {
           throw error;
         }
 
-        setPrescription(data as ProcessedPrescription);
+        // Transform the data to ensure medications are properly typed
+        const transformedMedications = Array.isArray(data.medications) 
+          ? data.medications.map((med: any) => ({
+              name: med.name || '', // Ensure name always exists
+              dinamization: med.dinamization,
+              form: med.form,
+              quantity: med.quantity,
+              unit: med.unit || 'unidades',
+              dosage_instructions: med.dosage_instructions
+            }))
+          : [];
+
+        // Create a properly typed ProcessedPrescription object
+        const typedPrescription: ProcessedPrescription = {
+          id: data.id,
+          raw_recipe_id: data.raw_recipe_id,
+          processed_at: data.processed_at,
+          patient_name: data.patient_name,
+          patient_dob: data.patient_dob,
+          prescriber_name: data.prescriber_name,
+          prescriber_identifier: data.prescriber_identifier,
+          medications: transformedMedications,
+          validation_status: data.validation_status,
+          validation_notes: data.validation_notes
+        };
+
+        setPrescription(typedPrescription);
       } catch (err: any) {
         console.error('Error fetching prescription:', err);
         setError('Não foi possível carregar os detalhes da receita.');
