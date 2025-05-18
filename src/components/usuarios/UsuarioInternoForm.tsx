@@ -27,14 +27,24 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-// Definição do esquema de validação com Zod
+// Esquema de validação condicional com Zod
 const usuarioInternoSchema = z.object({
   nome_completo: z.string().min(3, "Nome deve ter no mínimo 3 caracteres"),
   email_contato: z.string().email("Email inválido"),
   cargo_perfil: z.string().min(1, "Selecione um cargo"),
   telefone_contato: z.string().optional(),
   ativo: z.boolean().default(true),
-  // Os campos de senha serão implementados em uma fase posterior
+  senha: z.string().min(6, "A senha deve ter no mínimo 6 caracteres").optional(),
+  confirmar_senha: z.string().optional(),
+}).refine((data) => {
+  // Se não estamos editando (criação) ou senha está presente (edição com alteração de senha)
+  if (data.senha) {
+    return data.senha === data.confirmar_senha;
+  }
+  return true;
+}, {
+  message: "As senhas não coincidem",
+  path: ["confirmar_senha"],
 });
 
 // Tipo dos dados do formulário baseado no schema Zod
@@ -43,7 +53,9 @@ type UsuarioInternoFormData = z.infer<typeof usuarioInternoSchema>;
 // Props do componente de formulário
 interface UsuarioInternoFormProps {
   usuarioId?: string;
-  usuarioData?: UsuarioInternoFormData;
+  usuarioData?: Omit<UsuarioInternoFormData, 'senha' | 'confirmar_senha'> & { 
+    supabase_auth_id?: string 
+  };
   isEditing: boolean;
 }
 
@@ -55,17 +67,21 @@ const UsuarioInternoForm: React.FC<UsuarioInternoFormProps> = ({
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isSaving, setIsSaving] = React.useState(false);
+  const [showPasswordFields, setShowPasswordFields] = React.useState(!isEditing);
 
   // Inicializar o formulário com react-hook-form e validação zod
   const form = useForm<UsuarioInternoFormData>({
     resolver: zodResolver(usuarioInternoSchema),
-    defaultValues: usuarioData || {
-      nome_completo: "",
-      email_contato: "",
-      cargo_perfil: "",
-      telefone_contato: "",
-      ativo: true,
+    defaultValues: {
+      nome_completo: usuarioData?.nome_completo || "",
+      email_contato: usuarioData?.email_contato || "",
+      cargo_perfil: usuarioData?.cargo_perfil || "",
+      telefone_contato: usuarioData?.telefone_contato || "",
+      ativo: usuarioData?.ativo ?? true,
+      senha: "",
+      confirmar_senha: "",
     },
+    mode: "onBlur", // Validar ao sair do campo
   });
 
   // Função para lidar com a submissão do formulário
@@ -76,31 +92,99 @@ const UsuarioInternoForm: React.FC<UsuarioInternoFormProps> = ({
         // Atualizar usuário existente
         const { error } = await supabase
           .from("usuarios_internos")
-          .update(data)
+          .update({
+            nome_completo: data.nome_completo,
+            email_contato: data.email_contato,
+            cargo_perfil: data.cargo_perfil,
+            telefone_contato: data.telefone_contato || null,
+            ativo: data.ativo,
+          })
           .eq("id", usuarioId);
 
         if (error) throw error;
+
+        // Se o email foi alterado, precisamos atualizar o email no Supabase Auth
+        const originalEmail = usuarioData?.email_contato;
+        if (data.email_contato !== originalEmail && usuarioData?.supabase_auth_id) {
+          toast({
+            title: "Atualização de email Auth necessária",
+            description: "A atualização do email no sistema de autenticação requer uma função Edge. Por favor, implemente esta funcionalidade.",
+            variant: "warning",
+          });
+          
+          // Aqui seria o local para chamar uma Edge Function para atualizar o email
+          // const { error: authError } = await supabase.functions.invoke("update-user-email", {
+          //   body: { user_id: usuarioData.supabase_auth_id, email: data.email_contato }
+          // });
+          // if (authError) throw new Error(`Erro ao atualizar email: ${authError.message}`);
+        }
+
+        // Se a senha foi fornecida, precisaríamos atualizar a senha no Supabase Auth
+        if (data.senha && usuarioData?.supabase_auth_id) {
+          toast({
+            title: "Atualização de senha Auth necessária",
+            description: "A atualização da senha no sistema de autenticação requer uma função Edge. Por favor, implemente esta funcionalidade.",
+            variant: "warning",
+          });
+          
+          // Aqui seria o local para chamar uma Edge Function para atualizar a senha
+          // const { error: authError } = await supabase.functions.invoke("update-user-password", {
+          //   body: { user_id: usuarioData.supabase_auth_id, password: data.senha }
+          // });
+          // if (authError) throw new Error(`Erro ao atualizar senha: ${authError.message}`);
+        }
 
         toast({
           title: "Usuário atualizado",
           description: "As informações foram atualizadas com sucesso.",
         });
       } else {
-        // Criar novo usuário
-        // Certifique-se de que todos os campos obrigatórios estão presentes
+        // Criar novo usuário - primeiro criar no Auth
+        if (!data.senha) {
+          throw new Error("Senha é obrigatória para criar um novo usuário");
+        }
+
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+          email: data.email_contato,
+          password: data.senha,
+        });
+
+        if (authError) {
+          // Tratar erros específicos do signUp
+          if (authError.message.includes("already registered")) {
+            throw new Error("Este email já está registrado no sistema");
+          }
+          throw new Error(`Erro na criação da conta: ${authError.message}`);
+        }
+
+        if (!authData.user?.id) {
+          throw new Error("Não foi possível obter o ID do usuário criado");
+        }
+
+        // Depois criar na nossa tabela, com referência ao auth.users
         const novoUsuario = {
           nome_completo: data.nome_completo,
           email_contato: data.email_contato,
           cargo_perfil: data.cargo_perfil,
           telefone_contato: data.telefone_contato || null,
           ativo: data.ativo,
+          supabase_auth_id: authData.user.id,
         };
         
         const { error } = await supabase
           .from("usuarios_internos")
           .insert(novoUsuario);
 
-        if (error) throw error;
+        if (error) {
+          // Se falhar ao inserir na tabela usuarios_internos, deveríamos tentar remover o usuário do auth
+          // Isso requer uma função admin, então apenas notificamos o problema
+          toast({
+            title: "Atenção",
+            description: "Usuário foi criado no sistema de autenticação, mas falhou ao criar o perfil. Informações do Auth podem precisar de limpeza manual.",
+            variant: "destructive",
+          });
+          throw error;
+        }
 
         toast({
           title: "Usuário criado",
@@ -125,6 +209,16 @@ const UsuarioInternoForm: React.FC<UsuarioInternoFormProps> = ({
   // Função para cancelar e voltar à página de listagem
   const handleCancel = () => {
     navigate("/admin/usuarios");
+  };
+
+  // Toggle para mostrar/esconder campos de senha na edição
+  const togglePasswordFields = () => {
+    setShowPasswordFields(!showPasswordFields);
+    if (!showPasswordFields) {
+      // Limpar os campos de senha quando eles são escondidos
+      form.setValue("senha", "");
+      form.setValue("confirmar_senha", "");
+    }
   };
 
   return (
@@ -225,6 +319,52 @@ const UsuarioInternoForm: React.FC<UsuarioInternoFormProps> = ({
               </FormItem>
             )}
           />
+
+          {/* Toggle para mostrar/ocultar campos de senha em modo edição */}
+          {isEditing && (
+            <div className="col-span-1 md:col-span-2">
+              <Button 
+                type="button" 
+                variant="outline"
+                onClick={togglePasswordFields}
+              >
+                {showPasswordFields ? "Cancelar alteração de senha" : "Alterar senha"}
+              </Button>
+            </div>
+          )}
+
+          {/* Campos de Senha Condicional */}
+          {(!isEditing && showPasswordFields) || (isEditing && showPasswordFields) ? (
+            <>
+              <FormField
+                control={form.control}
+                name="senha"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{isEditing ? "Nova Senha" : "Senha"}</FormLabel>
+                    <FormControl>
+                      <Input type="password" placeholder="Mínimo 6 caracteres" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="confirmar_senha"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Confirmar {isEditing ? "Nova Senha" : "Senha"}</FormLabel>
+                    <FormControl>
+                      <Input type="password" placeholder="Confirme a senha" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </>
+          ) : null}
         </div>
 
         <div className="flex items-center justify-end space-x-4">
