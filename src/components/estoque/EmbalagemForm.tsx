@@ -108,10 +108,22 @@ const EmbalagemForm: React.FC<EmbalagemFormProps> = ({
           description: "A embalagem foi atualizada com sucesso.",
         });
       } else {
-        // Inserir nova embalagem
+        // Inserir nova embalagem - garantir que campos obrigatórios estejam presentes
+        const newEmbalagem = {
+          nome: data.nome,
+          tipo: data.tipo,
+          custo_unitario: data.custo_unitario,
+          volume_capacidade: data.volume_capacidade || null,
+          fornecedor_id: data.fornecedor_id || null,
+          descricao: data.descricao || null,
+          estoque_atual: data.estoque_atual || 0,
+          estoque_minimo: data.estoque_minimo || 0,
+          estoque_maximo: data.estoque_maximo || null
+        };
+        
         const { error } = await supabase
           .from('embalagens')
-          .insert(data);
+          .insert(newEmbalagem);
 
         if (error) throw error;
         
