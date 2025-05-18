@@ -142,7 +142,7 @@ const LoteInsumoForm = ({ initialData, isEditing = false, loteId, insumoId }: Lo
   });
 
   // Fetch lote data in edit mode
-  const { isLoading: isLoadingLote } = useQuery({
+  const { data: loteData, isLoading: isLoadingLote } = useQuery({
     queryKey: ['lote', loteId],
     queryFn: async () => {
       if (!loteId) return null;
@@ -169,24 +169,26 @@ const LoteInsumoForm = ({ initialData, isEditing = false, loteId, insumoId }: Lo
       return data;
     },
     enabled: !!loteId && isEditing,
-    onSuccess: (data) => {
-      if (data) {
-        setSelectedInsumoId(data.insumo_id);
-        form.reset({
-          insumo_id: data.insumo_id,
-          numero_lote: data.numero_lote,
-          quantidade_inicial: data.quantidade_inicial,
-          quantidade_atual: data.quantidade_atual,
-          data_validade: data.data_validade ? new Date(data.data_validade) : null,
-          fornecedor_id: data.fornecedor_id,
-          custo_unitario_lote: data.custo_unitario_lote,
-          localizacao: data.localizacao,
-          notas: data.notas,
-          unidade_medida: data.unidade_medida
-        });
-      }
-    }
   });
+
+  // Update form when lote data is loaded in edit mode
+  useEffect(() => {
+    if (loteData) {
+      setSelectedInsumoId(loteData.insumo_id);
+      form.reset({
+        insumo_id: loteData.insumo_id,
+        numero_lote: loteData.numero_lote,
+        quantidade_inicial: loteData.quantidade_inicial,
+        quantidade_atual: loteData.quantidade_atual,
+        data_validade: loteData.data_validade ? new Date(loteData.data_validade) : null,
+        fornecedor_id: loteData.fornecedor_id,
+        custo_unitario_lote: loteData.custo_unitario_lote,
+        localizacao: loteData.localizacao,
+        notas: loteData.notas,
+        unidade_medida: loteData.unidade_medida
+      });
+    }
+  }, [loteData, form]);
 
   // Effect to update form when insumo changes
   useEffect(() => {
@@ -209,13 +211,16 @@ const LoteInsumoForm = ({ initialData, isEditing = false, loteId, insumoId }: Lo
         values.quantidade_atual = values.quantidade_inicial;
       }
       
+      // Format the date to ISO string if it exists
+      const formattedDate = values.data_validade ? values.data_validade.toISOString().split('T')[0] : null;
+      
       if (isEditing && loteId) {
         const { data, error } = await supabase
           .from('lotes_insumos')
           .update({
             insumo_id: values.insumo_id,
             numero_lote: values.numero_lote,
-            data_validade: values.data_validade,
+            data_validade: formattedDate,
             quantidade_inicial: values.quantidade_inicial,
             quantidade_atual: values.quantidade_atual,
             unidade_medida: values.unidade_medida,
@@ -234,7 +239,7 @@ const LoteInsumoForm = ({ initialData, isEditing = false, loteId, insumoId }: Lo
           .insert({
             insumo_id: values.insumo_id,
             numero_lote: values.numero_lote,
-            data_validade: values.data_validade,
+            data_validade: formattedDate,
             quantidade_inicial: values.quantidade_inicial,
             quantidade_atual: values.quantidade_atual,
             unidade_medida: values.unidade_medida,
