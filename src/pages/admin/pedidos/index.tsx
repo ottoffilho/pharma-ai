@@ -3,11 +3,19 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, Check, AlertTriangle, FileText, Clock, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+
+interface Medication {
+  name: string;
+  dinamization?: string;
+  form?: string;
+  quantity?: number;
+  dosage_instructions?: string;
+}
 
 interface ProcessedPrescription {
   id: string;
@@ -15,13 +23,7 @@ interface ProcessedPrescription {
   processed_at: string;
   patient_name: string | null;
   validation_status: string;
-  medications: {
-    name: string;
-    dinamization?: string;
-    form?: string;
-    quantity?: number;
-    dosage_instructions?: string;
-  }[];
+  medications: Medication[];
 }
 
 const PedidosPage: React.FC = () => {
@@ -42,7 +44,17 @@ const PedidosPage: React.FC = () => {
           throw error;
         }
 
-        setPrescriptions(data as ProcessedPrescription[]);
+        // Transform the data to ensure medications are properly typed
+        const typedPrescriptions = data.map(item => ({
+          id: item.id,
+          raw_recipe_id: item.raw_recipe_id,
+          processed_at: item.processed_at,
+          patient_name: item.patient_name,
+          validation_status: item.validation_status,
+          medications: Array.isArray(item.medications) ? item.medications : []
+        })) as ProcessedPrescription[];
+
+        setPrescriptions(typedPrescriptions);
       } catch (err) {
         console.error('Error fetching prescriptions:', err);
         setError('Não foi possível carregar as receitas processadas');

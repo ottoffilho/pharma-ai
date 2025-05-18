@@ -17,14 +17,16 @@ import FileUploadDropzone from '@/components/FileUploadDropzone';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import PrescriptionReviewForm from '@/components/PrescriptionReviewForm';
 
+interface Medication {
+  name: string;
+  dinamization?: string;
+  form?: string;
+  quantity?: number;
+  dosage_instructions?: string;
+}
+
 interface IAExtractedData {
-  medications: Array<{
-    name: string;
-    dinamization?: string;
-    form?: string;
-    quantity?: number;
-    dosage_instructions?: string;
-  }>;
+  medications: Medication[];
   patient_name?: string;
   patient_dob?: string;
   prescriber_name?: string;
@@ -181,18 +183,21 @@ const NovaReceitaPage: React.FC = () => {
         throw new Error("Usuário não autenticado");
       }
 
+      // Create a structured object for insert that conforms to the table schema
+      const dataToInsert = {
+        raw_recipe_id: uploadedRecipeId,
+        processed_by_user_id: user.id,
+        medications: validatedData.medications,
+        patient_name: validatedData.patient_name,
+        patient_dob: validatedData.patient_dob,
+        prescriber_name: validatedData.prescriber_name,
+        prescriber_identifier: validatedData.prescriber_identifier,
+        raw_ia_output: extractedData
+      };
+
       const { error } = await supabase
         .from('receitas_processadas')
-        .insert({
-          raw_recipe_id: uploadedRecipeId,
-          processed_by_user_id: user.id,
-          medications: validatedData.medications,
-          patient_name: validatedData.patient_name,
-          patient_dob: validatedData.patient_dob,
-          prescriber_name: validatedData.prescriber_name,
-          prescriber_identifier: validatedData.prescriber_identifier,
-          raw_ia_output: extractedData
-        });
+        .insert(dataToInsert);
 
       if (error) throw error;
 
@@ -208,8 +213,8 @@ const NovaReceitaPage: React.FC = () => {
       setProcessStatus('idle');
       setUploadedRecipeId(null);
 
-      // Navigate to the orders page (future implementation)
-      // navigate('/admin/pedidos');
+      // Navigate to the orders page
+      navigate('/admin/pedidos');
       
     } catch (error: any) {
       toast({
