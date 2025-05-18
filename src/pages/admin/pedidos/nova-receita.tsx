@@ -28,6 +28,10 @@ import AdminLayout from '@/components/layouts/AdminLayout';
 import PrescriptionReviewForm from '@/components/PrescriptionReviewForm';
 import { Json } from '@/integrations/supabase/types';
 import { cn } from '@/lib/utils';
+import PatientPrescriberInfo from '@/components/prescription/PatientPrescriberInfo';
+import MedicationsSection from '@/components/prescription/MedicationsSection';
+import ValidationSection from '@/components/prescription/ValidationSection';
+import OriginalPrescriptionPreview from '@/components/prescription/OriginalPrescriptionPreview';
 
 interface Medication {
   name: string;
@@ -83,8 +87,22 @@ const NovaReceitaPage: React.FC = () => {
   const [showValidationArea, setShowValidationArea] = useState(false);
   const [validationView, setValidationView] = useState<'split' | 'preview'>('split');
   const [validationProgress, setValidationProgress] = useState(0);
+  const [validationNotes, setValidationNotes] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  // Modo de desenvolvimento para mostrar a interface diretamente
+  const [devMode, setDevMode] = useState(true);
+
+  // Se estiver em modo de desenvolvimento, mostrar a área de validação com dados mockados
+  React.useEffect(() => {
+    if (devMode) {
+      setExtractedData(mockIAResponse);
+      setShowValidationArea(true);
+      setProcessStatus('success');
+    }
+  }, [devMode]);
 
   const handleFilesChange = (acceptedFiles: File[]) => {
     setFiles(acceptedFiles);
@@ -114,50 +132,8 @@ const NovaReceitaPage: React.FC = () => {
     setProcessStatus('processing');
     
     try {
-      // Get current authenticated user
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        throw new Error("Usuário não autenticado");
-      }
-
-      let lastUploadedRecipeId = null;
-      
-      for (const file of files) {
-        // Upload file to Supabase Storage
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
-        const filePath = `${user.id}/${fileName}`;
-        
-        const { error: uploadError } = await supabase.storage
-          .from('receitas')
-          .upload(filePath, file);
-          
-        if (uploadError) {
-          throw uploadError;
-        }
-        
-        // Save record in the database
-        const { error: dbError, data: recipeData } = await supabase
-          .from('receitas_raw')
-          .insert({
-            uploaded_by_user_id: user.id,
-            file_url: filePath,
-            file_name: file.name,
-            file_mime_type: file.type,
-            input_type: uploadMethod,
-            status: 'received',
-          })
-          .select('id')
-          .single();
-          
-        if (dbError) {
-          throw dbError;
-        }
-
-        lastUploadedRecipeId = recipeData.id;
-      }
-      
+      // Modo de desenvolvimento - pular autenticação
+      let lastUploadedRecipeId = 'mock-recipe-id-' + Date.now();
       setUploadedRecipeId(lastUploadedRecipeId);
       
       // Simulate AI processing with progress updates
@@ -196,59 +172,88 @@ const NovaReceitaPage: React.FC = () => {
     }
   };
 
-  const handleSaveProcessedRecipe = async (validatedData: IAExtractedData) => {
-    if (!uploadedRecipeId) {
-      toast({
-        title: "Erro ao salvar",
-        description: "ID da receita não encontrado.",
-        variant: "destructive",
-      });
-      return;
+  // Handle medication changes
+  const handleMedicationChange = (index: number, field: keyof Medication, value: any) => {
+    if (extractedData) {
+      const updatedData = { ...extractedData };
+      updatedData.medications[index][field] = value;
+      setExtractedData(updatedData);
     }
+  };
 
+  // Handle adding new medication
+  const handleAddMedication = () => {
+    if (extractedData) {
+      const updatedData = { ...extractedData };
+      updatedData.medications = [
+        ...updatedData.medications,
+        { 
+          name: '', 
+          dinamization: '', 
+          form: '', 
+          quantity: 1, 
+          unit: 'unidades',
+          dosage_instructions: '' 
+        }
+      ];
+      setExtractedData(updatedData);
+    }
+  };
+
+  // Handle removing medication
+  const handleRemoveMedication = (index: number) => {
+    if (extractedData) {
+      const updatedData = { ...extractedData };
+      updatedData.medications = updatedData.medications.filter((_, i) => i !== index);
+      setExtractedData(updatedData);
+    }
+  };
+
+  // Handle patient data changes
+  const handlePatientChange = (field: string, value: string) => {
+    if (extractedData) {
+      const updatedData = { ...extractedData };
+      updatedData[field as keyof IAExtractedData] = value;
+      setExtractedData(updatedData);
+    }
+  };
+
+  // Handle prescriber data changes
+  const handlePrescriberChange = (field: string, value: string) => {
+    if (extractedData) {
+      const updatedData = { ...extractedData };
+      updatedData[field as keyof IAExtractedData] = value;
+      setExtractedData(updatedData);
+    }
+  };
+
+  const handleSaveProcessedRecipe = async () => {
+    if (!extractedData) return;
+
+    setIsSaving(true);
+    
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        throw new Error("Usuário não autenticado");
-      }
-
-      // Create a structured object for insert that conforms to the table schema
-      // We need to use type casting for the medications array and raw_ia_output
-      const dataToInsert = {
-        raw_recipe_id: uploadedRecipeId,
-        processed_by_user_id: user.id,
-        medications: validatedData.medications as unknown as Json,
-        patient_name: validatedData.patient_name,
-        patient_dob: validatedData.patient_dob,
-        prescriber_name: validatedData.prescriber_name,
-        prescriber_identifier: validatedData.prescriber_identifier,
-        raw_ia_output: extractedData as unknown as Json,
-        validation_status: 'validated'
-      };
-
-      const { error } = await supabase
-        .from('receitas_processadas')
-        .insert(dataToInsert);
-
-      if (error) throw error;
-
-      toast({
-        title: "Receita validada com sucesso",
-        description: "Os dados foram salvos e um pedido foi criado.",
-      });
-
-      // Reset states
+      // Modo de desenvolvimento - simular salvamento
       setTimeout(() => {
-        setFiles([]);
-        setExtractedData(null);
-        setProcessStatus('idle');
-        setUploadedRecipeId(null);
-        setShowValidationArea(false);
+        toast({
+          title: "Receita validada com sucesso",
+          description: "Os dados foram salvos e um pedido foi criado.",
+        });
 
-        // Navigate to the orders page
-        navigate('/admin/pedidos');
-      }, 1500);
+        // Reset states
+        setTimeout(() => {
+          if (!devMode) {
+            setFiles([]);
+            setExtractedData(null);
+            setProcessStatus('idle');
+            setUploadedRecipeId(null);
+            setShowValidationArea(false);
+          }
+
+          // Navigate to the orders page (commented for dev mode)
+          // navigate('/admin/pedidos');
+        }, 1500);
+      }, 1000);
       
     } catch (error: any) {
       toast({
@@ -256,6 +261,8 @@ const NovaReceitaPage: React.FC = () => {
         description: error.message || "Ocorreu um erro ao salvar os dados validados.",
         variant: "destructive",
       });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -274,6 +281,15 @@ const NovaReceitaPage: React.FC = () => {
   return (
     <AdminLayout>
       <div className="container-section py-8">
+        {devMode && (
+          <div className="bg-yellow-100 border-l-4 border-yellow-500 p-4 mb-6">
+            <p className="text-yellow-700">
+              <strong>Modo de desenvolvimento ativo:</strong> Interface de validação exibida automaticamente com dados mockados.
+              Autenticação temporariamente desativada para testes.
+            </p>
+          </div>
+        )}
+
         <h1 className="heading-lg mb-8">Nova Entrada de Receita</h1>
         
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
@@ -341,7 +357,7 @@ const NovaReceitaPage: React.FC = () => {
                       </div>
                     )}
                     
-                    {processStatus !== 'idle' && (
+                    {processStatus !== 'idle' && !devMode && (
                       <div className="mt-6 p-4 border rounded-md bg-muted">
                         <div className="space-y-3">
                           <div className="flex items-center gap-2">
@@ -390,32 +406,46 @@ const NovaReceitaPage: React.FC = () => {
             </CardContent>
             
             <CardFooter>
-              <Button 
-                onClick={handleProcessarReceita} 
-                disabled={isUploading || files.length === 0 || processStatus === 'processing'}
-                className="w-full md:w-auto"
-              >
-                {isUploading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Enviando...
-                  </>
-                ) : processStatus === 'processing' ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Processando...
-                  </>
-                ) : processStatus === 'success' ? (
-                  <>
-                    <CheckCircle className="mr-2 h-4 w-4" />
-                    Visualizar Dados Extraídos
-                  </>
-                ) : (
-                  <>
-                    Processar Receita com IA
-                  </>
-                )}
-              </Button>
+              {!devMode && (
+                <Button 
+                  onClick={handleProcessarReceita} 
+                  disabled={isUploading || files.length === 0 || processStatus === 'processing'}
+                  className="w-full md:w-auto"
+                >
+                  {isUploading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Enviando...
+                    </>
+                  ) : processStatus === 'processing' ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Processando...
+                    </>
+                  ) : processStatus === 'success' ? (
+                    <>
+                      <CheckCircle className="mr-2 h-4 w-4" />
+                      Visualizar Dados Extraídos
+                    </>
+                  ) : (
+                    <>
+                      Processar Receita com IA
+                    </>
+                  )}
+                </Button>
+              )}
+              {devMode && !showValidationArea && (
+                <Button 
+                  onClick={() => {
+                    setExtractedData(mockIAResponse);
+                    setShowValidationArea(true);
+                    setProcessStatus('success');
+                  }}
+                  className="w-full md:w-auto"
+                >
+                  Mostrar Interface de Validação (Modo Dev)
+                </Button>
+              )}
             </CardFooter>
           </Card>
           
@@ -462,365 +492,55 @@ const NovaReceitaPage: React.FC = () => {
                 )}>
                   {/* Original prescription preview */}
                   {validationView === 'split' && (
-                    <div className="border rounded-md p-4 bg-gray-50">
-                      <h3 className="text-lg font-medium mb-3">Receita Original</h3>
-                      
-                      {previewUrl ? (
-                        <div className="overflow-hidden">
-                          <img 
-                            src={previewUrl} 
-                            alt="Receita" 
-                            className="w-full h-auto max-h-[500px] object-contain"
-                          />
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-center border rounded-md h-64 bg-gray-100">
-                          {files.length > 0 && (
-                            <div className="flex flex-col items-center text-muted-foreground">
-                              <FileText className="h-8 w-8 mb-2" />
-                              <span>{files[0].name}</span>
-                              <a 
-                                href={URL.createObjectURL(files[0])}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-sm text-homeo-blue mt-2"
-                              >
-                                Abrir arquivo
-                              </a>
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      <div className="mt-4">
-                        <p className="text-sm text-muted-foreground">
-                          {files.length > 1 && (
-                            <>Mais {files.length - 1} arquivo(s) anexado(s)</>
-                          )}
-                        </p>
-                      </div>
-                    </div>
+                    <OriginalPrescriptionPreview 
+                      previewUrl={previewUrl}
+                      originalFiles={files}
+                    />
                   )}
                   
                   {/* Prescription data validation form */}
                   <div className={validationView === 'preview' ? "border rounded-md p-4" : ""}>
                     <div className="space-y-6">
-                      {/* Patient Information */}
-                      <div>
-                        <h3 className="text-lg font-medium mb-3">Informações do Paciente</h3>
-                        <div className="space-y-4">
-                          <div>
-                            <Label htmlFor="patient_name">Nome do Paciente</Label>
-                            <Input 
-                              id="patient_name"
-                              defaultValue={extractedData.patient_name} 
-                              placeholder="Nome completo do paciente"
-                            />
-                          </div>
-                          
-                          <div>
-                            <Label htmlFor="patient_dob">Data de Nascimento</Label>
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <Button
-                                  variant="outline"
-                                  className="w-full justify-start text-left font-normal"
-                                >
-                                  <Calendar className="mr-2 h-4 w-4" />
-                                  {extractedData.patient_dob ? 
-                                    format(new Date(extractedData.patient_dob), "dd/MM/yyyy") : 
-                                    "Selecionar data"}
-                                </Button>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-auto p-0 pointer-events-auto">
-                                <CalendarComponent
-                                  mode="single"
-                                  initialFocus
-                                  className="p-3 pointer-events-auto"
-                                />
-                              </PopoverContent>
-                            </Popover>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <Separator />
-                      
-                      {/* Prescriber Information */}
-                      <div>
-                        <h3 className="text-lg font-medium mb-3">Informações do Prescritor</h3>
-                        <div className="space-y-4">
-                          <div>
-                            <Label htmlFor="prescriber_name">Nome do Prescritor</Label>
-                            <Input 
-                              id="prescriber_name"
-                              defaultValue={extractedData.prescriber_name} 
-                              placeholder="Nome do médico/prescritor"
-                            />
-                          </div>
-                          
-                          <div>
-                            <Label htmlFor="prescriber_identifier">Identificação do Prescritor (CRM)</Label>
-                            <Input 
-                              id="prescriber_identifier"
-                              defaultValue={extractedData.prescriber_identifier} 
-                              placeholder="Ex: CRM 12345-SP"
-                            />
-                          </div>
-                        </div>
-                      </div>
+                      {/* Patient and Prescriber Information */}
+                      <PatientPrescriberInfo 
+                        patientName={extractedData.patient_name || ''}
+                        patientDob={extractedData.patient_dob || ''}
+                        prescriberName={extractedData.prescriber_name || ''}
+                        prescriberIdentifier={extractedData.prescriber_identifier || ''}
+                        onPatientChange={handlePatientChange}
+                        onPrescriberChange={handlePrescriberChange}
+                      />
                       
                       <Separator />
                       
                       {/* Medications */}
-                      <div>
-                        <div className="flex items-center justify-between mb-3">
-                          <h3 className="text-lg font-medium">Medicamentos</h3>
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={() => {
-                              const updatedData = { ...extractedData };
-                              updatedData.medications = [
-                                ...updatedData.medications,
-                                { 
-                                  name: '', 
-                                  dinamization: '', 
-                                  form: '', 
-                                  quantity: 1, 
-                                  unit: 'unidades',
-                                  dosage_instructions: '' 
-                                }
-                              ];
-                              setExtractedData(updatedData);
-                            }}
-                            className="flex items-center gap-1"
-                          >
-                            <Plus className="h-4 w-4" />
-                            <span>Adicionar Medicamento</span>
-                          </Button>
-                        </div>
-                        
-                        <div className="space-y-4">
-                          {extractedData.medications.map((med, index) => (
-                            <Card key={index} className="overflow-hidden">
-                              <CardContent className="pt-6">
-                                <div className="flex justify-between items-start mb-3">
-                                  <h4 className="font-medium">Medicamento {index + 1}</h4>
-                                  {extractedData.medications.length > 1 && (
-                                    <Button 
-                                      variant="ghost" 
-                                      size="sm" 
-                                      onClick={() => {
-                                        const updatedData = { ...extractedData };
-                                        updatedData.medications = updatedData.medications.filter((_, i) => i !== index);
-                                        setExtractedData(updatedData);
-                                      }}
-                                      className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                                    >
-                                      <Trash className="h-4 w-4" />
-                                    </Button>
-                                  )}
-                                </div>
-                                
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                  <div>
-                                    <Label htmlFor={`med_name_${index}`}>Nome <span className="text-red-500">*</span></Label>
-                                    <Input 
-                                      id={`med_name_${index}`}
-                                      value={med.name}
-                                      onChange={(e) => {
-                                        const updatedData = { ...extractedData };
-                                        updatedData.medications[index].name = e.target.value;
-                                        setExtractedData(updatedData);
-                                      }}
-                                      placeholder="Nome do medicamento"
-                                    />
-                                  </div>
-                                  
-                                  <div>
-                                    <Label htmlFor={`med_dinamization_${index}`}>Dinamização</Label>
-                                    <Input 
-                                      id={`med_dinamization_${index}`}
-                                      value={med.dinamization || ''}
-                                      onChange={(e) => {
-                                        const updatedData = { ...extractedData };
-                                        updatedData.medications[index].dinamization = e.target.value;
-                                        setExtractedData(updatedData);
-                                      }}
-                                      placeholder="Ex: 30CH, 6X, LM1"
-                                      list="dinamizacoes"
-                                    />
-                                    <datalist id="dinamizacoes">
-                                      <option value="1X" />
-                                      <option value="2X" />
-                                      <option value="3X" />
-                                      <option value="6X" />
-                                      <option value="12X" />
-                                      <option value="30X" />
-                                      <option value="200X" />
-                                      <option value="1C" />
-                                      <option value="6CH" />
-                                      <option value="12CH" />
-                                      <option value="30CH" />
-                                      <option value="200CH" />
-                                      <option value="M" />
-                                      <option value="LM1" />
-                                      <option value="LM3" />
-                                    </datalist>
-                                  </div>
-                                  
-                                  <div>
-                                    <Label htmlFor={`med_form_${index}`}>Forma Farmacêutica</Label>
-                                    <Input 
-                                      id={`med_form_${index}`}
-                                      value={med.form || ''}
-                                      onChange={(e) => {
-                                        const updatedData = { ...extractedData };
-                                        updatedData.medications[index].form = e.target.value;
-                                        setExtractedData(updatedData);
-                                      }}
-                                      placeholder="Ex: Glóbulos, Gotas, Tabletes"
-                                      list="formas"
-                                    />
-                                    <datalist id="formas">
-                                      <option value="Glóbulos" />
-                                      <option value="Gotas" />
-                                      <option value="Tabletes" />
-                                      <option value="Comprimidos" />
-                                      <option value="Pomada" />
-                                      <option value="Creme" />
-                                      <option value="Gel" />
-                                      <option value="Solução Aquosa" />
-                                      <option value="Solução Alcoólica" />
-                                      <option value="Pó" />
-                                    </datalist>
-                                  </div>
-                                  
-                                  <div className="grid grid-cols-2 gap-2">
-                                    <div>
-                                      <Label htmlFor={`med_quantity_${index}`}>Quantidade</Label>
-                                      <Input 
-                                        id={`med_quantity_${index}`}
-                                        type="number" 
-                                        value={med.quantity || 1}
-                                        onChange={(e) => {
-                                          const updatedData = { ...extractedData };
-                                          updatedData.medications[index].quantity = parseInt(e.target.value);
-                                          setExtractedData(updatedData);
-                                        }}
-                                        min="1"
-                                      />
-                                    </div>
-                                    <div>
-                                      <Label htmlFor={`med_unit_${index}`}>Unidade</Label>
-                                      <Input 
-                                        id={`med_unit_${index}`}
-                                        value={med.unit || 'unidades'}
-                                        onChange={(e) => {
-                                          const updatedData = { ...extractedData };
-                                          updatedData.medications[index].unit = e.target.value;
-                                          setExtractedData(updatedData);
-                                        }}
-                                        placeholder="Ex: ml, g, unidades"
-                                        list="unidades"
-                                      />
-                                      <datalist id="unidades">
-                                        <option value="ml" />
-                                        <option value="g" />
-                                        <option value="mg" />
-                                        <option value="unidades" />
-                                        <option value="gotas" />
-                                        <option value="glóbulos" />
-                                        <option value="cápsulas" />
-                                        <option value="frascos" />
-                                        <option value="potes" />
-                                      </datalist>
-                                    </div>
-                                  </div>
-                                  
-                                  <div className="md:col-span-2">
-                                    <Label htmlFor={`med_instructions_${index}`}>Posologia / Instruções</Label>
-                                    <Textarea 
-                                      id={`med_instructions_${index}`}
-                                      value={med.dosage_instructions || ''}
-                                      onChange={(e) => {
-                                        const updatedData = { ...extractedData };
-                                        updatedData.medications[index].dosage_instructions = e.target.value;
-                                        setExtractedData(updatedData);
-                                      }}
-                                      placeholder="Instruções de uso"
-                                      className="min-h-[80px]"
-                                    />
-                                  </div>
-                                </div>
-                              </CardContent>
-                            </Card>
-                          ))}
-                          
-                          {extractedData.medications.length === 0 && (
-                            <div className="text-center py-8 border border-dashed rounded-md">
-                              <p className="text-muted-foreground">Nenhum medicamento adicionado</p>
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                onClick={() => {
-                                  const updatedData = { ...extractedData };
-                                  updatedData.medications = [
-                                    { 
-                                      name: '', 
-                                      dinamization: '', 
-                                      form: '', 
-                                      quantity: 1, 
-                                      unit: 'unidades',
-                                      dosage_instructions: '' 
-                                    }
-                                  ];
-                                  setExtractedData(updatedData);
-                                }}
-                                className="mt-2"
-                              >
-                                <Plus className="h-4 w-4 mr-1" /> Adicionar Medicamento
-                              </Button>
-                            </div>
-                          )}
-                        </div>
-                      </div>
+                      <MedicationsSection 
+                        medications={extractedData.medications}
+                        onMedicationChange={handleMedicationChange}
+                        onAddMedication={handleAddMedication}
+                        onRemoveMedication={handleRemoveMedication}
+                      />
                       
                       <Separator />
                       
-                      {/* Validation Notes */}
-                      <div>
-                        <Label htmlFor="validation_notes">Notas Adicionais da Validação</Label>
-                        <Textarea 
-                          id="validation_notes"
-                          placeholder="Observações adicionais sobre esta receita (opcional)"
-                          className="min-h-[80px]"
-                        />
-                      </div>
+                      {/* Validation Notes and Submit */}
+                      <ValidationSection 
+                        validationNotes={validationNotes}
+                        onValidationNotesChange={(value) => setValidationNotes(value)}
+                        onSubmit={handleSaveProcessedRecipe}
+                        onCancel={() => {
+                          if (!devMode) {
+                            setShowValidationArea(false);
+                            setProcessStatus('idle');
+                          }
+                        }}
+                        isSaving={isSaving}
+                        disableSubmit={false}
+                      />
                     </div>
                   </div>
                 </div>
               </CardContent>
-              
-              <CardFooter className="flex justify-end space-x-2">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setShowValidationArea(false);
-                    setProcessStatus('idle');
-                  }}
-                >
-                  Cancelar / Voltar
-                </Button>
-                <Button
-                  onClick={() => handleSaveProcessedRecipe(extractedData)}
-                  className="min-w-[210px]"
-                >
-                  <CheckCircle className="mr-2 h-4 w-4" />
-                  Validar e Criar Pedido
-                </Button>
-              </CardFooter>
             </Card>
           )}
         </div>
