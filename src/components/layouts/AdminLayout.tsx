@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -11,6 +11,7 @@ interface AdminLayoutProps {
 
 const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
 
   const handleLogout = async () => {
@@ -31,6 +32,11 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     }
   };
 
+  // Função para determinar se um link está ativo
+  const isActive = (path: string) => {
+    return location.pathname.startsWith(path);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Admin Header */}
@@ -41,14 +47,35 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
               Homeo-AI
             </Link>
             <nav className="ml-6 hidden md:flex space-x-4">
-              <Link to="/admin" className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-homeo-green">
+              <Link 
+                to="/admin" 
+                className={`px-3 py-2 rounded-md text-sm font-medium ${
+                  location.pathname === '/admin' 
+                    ? 'text-homeo-green bg-homeo-green bg-opacity-10' 
+                    : 'text-gray-700 hover:text-homeo-green'
+                }`}
+              >
                 Dashboard
               </Link>
-              <Link to="/admin/pedidos" className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-homeo-green">
+              <Link 
+                to="/admin/pedidos" 
+                className={`px-3 py-2 rounded-md text-sm font-medium ${
+                  isActive('/admin/pedidos') 
+                    ? 'text-homeo-green bg-homeo-green bg-opacity-10' 
+                    : 'text-gray-700 hover:text-homeo-green'
+                }`}
+              >
                 Pedidos
               </Link>
-              <Link to="/admin/pedidos/nova-receita" className="px-3 py-2 rounded-md text-sm font-medium text-homeo-green hover:bg-homeo-green hover:bg-opacity-10">
-                Nova Receita
+              <Link 
+                to="/admin/estoque/insumos" 
+                className={`px-3 py-2 rounded-md text-sm font-medium ${
+                  isActive('/admin/estoque') 
+                    ? 'text-homeo-green bg-homeo-green bg-opacity-10' 
+                    : 'text-gray-700 hover:text-homeo-green'
+                }`}
+              >
+                Estoque
               </Link>
             </nav>
           </div>

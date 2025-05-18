@@ -9,6 +9,183 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      embalagens: {
+        Row: {
+          created_at: string
+          custo_unitario: number
+          descricao: string | null
+          estoque_atual: number
+          estoque_maximo: number | null
+          estoque_minimo: number
+          fornecedor_id: string | null
+          id: string
+          nome: string
+          tipo: string
+          updated_at: string
+          volume_capacidade: string | null
+        }
+        Insert: {
+          created_at?: string
+          custo_unitario: number
+          descricao?: string | null
+          estoque_atual?: number
+          estoque_maximo?: number | null
+          estoque_minimo?: number
+          fornecedor_id?: string | null
+          id?: string
+          nome: string
+          tipo: string
+          updated_at?: string
+          volume_capacidade?: string | null
+        }
+        Update: {
+          created_at?: string
+          custo_unitario?: number
+          descricao?: string | null
+          estoque_atual?: number
+          estoque_maximo?: number | null
+          estoque_minimo?: number
+          fornecedor_id?: string | null
+          id?: string
+          nome?: string
+          tipo?: string
+          updated_at?: string
+          volume_capacidade?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "embalagens_fornecedor_id_fkey"
+            columns: ["fornecedor_id"]
+            isOneToOne: false
+            referencedRelation: "fornecedores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fornecedores: {
+        Row: {
+          contato: string | null
+          created_at: string
+          email: string | null
+          endereco: string | null
+          id: string
+          nome: string
+          telefone: string | null
+        }
+        Insert: {
+          contato?: string | null
+          created_at?: string
+          email?: string | null
+          endereco?: string | null
+          id?: string
+          nome: string
+          telefone?: string | null
+        }
+        Update: {
+          contato?: string | null
+          created_at?: string
+          email?: string | null
+          endereco?: string | null
+          id?: string
+          nome?: string
+          telefone?: string | null
+        }
+        Relationships: []
+      }
+      insumos: {
+        Row: {
+          created_at: string
+          custo_unitario: number
+          descricao: string | null
+          estoque_atual: number
+          estoque_maximo: number | null
+          estoque_minimo: number
+          fornecedor_id: string | null
+          id: string
+          nome: string
+          tipo: string
+          unidade_medida: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          custo_unitario: number
+          descricao?: string | null
+          estoque_atual?: number
+          estoque_maximo?: number | null
+          estoque_minimo?: number
+          fornecedor_id?: string | null
+          id?: string
+          nome: string
+          tipo: string
+          unidade_medida: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          custo_unitario?: number
+          descricao?: string | null
+          estoque_atual?: number
+          estoque_maximo?: number | null
+          estoque_minimo?: number
+          fornecedor_id?: string | null
+          id?: string
+          nome?: string
+          tipo?: string
+          unidade_medida?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "insumos_fornecedor_id_fkey"
+            columns: ["fornecedor_id"]
+            isOneToOne: false
+            referencedRelation: "fornecedores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lotes_insumos: {
+        Row: {
+          created_at: string
+          data_validade: string | null
+          id: string
+          insumo_id: string
+          localizacao: string | null
+          numero_lote: string
+          quantidade: number
+          unidade_medida: string
+        }
+        Insert: {
+          created_at?: string
+          data_validade?: string | null
+          id?: string
+          insumo_id: string
+          localizacao?: string | null
+          numero_lote: string
+          quantidade: number
+          unidade_medida: string
+        }
+        Update: {
+          created_at?: string
+          data_validade?: string | null
+          id?: string
+          insumo_id?: string
+          localizacao?: string | null
+          numero_lote?: string
+          quantidade?: number
+          unidade_medida?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lotes_insumos_insumo_id_fkey"
+            columns: ["insumo_id"]
+            isOneToOne: false
+            referencedRelation: "insumos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pedidos: {
         Row: {
           channel: string
