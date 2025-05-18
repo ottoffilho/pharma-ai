@@ -34,6 +34,7 @@ const usuarioInternoSchema = z.object({
   cargo_perfil: z.string().min(1, "Selecione um cargo"),
   telefone_contato: z.string().optional(),
   ativo: z.boolean().default(true),
+  // Os campos de senha serão implementados em uma fase posterior
 });
 
 // Tipo dos dados do formulário baseado no schema Zod
@@ -92,7 +93,7 @@ const UsuarioInternoForm: React.FC<UsuarioInternoFormProps> = ({
           email_contato: data.email_contato,
           cargo_perfil: data.cargo_perfil,
           telefone_contato: data.telefone_contato || null,
-          ativo: data.ativo
+          ativo: data.ativo,
         };
         
         const { error } = await supabase
