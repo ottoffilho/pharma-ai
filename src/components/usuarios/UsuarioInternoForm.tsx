@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -84,12 +83,12 @@ const UsuarioInternoForm: React.FC<UsuarioInternoFormProps> = ({
     mode: "onBlur", // Validar ao sair do campo
   });
 
-  // Função para lidar com a submissão do formulário
+  // Function to handle the form submission
   const onSubmit = async (data: UsuarioInternoFormData) => {
     setIsSaving(true);
     try {
       if (isEditing && usuarioId) {
-        // Atualizar usuário existente
+        // Update existing user
         const { error } = await supabase
           .from("usuarios_internos")
           .update({
@@ -103,31 +102,31 @@ const UsuarioInternoForm: React.FC<UsuarioInternoFormProps> = ({
 
         if (error) throw error;
 
-        // Se o email foi alterado, precisamos atualizar o email no Supabase Auth
+        // If the email was changed, we need to update the email in Supabase Auth
         const originalEmail = usuarioData?.email_contato;
         if (data.email_contato !== originalEmail && usuarioData?.supabase_auth_id) {
           toast({
             title: "Atualização de email Auth necessária",
             description: "A atualização do email no sistema de autenticação requer uma função Edge. Por favor, implemente esta funcionalidade.",
-            variant: "warning",
+            variant: "default",
           });
           
-          // Aqui seria o local para chamar uma Edge Function para atualizar o email
+          // Here would be the place to call an Edge Function to update the email
           // const { error: authError } = await supabase.functions.invoke("update-user-email", {
           //   body: { user_id: usuarioData.supabase_auth_id, email: data.email_contato }
           // });
           // if (authError) throw new Error(`Erro ao atualizar email: ${authError.message}`);
         }
 
-        // Se a senha foi fornecida, precisaríamos atualizar a senha no Supabase Auth
+        // If a password was provided, we would need to update the password in Supabase Auth
         if (data.senha && usuarioData?.supabase_auth_id) {
           toast({
             title: "Atualização de senha Auth necessária",
             description: "A atualização da senha no sistema de autenticação requer uma função Edge. Por favor, implemente esta funcionalidade.",
-            variant: "warning",
+            variant: "default",
           });
           
-          // Aqui seria o local para chamar uma Edge Function para atualizar a senha
+          // Here would be the place to call an Edge Function to update the password
           // const { error: authError } = await supabase.functions.invoke("update-user-password", {
           //   body: { user_id: usuarioData.supabase_auth_id, password: data.senha }
           // });
@@ -139,7 +138,7 @@ const UsuarioInternoForm: React.FC<UsuarioInternoFormProps> = ({
           description: "As informações foram atualizadas com sucesso.",
         });
       } else {
-        // Criar novo usuário - primeiro criar no Auth
+        // Create new user - first create in Auth
         if (!data.senha) {
           throw new Error("Senha é obrigatória para criar um novo usuário");
         }
@@ -150,7 +149,7 @@ const UsuarioInternoForm: React.FC<UsuarioInternoFormProps> = ({
         });
 
         if (authError) {
-          // Tratar erros específicos do signUp
+          // Handle specific signUp errors
           if (authError.message.includes("already registered")) {
             throw new Error("Este email já está registrado no sistema");
           }
@@ -161,7 +160,7 @@ const UsuarioInternoForm: React.FC<UsuarioInternoFormProps> = ({
           throw new Error("Não foi possível obter o ID do usuário criado");
         }
 
-        // Depois criar na nossa tabela, com referência ao auth.users
+        // Then create in our table, with reference to auth.users
         const novoUsuario = {
           nome_completo: data.nome_completo,
           email_contato: data.email_contato,
@@ -176,8 +175,8 @@ const UsuarioInternoForm: React.FC<UsuarioInternoFormProps> = ({
           .insert(novoUsuario);
 
         if (error) {
-          // Se falhar ao inserir na tabela usuarios_internos, deveríamos tentar remover o usuário do auth
-          // Isso requer uma função admin, então apenas notificamos o problema
+          // If we fail to insert into usuarios_internos, we should try to remove the user from auth
+          // This requires an admin function, so we just notify about the issue
           toast({
             title: "Atenção",
             description: "Usuário foi criado no sistema de autenticação, mas falhou ao criar o perfil. Informações do Auth podem precisar de limpeza manual.",
@@ -192,7 +191,7 @@ const UsuarioInternoForm: React.FC<UsuarioInternoFormProps> = ({
         });
       }
 
-      // Retornar para a página de listagem após sucesso
+      // Return to the listing page after success
       navigate("/admin/usuarios");
     } catch (error: any) {
       console.error("Erro ao salvar usuário:", error);
@@ -206,16 +205,16 @@ const UsuarioInternoForm: React.FC<UsuarioInternoFormProps> = ({
     }
   };
 
-  // Função para cancelar e voltar à página de listagem
+  // Function to cancel and go back to the listing page
   const handleCancel = () => {
     navigate("/admin/usuarios");
   };
 
-  // Toggle para mostrar/esconder campos de senha na edição
+  // Toggle to show/hide password fields in edit mode
   const togglePasswordFields = () => {
     setShowPasswordFields(!showPasswordFields);
     if (!showPasswordFields) {
-      // Limpar os campos de senha quando eles são escondidos
+      // Clear password fields when they are hidden
       form.setValue("senha", "");
       form.setValue("confirmar_senha", "");
     }
@@ -320,7 +319,7 @@ const UsuarioInternoForm: React.FC<UsuarioInternoFormProps> = ({
             )}
           />
 
-          {/* Toggle para mostrar/ocultar campos de senha em modo edição */}
+          {/* Toggle to show/hide password fields in edit mode */}
           {isEditing && (
             <div className="col-span-1 md:col-span-2">
               <Button 
@@ -333,7 +332,7 @@ const UsuarioInternoForm: React.FC<UsuarioInternoFormProps> = ({
             </div>
           )}
 
-          {/* Campos de Senha Condicional */}
+          {/* Conditional password fields */}
           {(!isEditing && showPasswordFields) || (isEditing && showPasswordFields) ? (
             <>
               <FormField
