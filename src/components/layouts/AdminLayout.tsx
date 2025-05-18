@@ -4,6 +4,30 @@ import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import {
+  Sidebar,
+  SidebarProvider,
+  SidebarContent,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
+  SidebarFooter,
+  SidebarInset,
+  SidebarTrigger,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
+} from '@/components/ui/sidebar';
+import {
+  LayoutDashboard,
+  Package,
+  FlaskConical,
+  Box,
+  LogOut,
+  Menu
+} from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -38,84 +62,117 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Admin Header */}
-      <header className="bg-white shadow">
-        <div className="mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-16">
-          <div className="flex items-center">
-            <Link to="/admin" className="text-homeo-green font-semibold text-xl">
-              Homeo-AI
-            </Link>
-            <nav className="ml-6 hidden md:flex space-x-4">
-              <Link 
-                to="/admin" 
-                className={`px-3 py-2 rounded-md text-sm font-medium ${
-                  location.pathname === '/admin' 
-                    ? 'text-homeo-green bg-homeo-green bg-opacity-10' 
-                    : 'text-gray-700 hover:text-homeo-green'
-                }`}
-              >
-                Dashboard
+    <SidebarProvider defaultOpen={true}>
+      <div className="min-h-screen w-full bg-gray-50 flex">
+        {/* Admin Sidebar */}
+        <Sidebar variant="sidebar" collapsible="icon">
+          <SidebarHeader className="border-b border-slate-200">
+            <div className="flex items-center justify-center h-14">
+              <Link to="/admin" className="text-homeo-green font-semibold text-xl px-2">
+                Homeo-AI
               </Link>
-              <Link 
-                to="/admin/pedidos" 
-                className={`px-3 py-2 rounded-md text-sm font-medium ${
-                  isActive('/admin/pedidos') 
-                    ? 'text-homeo-green bg-homeo-green bg-opacity-10' 
-                    : 'text-gray-700 hover:text-homeo-green'
-                }`}
-              >
-                Pedidos
-              </Link>
-              <div className="relative group">
-                <Link 
-                  to="/admin/estoque/insumos" 
-                  className={`px-3 py-2 rounded-md text-sm font-medium ${
-                    isActive('/admin/estoque') 
-                      ? 'text-homeo-green bg-homeo-green bg-opacity-10' 
-                      : 'text-gray-700 hover:text-homeo-green'
-                  }`}
+            </div>
+          </SidebarHeader>
+          
+          <SidebarContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton 
+                  asChild 
+                  isActive={location.pathname === '/admin'}
+                  tooltip="Dashboard"
                 >
-                  Estoque
-                </Link>
-                <div className="absolute hidden group-hover:block bg-white shadow-md rounded-md mt-1 py-1 w-48 z-10">
-                  <Link 
-                    to="/admin/estoque/insumos" 
-                    className={`block px-4 py-2 text-sm ${
-                      isActive('/admin/estoque/insumos') 
-                        ? 'bg-gray-100 text-homeo-green' 
-                        : 'text-gray-700 hover:bg-gray-100'
-                    }`}
-                  >
-                    Insumos
+                  <Link to="/admin">
+                    <LayoutDashboard />
+                    <span>Dashboard</span>
                   </Link>
-                  <Link 
-                    to="/admin/estoque/embalagens" 
-                    className={`block px-4 py-2 text-sm ${
-                      isActive('/admin/estoque/embalagens') 
-                        ? 'bg-gray-100 text-homeo-green' 
-                        : 'text-gray-700 hover:bg-gray-100'
-                    }`}
-                  >
-                    Embalagens
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              
+              <SidebarMenuItem>
+                <SidebarMenuButton 
+                  asChild 
+                  isActive={isActive('/admin/pedidos')}
+                  tooltip="Pedidos"
+                >
+                  <Link to="/admin/pedidos">
+                    <Package />
+                    <span>Pedidos</span>
                   </Link>
-                </div>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              
+              <SidebarMenuItem>
+                <Collapsible>
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton 
+                      isActive={isActive('/admin/estoque')}
+                      tooltip="Estoque"
+                    >
+                      <FlaskConical />
+                      <span>Estoque</span>
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <SidebarMenuSub>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton
+                          asChild
+                          isActive={isActive('/admin/estoque/insumos')}
+                        >
+                          <Link to="/admin/estoque/insumos">Insumos</Link>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton
+                          asChild
+                          isActive={isActive('/admin/estoque/embalagens')}
+                        >
+                          <Link to="/admin/estoque/embalagens">Embalagens</Link>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                    </SidebarMenuSub>
+                  </CollapsibleContent>
+                </Collapsible>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarContent>
+          
+          <SidebarFooter className="border-t border-slate-200">
+            <div className="p-2">
+              <Button 
+                variant="ghost" 
+                onClick={handleLogout}
+                className="w-full justify-start"
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Sair</span>
+              </Button>
+            </div>
+          </SidebarFooter>
+        </Sidebar>
+        
+        {/* Main Content Area */}
+        <SidebarInset>
+          {/* Admin Header - Simplified */}
+          <header className="bg-white shadow">
+            <div className="mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-16">
+              <div className="flex items-center">
+                <SidebarTrigger />
+                <h1 className="ml-4 text-lg font-medium text-gray-700 hidden sm:block">
+                  Painel Administrativo
+                </h1>
               </div>
-            </nav>
-          </div>
-          <div className="flex items-center">
-            <Button variant="ghost" onClick={handleLogout} className="text-sm">
-              Sair
-            </Button>
-          </div>
-        </div>
-      </header>
+            </div>
+          </header>
 
-      {/* Main Content */}
-      <main>
-        {children}
-      </main>
-    </div>
+          {/* Main Content */}
+          <main className="p-4 sm:p-6 lg:p-8">
+            {children}
+          </main>
+        </SidebarInset>
+      </div>
+    </SidebarProvider>
   );
 };
 
