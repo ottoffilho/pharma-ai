@@ -1,21 +1,22 @@
 
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { PlusCircle, Trash2, Save, ArrowRight, FileText, Image, CheckCircle } from 'lucide-react';
+import { PlusCircle, Trash2, Save, ArrowRight, FileText, Image, CheckCircle, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
 
 interface Medication {
   name: string;
   dinamization?: string;
   form?: string;
   quantity?: number;
+  unit?: string;
   dosage_instructions?: string;
 }
 
@@ -25,26 +26,36 @@ interface PrescriptionData {
   patient_dob?: string;
   prescriber_name?: string;
   prescriber_identifier?: string;
+  validation_notes?: string;
 }
 
 interface PrescriptionReviewFormProps {
   initialData: PrescriptionData;
   onSubmit: (data: PrescriptionData) => void;
   originalFiles: File[];
+  showMobilePreview?: boolean;
 }
 
 const PrescriptionReviewForm: React.FC<PrescriptionReviewFormProps> = ({ 
   initialData, 
   onSubmit,
-  originalFiles 
+  originalFiles,
+  showMobilePreview = false
 }) => {
-  const [formData, setFormData] = useState<PrescriptionData>(initialData);
+  const [formData, setFormData] = useState<PrescriptionData>({
+    ...initialData,
+    medications: initialData.medications.map(med => ({
+      ...med,
+      unit: med.unit || 'unidades' // Ensure unit field exists
+    })),
+    validation_notes: ''
+  });
   const [isSaving, setIsSaving] = useState(false);
+  const [reviewComplete, setReviewComplete] = useState(false);
   const { toast } = useToast();
   
   // Preview file functionality
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [reviewComplete, setReviewComplete] = useState(false);
 
   React.useEffect(() => {
     // Generate preview for the first file
@@ -63,7 +74,14 @@ const PrescriptionReviewForm: React.FC<PrescriptionReviewFormProps> = ({
       ...formData,
       medications: [
         ...formData.medications,
-        { name: '', dinamization: '', form: '', quantity: 1, dosage_instructions: '' }
+        { 
+          name: '', 
+          dinamization: '', 
+          form: '', 
+          quantity: 1, 
+          unit: 'unidades',
+          dosage_instructions: '' 
+        }
       ]
     });
   };
@@ -125,16 +143,15 @@ const PrescriptionReviewForm: React.FC<PrescriptionReviewFormProps> = ({
     if (!validateForm()) return;
     
     setIsSaving(true);
-    setReviewComplete(true);
     
     try {
       await onSubmit(formData);
+      setReviewComplete(true);
       toast({
         title: "Receita validada com sucesso",
         description: "Os dados foram salvos e um pedido foi criado",
       });
     } catch (error) {
-      setReviewComplete(false);
       toast({
         title: "Erro ao salvar receita",
         description: "Ocorreu um erro ao salvar os dados. Tente novamente.",
@@ -162,56 +179,51 @@ const PrescriptionReviewForm: React.FC<PrescriptionReviewFormProps> = ({
 
   return (
     <div className="space-y-6 py-4">
-      <div className="flex items-center justify-between mb-2">
-        <h2 className="text-lg font-semibold">Validação de Receita</h2>
-        <Badge variant="outline" className="bg-blue-50 text-blue-700 hover:bg-blue-100">
-          Dados Extraídos pela IA
-        </Badge>
-      </div>
-      
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Original prescription preview */}
-        <div>
-          <h3 className="text-lg font-medium mb-2">Receita Original</h3>
-          
-          {previewUrl ? (
-            <div className="border rounded-md overflow-hidden h-64">
-              <img 
-                src={previewUrl} 
-                alt="Receita" 
-                className="w-full h-full object-contain bg-gray-100"
-              />
-            </div>
-          ) : (
-            <div className="flex items-center justify-center border rounded-md h-64 bg-gray-50">
-              {originalFiles.length > 0 && (
-                <div className="flex flex-col items-center text-muted-foreground">
-                  <FileText className="h-8 w-8 mb-2" />
-                  <span>{originalFiles[0].name}</span>
-                  <a 
-                    href={URL.createObjectURL(originalFiles[0])}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm text-homeo-blue mt-2"
-                  >
-                    Abrir arquivo
-                  </a>
-                </div>
-              )}
-            </div>
-          )}
+        {/* Original prescription preview - hidden on mobile unless toggled */}
+        {(!showMobilePreview && window.innerWidth < 768) ? null : (
+          <div className="order-2 md:order-1">
+            <h3 className="text-lg font-medium mb-2">Receita Original</h3>
+            
+            {previewUrl ? (
+              <div className="border rounded-md overflow-hidden h-64 bg-gray-50">
+                <img 
+                  src={previewUrl} 
+                  alt="Receita" 
+                  className="w-full h-full object-contain"
+                />
+              </div>
+            ) : (
+              <div className="flex items-center justify-center border rounded-md h-64 bg-gray-50">
+                {originalFiles.length > 0 && (
+                  <div className="flex flex-col items-center text-muted-foreground">
+                    <FileText className="h-8 w-8 mb-2" />
+                    <span>{originalFiles[0].name}</span>
+                    <a 
+                      href={URL.createObjectURL(originalFiles[0])}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-homeo-blue mt-2"
+                    >
+                      Abrir arquivo
+                    </a>
+                  </div>
+                )}
+              </div>
+            )}
 
-          <div className="mt-4">
-            <p className="text-sm text-muted-foreground">
-              {originalFiles.length > 1 && (
-                <>Mais {originalFiles.length - 1} arquivo(s) anexado(s)</>
-              )}
-            </p>
+            <div className="mt-4">
+              <p className="text-sm text-muted-foreground">
+                {originalFiles.length > 1 && (
+                  <>Mais {originalFiles.length - 1} arquivo(s) anexado(s)</>
+                )}
+              </p>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Patient and prescriber info */}
-        <div>
+        <div className="order-1 md:order-2">
           <h3 className="text-lg font-medium mb-2">Informações Gerais</h3>
           
           <div className="space-y-4">
@@ -310,28 +322,67 @@ const PrescriptionReviewForm: React.FC<PrescriptionReviewFormProps> = ({
                     <Input 
                       value={medication.dinamization || ''}
                       onChange={(e) => handleMedicationChange(index, 'dinamization', e.target.value)}
-                      placeholder="Ex: 30CH"
+                      placeholder="Ex: 30CH, 6X, LM1"
+                      list="dinamizacoes"
                     />
+                    <datalist id="dinamizacoes">
+                      <option value="6X" />
+                      <option value="12X" />
+                      <option value="30X" />
+                      <option value="6CH" />
+                      <option value="12CH" />
+                      <option value="30CH" />
+                      <option value="200CH" />
+                      <option value="LM1" />
+                      <option value="LM3" />
+                    </datalist>
                   </div>
                   
                   <div>
-                    <label className="text-sm font-medium">Forma</label>
+                    <label className="text-sm font-medium">Forma Farmacêutica</label>
                     <Input 
                       value={medication.form || ''}
                       onChange={(e) => handleMedicationChange(index, 'form', e.target.value)}
-                      placeholder="Ex: Glóbulos, Gotas"
+                      placeholder="Ex: Glóbulos, Gotas, Tabletes"
+                      list="formas"
                     />
+                    <datalist id="formas">
+                      <option value="Glóbulos" />
+                      <option value="Gotas" />
+                      <option value="Tabletes" />
+                      <option value="Comprimidos" />
+                      <option value="Pomada" />
+                      <option value="Creme" />
+                    </datalist>
                   </div>
                   
-                  <div>
-                    <label className="text-sm font-medium">Quantidade</label>
-                    <Input 
-                      type="number" 
-                      value={medication.quantity || ''}
-                      onChange={(e) => handleMedicationChange(index, 'quantity', parseInt(e.target.value) || undefined)}
-                      placeholder="Quantidade"
-                      min="1"
-                    />
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-sm font-medium">Quantidade</label>
+                      <Input 
+                        type="number" 
+                        value={medication.quantity || ''}
+                        onChange={(e) => handleMedicationChange(index, 'quantity', parseInt(e.target.value) || undefined)}
+                        placeholder="Quantidade"
+                        min="1"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium">Unidade</label>
+                      <Input 
+                        value={medication.unit || 'unidades'}
+                        onChange={(e) => handleMedicationChange(index, 'unit', e.target.value)}
+                        placeholder="Ex: ml, g, unidades"
+                        list="unidades"
+                      />
+                      <datalist id="unidades">
+                        <option value="ml" />
+                        <option value="g" />
+                        <option value="unidades" />
+                        <option value="gotas" />
+                        <option value="glóbulos" />
+                      </datalist>
+                    </div>
                   </div>
                   
                   <div className="md:col-span-2">
@@ -364,6 +415,17 @@ const PrescriptionReviewForm: React.FC<PrescriptionReviewFormProps> = ({
             </div>
           )}
         </div>
+      </div>
+
+      {/* Validation notes */}
+      <div>
+        <label className="text-sm font-medium">Notas Adicionais da Validação</label>
+        <Textarea 
+          value={formData.validation_notes || ''}
+          onChange={(e) => handleChange('validation_notes', e.target.value)}
+          placeholder="Observações adicionais sobre esta receita (opcional)"
+          className="min-h-[80px]"
+        />
       </div>
 
       <div className="flex justify-end space-x-2 pt-4">

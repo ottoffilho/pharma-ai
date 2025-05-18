@@ -10,7 +10,9 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import FileUploadDropzone from '@/components/FileUploadDropzone';
@@ -66,6 +68,7 @@ const NovaReceitaPage: React.FC = () => {
   const [extractedData, setExtractedData] = useState<IAExtractedData | null>(null);
   const [uploadedRecipeId, setUploadedRecipeId] = useState<string | null>(null);
   const [showReviewSheet, setShowReviewSheet] = useState(false);
+  const [showMobilePreview, setShowMobilePreview] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -185,17 +188,17 @@ const NovaReceitaPage: React.FC = () => {
       }
 
       // Create a structured object for insert that conforms to the table schema
-      // We need to convert the strongly-typed Medication[] to Json for Supabase
+      // We need to use type casting for the medications array and raw_ia_output
       const dataToInsert = {
         raw_recipe_id: uploadedRecipeId,
         processed_by_user_id: user.id,
-        medications: validatedData.medications as unknown as Json, // Type cast to Json for Supabase
+        medications: validatedData.medications as unknown as Json,
         patient_name: validatedData.patient_name,
         patient_dob: validatedData.patient_dob,
         prescriber_name: validatedData.prescriber_name,
         prescriber_identifier: validatedData.prescriber_identifier,
-        raw_ia_output: extractedData as unknown as Json, // Type cast to Json for Supabase
-        validation_status: 'validated'  // Set status to validated since human review is done
+        raw_ia_output: extractedData as unknown as Json,
+        validation_status: 'validated'
       };
 
       const { error } = await supabase
@@ -228,6 +231,11 @@ const NovaReceitaPage: React.FC = () => {
         variant: "destructive",
       });
     }
+  };
+
+  // Function to toggle the mobile prescription preview
+  const toggleMobilePreview = () => {
+    setShowMobilePreview(!showMobilePreview);
   };
 
   return (
@@ -354,7 +362,7 @@ const NovaReceitaPage: React.FC = () => {
               ) : processStatus === 'success' ? (
                 <>
                   <CheckCircle className="mr-2 h-4 w-4" />
-                  Processado
+                  Visualizar Dados Extraídos
                 </>
               ) : (
                 <>
@@ -366,25 +374,80 @@ const NovaReceitaPage: React.FC = () => {
         </Card>
       </div>
       
-      {/* Prescription Review Sheet */}
+      {/* Responsive handling: Sheet for desktop, Drawer for mobile */}
+      {/* Desktop: Right side sliding panel */}
       <Sheet open={showReviewSheet} onOpenChange={setShowReviewSheet}>
         <SheetContent side="right" className="w-full md:max-w-xl lg:max-w-2xl overflow-y-auto">
-          <SheetHeader>
+          <SheetHeader className="mb-6">
             <SheetTitle>Revisar e Validar Receita</SheetTitle>
             <SheetDescription>
               Confira os dados extraídos pela IA e faça correções se necessário
             </SheetDescription>
+            <Badge variant="outline" className="self-start mt-2 bg-blue-50 text-blue-700 hover:bg-blue-100">
+              Validação de Dados
+            </Badge>
           </SheetHeader>
+          
+          {extractedData && (
+            <div className="mb-4 md:hidden">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={toggleMobilePreview} 
+                className="w-full flex items-center justify-center gap-2"
+              >
+                <FileText className="h-4 w-4" />
+                {showMobilePreview ? "Ocultar Receita Original" : "Ver Receita Original"}
+              </Button>
+            </div>
+          )}
           
           {extractedData && (
             <PrescriptionReviewForm 
               initialData={extractedData} 
               onSubmit={handleSaveProcessedRecipe} 
               originalFiles={files}
+              showMobilePreview={showMobilePreview}
             />
           )}
         </SheetContent>
       </Sheet>
+      
+      {/* Mobile: Bottom drawer for prescription preview */}
+      <Drawer open={showMobilePreview} onOpenChange={setShowMobilePreview}>
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>Receita Original</DrawerTitle>
+            <DrawerDescription>Visualização do documento enviado</DrawerDescription>
+          </DrawerHeader>
+          <div className="p-4 flex justify-center">
+            {files.length > 0 && (
+              <div className="w-full max-w-md">
+                {files[0].type.includes('image') ? (
+                  <img 
+                    src={URL.createObjectURL(files[0])} 
+                    alt="Receita" 
+                    className="w-full object-contain max-h-[60vh]"
+                  />
+                ) : (
+                  <div className="flex flex-col items-center justify-center border rounded-lg p-6 bg-muted h-64">
+                    <FileText className="h-12 w-12 mb-2 text-muted-foreground" />
+                    <p className="font-medium">{files[0].name}</p>
+                    <a 
+                      href={URL.createObjectURL(files[0])} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="mt-2 text-sm text-homeo-blue"
+                    >
+                      Abrir arquivo
+                    </a>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </DrawerContent>
+      </Drawer>
     </AdminLayout>
   );
 };
