@@ -9,6 +9,65 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      receitas_processadas: {
+        Row: {
+          client_id: string | null
+          id: string
+          medications: Json
+          patient_dob: string | null
+          patient_name: string | null
+          prescriber_id: string | null
+          prescriber_identifier: string | null
+          prescriber_name: string | null
+          processed_at: string
+          processed_by_user_id: string
+          raw_ia_output: Json | null
+          raw_recipe_id: string
+          validation_notes: string | null
+          validation_status: string
+        }
+        Insert: {
+          client_id?: string | null
+          id?: string
+          medications: Json
+          patient_dob?: string | null
+          patient_name?: string | null
+          prescriber_id?: string | null
+          prescriber_identifier?: string | null
+          prescriber_name?: string | null
+          processed_at?: string
+          processed_by_user_id: string
+          raw_ia_output?: Json | null
+          raw_recipe_id: string
+          validation_notes?: string | null
+          validation_status?: string
+        }
+        Update: {
+          client_id?: string | null
+          id?: string
+          medications?: Json
+          patient_dob?: string | null
+          patient_name?: string | null
+          prescriber_id?: string | null
+          prescriber_identifier?: string | null
+          prescriber_name?: string | null
+          processed_at?: string
+          processed_by_user_id?: string
+          raw_ia_output?: Json | null
+          raw_recipe_id?: string
+          validation_notes?: string | null
+          validation_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "receitas_processadas_raw_recipe_id_fkey"
+            columns: ["raw_recipe_id"]
+            isOneToOne: false
+            referencedRelation: "receitas_raw"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       receitas_raw: {
         Row: {
           client_id: string | null

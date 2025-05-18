@@ -1,26 +1,77 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { UploadCloud, FileText, Image, FileArchive, File, X, Loader2 } from 'lucide-react';
+import { UploadCloud, FileText, Image, FileArchive, File, X, Loader2, CheckCircle, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import FileUploadDropzone from '@/components/FileUploadDropzone';
 import AdminLayout from '@/components/layouts/AdminLayout';
+import PrescriptionReviewForm from '@/components/PrescriptionReviewForm';
+
+interface IAExtractedData {
+  medications: Array<{
+    name: string;
+    dinamization?: string;
+    form?: string;
+    quantity?: number;
+    dosage_instructions?: string;
+  }>;
+  patient_name?: string;
+  patient_dob?: string;
+  prescriber_name?: string;
+  prescriber_identifier?: string;
+}
+
+const mockIAResponse: IAExtractedData = {
+  medications: [
+    {
+      name: "Arnica Montana",
+      dinamization: "30CH",
+      form: "Glóbulos",
+      quantity: 10,
+      dosage_instructions: "5 glóbulos, 3x ao dia"
+    },
+    {
+      name: "Belladonna",
+      dinamization: "6CH",
+      form: "Glóbulos",
+      quantity: 5,
+      dosage_instructions: "3 glóbulos antes de dormir"
+    }
+  ],
+  patient_name: "Maria Silva",
+  patient_dob: "1985-06-15",
+  prescriber_name: "Dr. João Santos",
+  prescriber_identifier: "CRM 12345-SP"
+};
 
 const NovaReceitaPage: React.FC = () => {
   const [uploadMethod, setUploadMethod] = useState<'upload_arquivo' | 'digitacao'>('upload_arquivo');
   const [files, setFiles] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [processStatus, setProcessStatus] = useState<'idle' | 'processing' | 'success' | 'error'>('idle');
+  const [extractedData, setExtractedData] = useState<IAExtractedData | null>(null);
+  const [uploadedRecipeId, setUploadedRecipeId] = useState<string | null>(null);
+  const [showReviewSheet, setShowReviewSheet] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
   const handleFilesChange = (acceptedFiles: File[]) => {
     setFiles(acceptedFiles);
+    // Reset states when new files are added
+    setProcessStatus('idle');
+    setExtractedData(null);
+    setUploadedRecipeId(null);
   };
 
   const removeFile = (index: number) => {
@@ -38,6 +89,7 @@ const NovaReceitaPage: React.FC = () => {
     }
 
     setIsUploading(true);
+    setProcessStatus('processing');
     
     try {
       // Get current authenticated user
@@ -47,13 +99,15 @@ const NovaReceitaPage: React.FC = () => {
         throw new Error("Usuário não autenticado");
       }
 
+      let lastUploadedRecipeId = null;
+      
       for (const file of files) {
         // Upload file to Supabase Storage
         const fileExt = file.name.split('.').pop();
         const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
         const filePath = `${user.id}/${fileName}`;
         
-        const { error: uploadError, data: uploadData } = await supabase.storage
+        const { error: uploadError } = await supabase.storage
           .from('receitas')
           .upload(filePath, file);
           
@@ -61,13 +115,8 @@ const NovaReceitaPage: React.FC = () => {
           throw uploadError;
         }
         
-        // Get the public URL of the file
-        const { data: { publicUrl } } = supabase.storage
-          .from('receitas')
-          .getPublicUrl(filePath);
-          
         // Save record in the database
-        const { error: dbError } = await supabase
+        const { error: dbError, data: recipeData } = await supabase
           .from('receitas_raw')
           .insert({
             uploaded_by_user_id: user.id,
@@ -76,25 +125,34 @@ const NovaReceitaPage: React.FC = () => {
             file_mime_type: file.type,
             input_type: uploadMethod,
             status: 'received',
-          });
+          })
+          .select('id')
+          .single();
           
         if (dbError) {
           throw dbError;
         }
+
+        lastUploadedRecipeId = recipeData.id;
       }
       
-      toast({
-        title: "Receita enviada com sucesso!",
-        description: "Os arquivos foram enviados e estão prontos para processamento.",
-      });
+      setUploadedRecipeId(lastUploadedRecipeId);
       
-      // Clear the form
-      setFiles([]);
-      
-      // Redirect to list view or stay on the page
-      // navigate('/admin/pedidos'); // Uncomment when list view is ready
+      // Simulate AI processing with a delay
+      setTimeout(() => {
+        setIsProcessing(false);
+        setProcessStatus('success');
+        setExtractedData(mockIAResponse);
+        setShowReviewSheet(true);
+        
+        toast({
+          title: "Processamento concluído",
+          description: "A IA extraiu os dados da receita com sucesso.",
+        });
+      }, 2000);
       
     } catch (error: any) {
+      setProcessStatus('error');
       toast({
         title: "Erro ao processar a receita",
         description: error.message || "Ocorreu um erro ao enviar os arquivos. Tente novamente.",
@@ -103,6 +161,62 @@ const NovaReceitaPage: React.FC = () => {
       console.error("Upload error:", error);
     } finally {
       setIsUploading(false);
+    }
+  };
+
+  const handleSaveProcessedRecipe = async (validatedData: IAExtractedData) => {
+    if (!uploadedRecipeId) {
+      toast({
+        title: "Erro ao salvar",
+        description: "ID da receita não encontrado.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error("Usuário não autenticado");
+      }
+
+      const { error } = await supabase
+        .from('receitas_processadas')
+        .insert({
+          raw_recipe_id: uploadedRecipeId,
+          processed_by_user_id: user.id,
+          medications: validatedData.medications,
+          patient_name: validatedData.patient_name,
+          patient_dob: validatedData.patient_dob,
+          prescriber_name: validatedData.prescriber_name,
+          prescriber_identifier: validatedData.prescriber_identifier,
+          raw_ia_output: extractedData
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Receita validada com sucesso",
+        description: "Os dados foram salvos e um rascunho de pedido foi criado.",
+      });
+
+      // Close the review sheet and reset states
+      setShowReviewSheet(false);
+      setFiles([]);
+      setExtractedData(null);
+      setProcessStatus('idle');
+      setUploadedRecipeId(null);
+
+      // Navigate to the orders page (future implementation)
+      // navigate('/admin/pedidos');
+      
+    } catch (error: any) {
+      toast({
+        title: "Erro ao salvar dados validados",
+        description: error.message || "Ocorreu um erro ao salvar os dados validados.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -173,6 +287,31 @@ const NovaReceitaPage: React.FC = () => {
                       </div>
                     </div>
                   )}
+                  
+                  {processStatus !== 'idle' && (
+                    <div className="mt-6 p-4 border rounded-md">
+                      <div className="flex items-center gap-2">
+                        {processStatus === 'processing' && (
+                          <>
+                            <Loader2 className="h-5 w-5 animate-spin text-homeo-accent" />
+                            <span>Processando receita com IA...</span>
+                          </>
+                        )}
+                        {processStatus === 'success' && (
+                          <>
+                            <CheckCircle className="h-5 w-5 text-homeo-green" />
+                            <span>Processamento concluído com sucesso!</span>
+                          </>
+                        )}
+                        {processStatus === 'error' && (
+                          <>
+                            <AlertTriangle className="h-5 w-5 text-destructive" />
+                            <span>Erro ao processar a receita. Tente novamente.</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </TabsContent>
               
@@ -189,10 +328,10 @@ const NovaReceitaPage: React.FC = () => {
           <CardFooter>
             <Button 
               onClick={handleProcessarReceita} 
-              disabled={isUploading || files.length === 0}
+              disabled={isUploading || files.length === 0 || processStatus === 'processing'}
               className="w-full md:w-auto"
             >
-              {isUploading ? (
+              {processStatus === 'processing' ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Processando...
@@ -206,6 +345,26 @@ const NovaReceitaPage: React.FC = () => {
           </CardFooter>
         </Card>
       </div>
+      
+      {/* Prescription Review Sheet */}
+      <Sheet open={showReviewSheet} onOpenChange={setShowReviewSheet}>
+        <SheetContent side="right" className="w-full md:max-w-xl lg:max-w-2xl overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>Revisar e Validar Receita</SheetTitle>
+            <SheetDescription>
+              Confira os dados extraídos pela IA e faça correções se necessário
+            </SheetDescription>
+          </SheetHeader>
+          
+          {extractedData && (
+            <PrescriptionReviewForm 
+              initialData={extractedData} 
+              onSubmit={handleSaveProcessedRecipe} 
+              originalFiles={files}
+            />
+          )}
+        </SheetContent>
+      </Sheet>
     </AdminLayout>
   );
 };
