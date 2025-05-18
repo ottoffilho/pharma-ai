@@ -337,6 +337,42 @@ export type Database = {
         }
         Relationships: []
       }
+      usuarios_internos: {
+        Row: {
+          ativo: boolean
+          cargo_perfil: string
+          created_at: string
+          email_contato: string
+          id: string
+          nome_completo: string
+          supabase_auth_id: string | null
+          telefone_contato: string | null
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          cargo_perfil: string
+          created_at?: string
+          email_contato: string
+          id?: string
+          nome_completo: string
+          supabase_auth_id?: string | null
+          telefone_contato?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          cargo_perfil?: string
+          created_at?: string
+          email_contato?: string
+          id?: string
+          nome_completo?: string
+          supabase_auth_id?: string | null
+          telefone_contato?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

@@ -25,7 +25,8 @@ import {
   FlaskConical,
   Box,
   LogOut,
-  Menu
+  Menu,
+  Users
 } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
@@ -134,6 +135,19 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                     </SidebarMenuSub>
                   </CollapsibleContent>
                 </Collapsible>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                <SidebarMenuButton 
+                  asChild 
+                  isActive={isActive('/admin/usuarios')}
+                  tooltip="Usuários"
+                >
+                  <Link to="/admin/usuarios">
+                    <Users />
+                    <span>Usuários</span>
+                  </Link>
+                </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarContent>
