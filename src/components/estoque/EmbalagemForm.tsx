@@ -111,7 +111,7 @@ const EmbalagemForm: React.FC<EmbalagemFormProps> = ({
         // Inserir nova embalagem
         const { error } = await supabase
           .from('embalagens')
-          .insert([data]);
+          .insert(data);
 
         if (error) throw error;
         
