@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -94,6 +95,11 @@ const NovaReceitaPage: React.FC = () => {
 
   // Modo de desenvolvimento para mostrar a interface diretamente
   const [devMode, setDevMode] = useState(true);
+
+  // Toggle validation view function
+  const toggleValidationView = () => {
+    setValidationView(validationView === 'split' ? 'preview' : 'split');
+  };
 
   // Se estiver em modo de desenvolvimento, mostrar a área de validação com dados mockados
   React.useEffect(() => {
@@ -245,15 +251,22 @@ const NovaReceitaPage: React.FC = () => {
         return;
       }
       
-      // Get current user ID - for development purposes using a mock ID
-      // In production, this would be fetched from Supabase Auth
-      const mockUserId = '00000000-0000-0000-0000-000000000000'; // Mock user ID for dev
+      // Get current user
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError) {
+        console.error('Error getting current user:', userError);
+        throw new Error('Não foi possível obter informações do usuário logado');
+      }
+      
+      if (!user) {
+        throw new Error('Usuário não está autenticado');
+      }
       
       // Prepare data for receitas_processadas
       const processedRecipeData = {
         raw_recipe_id: rawRecipeId,
-        processed_by_user_id: mockUserId,
-        // Cast medications array to Json type to satisfy TypeScript
+        processed_by_user_id: user.id,
         medications: extractedData.medications as unknown as Json,
         patient_name: extractedData.patient_name || null,
         patient_dob: extractedData.patient_dob || null,
@@ -270,12 +283,12 @@ const NovaReceitaPage: React.FC = () => {
         .eq('raw_recipe_id', rawRecipeId)
         .maybeSingle();
 
-      let processedRecipeId;
-      
       if (fetchError) {
-        throw new Error(`Error checking for existing processed recipe: ${fetchError.message}`);
+        throw new Error(`Erro ao verificar receita processada existente: ${fetchError.message}`);
       }
 
+      let processedRecipeId;
+      
       // Update or insert the processed recipe
       if (existingProcessedRecipe?.id) {
         // Update existing record
@@ -285,7 +298,7 @@ const NovaReceitaPage: React.FC = () => {
           .eq('id', existingProcessedRecipe.id);
 
         if (updateError) {
-          throw new Error(`Error updating processed recipe: ${updateError.message}`);
+          throw new Error(`Erro ao atualizar receita processada: ${updateError.message}`);
         }
         
         processedRecipeId = existingProcessedRecipe.id;
@@ -298,7 +311,7 @@ const NovaReceitaPage: React.FC = () => {
           .single();
 
         if (insertError) {
-          throw new Error(`Error creating processed recipe: ${insertError.message}`);
+          throw new Error(`Erro ao criar receita processada: ${insertError.message}`);
         }
         
         processedRecipeId = newProcessedRecipe.id;
@@ -307,7 +320,7 @@ const NovaReceitaPage: React.FC = () => {
       // Create a draft order linked to the processed recipe
       const orderData = {
         processed_recipe_id: processedRecipeId,
-        created_by_user_id: mockUserId,
+        created_by_user_id: user.id,
         channel: 'web',
         status: 'draft',
         payment_status: 'pending',
@@ -316,7 +329,7 @@ const NovaReceitaPage: React.FC = () => {
           source: 'prescription_validation',
           patient_name: extractedData.patient_name,
           medications_count: extractedData.medications.length
-        } as unknown as Json // Cast to Json type for TypeScript
+        } as unknown as Json
       };
 
       const { data: newOrder, error: orderError } = await supabase
@@ -326,7 +339,7 @@ const NovaReceitaPage: React.FC = () => {
         .single();
 
       if (orderError) {
-        throw new Error(`Error creating draft order: ${orderError.message}`);
+        throw new Error(`Erro ao criar rascunho de pedido: ${orderError.message}`);
       }
 
       toast({
@@ -421,11 +434,6 @@ const NovaReceitaPage: React.FC = () => {
     }
 
     return true;
-  };
-
-  // Add the missing toggleValidationView function
-  const toggleValidationView = () => {
-    setValidationView(validationView === 'split' ? 'preview' : 'split');
   };
 
   const handleCancelValidation = () => {
