@@ -212,23 +212,23 @@ const NovaReceitaPage: React.FC = () => {
     }
   };
 
-  // Handle patient data changes
+  // Handle patient data changes - Fixed the type issue
   const handlePatientChange = (field: string, value: string) => {
     if (extractedData) {
-      const updatedData = { ...extractedData };
+      const updatedData = { ...extractedData } as IAExtractedData;
       if (field === 'patient_name' || field === 'patient_dob') {
-        updatedData[field as keyof IAExtractedData] = value;
+        (updatedData as any)[field] = value;
       }
       setExtractedData(updatedData);
     }
   };
 
-  // Handle prescriber data changes
+  // Handle prescriber data changes - Fixed the type issue
   const handlePrescriberChange = (field: string, value: string) => {
     if (extractedData) {
-      const updatedData = { ...extractedData };
+      const updatedData = { ...extractedData } as IAExtractedData;
       if (field === 'prescriber_name' || field === 'prescriber_identifier') {
-        updatedData[field as keyof IAExtractedData] = value;
+        (updatedData as any)[field] = value;
       }
       setExtractedData(updatedData);
     }
