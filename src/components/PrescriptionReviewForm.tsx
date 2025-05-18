@@ -7,7 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 
 // Import our components
 import OriginalPrescriptionPreview from './prescription/OriginalPrescriptionPreview';
-import PatientPrescriberInfo from './prescription/PatientPrescriberInfo';
+import PatientPrescriberInfo from './prescription/PatientPresciberInfo';
 import MedicationsSection from './prescription/MedicationsSection';
 import SuccessView from './prescription/SuccessView';
 import ValidationSection from './prescription/ValidationSection';
