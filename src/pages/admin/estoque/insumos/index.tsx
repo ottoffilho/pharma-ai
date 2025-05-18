@@ -15,7 +15,7 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
-import { formatCurrency } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 // Tipo para os dados de insumos vindos do Supabase
 interface Insumo {
@@ -26,10 +26,14 @@ interface Insumo {
   custo_unitario: number;
   estoque_atual: number;
   estoque_minimo: number;
+  estoque_maximo?: number;
+  fornecedor_id?: string;
+  descricao?: string;
 }
 
 const InsumosPage: React.FC = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   // Buscar dados de insumos do Supabase
   const {
@@ -61,8 +65,20 @@ const InsumosPage: React.FC = () => {
 
   // Função placeholder para exclusão de insumos
   const handleDeleteInsumo = (id: string) => {
+    toast({
+      title: "Funcionalidade em desenvolvimento",
+      description: "A exclusão de insumos será implementada em breve.",
+      variant: "default",
+    });
     console.log('Deletar insumo', id);
-    // Implementação futura: Modal de confirmação e chamada à API
+  };
+
+  // Formatação de valores monetários
+  const formatCurrency = (value: number): string => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    }).format(value);
   };
 
   // Render de estado de carregamento
@@ -149,7 +165,7 @@ const InsumosPage: React.FC = () => {
                     <TableCell className="font-medium">{insumo.nome}</TableCell>
                     <TableCell>{insumo.tipo}</TableCell>
                     <TableCell>{insumo.unidade_medida}</TableCell>
-                    <TableCell>R$ {insumo.custo_unitario.toFixed(2)}</TableCell>
+                    <TableCell>{formatCurrency(insumo.custo_unitario)}</TableCell>
                     <TableCell className={`text-right ${insumo.estoque_atual <= insumo.estoque_minimo ? 'text-destructive font-medium' : ''}`}>
                       {insumo.estoque_atual}
                     </TableCell>
