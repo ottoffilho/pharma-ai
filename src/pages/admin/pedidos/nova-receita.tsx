@@ -176,7 +176,10 @@ const NovaReceitaPage: React.FC = () => {
   const handleMedicationChange = (index: number, field: keyof Medication, value: any) => {
     if (extractedData) {
       const updatedData = { ...extractedData };
-      updatedData.medications[index][field] = value;
+      updatedData.medications[index] = {
+        ...updatedData.medications[index],
+        [field]: value
+      };
       setExtractedData(updatedData);
     }
   };
@@ -213,7 +216,9 @@ const NovaReceitaPage: React.FC = () => {
   const handlePatientChange = (field: string, value: string) => {
     if (extractedData) {
       const updatedData = { ...extractedData };
-      updatedData[field as keyof IAExtractedData] = value;
+      if (field === 'patient_name' || field === 'patient_dob') {
+        updatedData[field as keyof IAExtractedData] = value;
+      }
       setExtractedData(updatedData);
     }
   };
@@ -222,7 +227,9 @@ const NovaReceitaPage: React.FC = () => {
   const handlePrescriberChange = (field: string, value: string) => {
     if (extractedData) {
       const updatedData = { ...extractedData };
-      updatedData[field as keyof IAExtractedData] = value;
+      if (field === 'prescriber_name' || field === 'prescriber_identifier') {
+        updatedData[field as keyof IAExtractedData] = value;
+      }
       setExtractedData(updatedData);
     }
   };
