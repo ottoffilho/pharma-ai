@@ -1,17 +1,16 @@
 
 import React, { useState } from 'react';
-import { Save, Eye } from 'lucide-react';
+import { Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { CheckCircle } from 'lucide-react';
 
-// Import our new components
+// Import our components
 import OriginalPrescriptionPreview from './prescription/OriginalPrescriptionPreview';
-import PatientPrescriberInfo from './prescription/PatientPresciberInfo';
+import PatientPrescriberInfo from './prescription/PatientPrescriberInfo';
 import MedicationsSection from './prescription/MedicationsSection';
+import SuccessView from './prescription/SuccessView';
+import ValidationSection from './prescription/ValidationSection';
 import { Medication } from './prescription/MedicationForm';
 
 interface PrescriptionData {
@@ -165,18 +164,7 @@ const PrescriptionReviewForm: React.FC<PrescriptionReviewFormProps> = ({
   };
 
   if (reviewComplete) {
-    return (
-      <div className="flex flex-col items-center justify-center py-12 text-center space-y-4">
-        <CheckCircle className="h-16 w-16 text-green-500" />
-        <h2 className="text-2xl font-semibold">Receita Validada com Sucesso!</h2>
-        <p className="text-muted-foreground">
-          Os dados foram salvos e um pedido foi criado com base nesta receita.
-        </p>
-        <Button onClick={() => window.location.href = '/admin/pedidos'} className="mt-4">
-          Ver Lista de Pedidos
-        </Button>
-      </div>
-    );
+    return <SuccessView />;
   }
 
   return (
@@ -217,40 +205,15 @@ const PrescriptionReviewForm: React.FC<PrescriptionReviewFormProps> = ({
 
       <Separator />
 
-      {/* Validation notes */}
-      <div>
-        <label className="text-sm font-medium">Notas Adicionais da Validação</label>
-        <Textarea 
-          value={formData.validation_notes || ''}
-          onChange={(e) => handlePatientChange('validation_notes', e.target.value)}
-          placeholder="Observações adicionais sobre esta receita (opcional)"
-          className="min-h-[80px]"
-        />
-      </div>
-
-      <div className="flex justify-end space-x-2 pt-4">
-        <Button
-          variant="outline"
-          onClick={() => onSubmit(initialData)}
-          disabled={isSaving}
-        >
-          Cancelar
-        </Button>
-        <Button
-          onClick={handleSubmit}
-          disabled={isSaving || formData.medications.length === 0}
-          className="min-w-[180px]"
-        >
-          {isSaving ? (
-            <>Processando...</>
-          ) : (
-            <>
-              <Save className="h-4 w-4 mr-2" />
-              Validar e Criar Pedido
-            </>
-          )}
-        </Button>
-      </div>
+      {/* Validation section with notes and buttons */}
+      <ValidationSection
+        validationNotes={formData.validation_notes || ''}
+        onValidationNotesChange={(value) => handlePatientChange('validation_notes', value)}
+        onSubmit={handleSubmit}
+        onCancel={() => onSubmit(initialData)}
+        isSaving={isSaving}
+        disableSubmit={formData.medications.length === 0}
+      />
     </div>
   );
 };
