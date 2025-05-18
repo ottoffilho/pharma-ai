@@ -1,13 +1,15 @@
 
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { PlusCircle, Trash2, Save, ArrowRight, FileText, Image } from 'lucide-react';
+import { PlusCircle, Trash2, Save, ArrowRight, FileText, Image, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { useToast } from '@/hooks/use-toast';
+import { Badge } from '@/components/ui/badge';
 
 interface Medication {
   name: string;
@@ -38,9 +40,11 @@ const PrescriptionReviewForm: React.FC<PrescriptionReviewFormProps> = ({
 }) => {
   const [formData, setFormData] = useState<PrescriptionData>(initialData);
   const [isSaving, setIsSaving] = useState(false);
+  const { toast } = useToast();
   
   // Preview file functionality
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [reviewComplete, setReviewComplete] = useState(false);
 
   React.useEffect(() => {
     // Generate preview for the first file
@@ -92,17 +96,79 @@ const PrescriptionReviewForm: React.FC<PrescriptionReviewFormProps> = ({
     });
   };
 
+  const validateForm = () => {
+    // Basic validation - check that all medications have at least a name
+    if (formData.medications.length === 0) {
+      toast({
+        title: "Validação falhou",
+        description: "Adicione pelo menos um medicamento à receita",
+        variant: "destructive",
+      });
+      return false;
+    }
+    
+    for (const med of formData.medications) {
+      if (!med.name || med.name.trim() === '') {
+        toast({
+          title: "Validação falhou",
+          description: "Todos os medicamentos devem ter um nome",
+          variant: "destructive",
+        });
+        return false;
+      }
+    }
+    
+    return true;
+  };
+
   const handleSubmit = async () => {
+    if (!validateForm()) return;
+    
     setIsSaving(true);
+    setReviewComplete(true);
+    
     try {
       await onSubmit(formData);
+      toast({
+        title: "Receita validada com sucesso",
+        description: "Os dados foram salvos e um pedido foi criado",
+      });
+    } catch (error) {
+      setReviewComplete(false);
+      toast({
+        title: "Erro ao salvar receita",
+        description: "Ocorreu um erro ao salvar os dados. Tente novamente.",
+        variant: "destructive",
+      });
     } finally {
       setIsSaving(false);
     }
   };
 
+  if (reviewComplete) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 text-center space-y-4">
+        <CheckCircle className="h-16 w-16 text-green-500" />
+        <h2 className="text-2xl font-semibold">Receita Validada com Sucesso!</h2>
+        <p className="text-muted-foreground">
+          Os dados foram salvos e um pedido foi criado com base nesta receita.
+        </p>
+        <Button onClick={() => window.location.href = '/admin/pedidos'} className="mt-4">
+          Ver Lista de Pedidos
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 py-4">
+      <div className="flex items-center justify-between mb-2">
+        <h2 className="text-lg font-semibold">Validação de Receita</h2>
+        <Badge variant="outline" className="bg-blue-50 text-blue-700 hover:bg-blue-100">
+          Dados Extraídos pela IA
+        </Badge>
+      </div>
+      
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Original prescription preview */}
         <div>
@@ -231,7 +297,7 @@ const PrescriptionReviewForm: React.FC<PrescriptionReviewFormProps> = ({
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div>
-                    <label className="text-sm font-medium">Nome</label>
+                    <label className="text-sm font-medium">Nome <span className="text-red-500">*</span></label>
                     <Input 
                       value={medication.name}
                       onChange={(e) => handleMedicationChange(index, 'name', e.target.value)}

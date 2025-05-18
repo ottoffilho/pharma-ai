@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UploadCloud, FileText, Image, FileArchive, File, X, Loader2, CheckCircle, AlertTriangle } from 'lucide-react';
@@ -151,7 +152,7 @@ const NovaReceitaPage: React.FC = () => {
           title: "Processamento concluído",
           description: "A IA extraiu os dados da receita com sucesso.",
         });
-      }, 2000);
+      }, 1500);
       
     } catch (error: any) {
       setProcessStatus('error');
@@ -193,7 +194,8 @@ const NovaReceitaPage: React.FC = () => {
         patient_dob: validatedData.patient_dob,
         prescriber_name: validatedData.prescriber_name,
         prescriber_identifier: validatedData.prescriber_identifier,
-        raw_ia_output: extractedData as unknown as Json // Type cast to Json for Supabase
+        raw_ia_output: extractedData as unknown as Json, // Type cast to Json for Supabase
+        validation_status: 'validated'  // Set status to validated since human review is done
       };
 
       const { error } = await supabase
@@ -204,18 +206,20 @@ const NovaReceitaPage: React.FC = () => {
 
       toast({
         title: "Receita validada com sucesso",
-        description: "Os dados foram salvos e um rascunho de pedido foi criado.",
+        description: "Os dados foram salvos e um pedido foi criado.",
       });
 
       // Close the review sheet and reset states
-      setShowReviewSheet(false);
-      setFiles([]);
-      setExtractedData(null);
-      setProcessStatus('idle');
-      setUploadedRecipeId(null);
+      setTimeout(() => {
+        setShowReviewSheet(false);
+        setFiles([]);
+        setExtractedData(null);
+        setProcessStatus('idle');
+        setUploadedRecipeId(null);
 
-      // Navigate to the orders page
-      navigate('/admin/pedidos');
+        // Navigate to the orders page
+        navigate('/admin/pedidos');
+      }, 1500);
       
     } catch (error: any) {
       toast({
@@ -295,7 +299,7 @@ const NovaReceitaPage: React.FC = () => {
                   )}
                   
                   {processStatus !== 'idle' && (
-                    <div className="mt-6 p-4 border rounded-md">
+                    <div className="mt-6 p-4 border rounded-md bg-muted">
                       <div className="flex items-center gap-2">
                         {processStatus === 'processing' && (
                           <>
@@ -337,10 +341,20 @@ const NovaReceitaPage: React.FC = () => {
               disabled={isUploading || files.length === 0 || processStatus === 'processing'}
               className="w-full md:w-auto"
             >
-              {processStatus === 'processing' ? (
+              {isUploading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Enviando...
+                </>
+              ) : processStatus === 'processing' ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Processando...
+                </>
+              ) : processStatus === 'success' ? (
+                <>
+                  <CheckCircle className="mr-2 h-4 w-4" />
+                  Processado
                 </>
               ) : (
                 <>
