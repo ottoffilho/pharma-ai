@@ -26,7 +26,9 @@ import {
   Box,
   LogOut,
   Menu,
-  Users
+  Users,
+  Landmark,
+  DollarSign
 } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
@@ -130,6 +132,41 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                           isActive={isActive('/admin/estoque/embalagens')}
                         >
                           <Link to="/admin/estoque/embalagens">Embalagens</Link>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                    </SidebarMenuSub>
+                  </CollapsibleContent>
+                </Collapsible>
+              </SidebarMenuItem>
+
+              {/* Novo item do menu Financeiro */}
+              <SidebarMenuItem>
+                <Collapsible>
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton 
+                      isActive={isActive('/admin/financeiro')}
+                      tooltip="Financeiro"
+                    >
+                      <Landmark />
+                      <span>Financeiro</span>
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <SidebarMenuSub>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton
+                          asChild
+                          isActive={isActive('/admin/financeiro/caixa')}
+                        >
+                          <Link to="/admin/financeiro/caixa">Fluxo de Caixa</Link>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton
+                          asChild
+                          isActive={isActive('/admin/financeiro/categorias')}
+                        >
+                          <Link to="/admin/financeiro/categorias">Categorias</Link>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
                     </SidebarMenuSub>

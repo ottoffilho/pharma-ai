@@ -245,9 +245,10 @@ export type Database = {
         Row: {
           categoria_id: string | null
           created_at: string
-          data: string
+          data_movimentacao: string
           descricao: string
           id: string
+          is_deleted: boolean
           observacoes: string | null
           pedido_id: string | null
           tipo_movimentacao: string
@@ -257,9 +258,10 @@ export type Database = {
         Insert: {
           categoria_id?: string | null
           created_at?: string
-          data?: string
+          data_movimentacao?: string
           descricao: string
           id?: string
+          is_deleted?: boolean
           observacoes?: string | null
           pedido_id?: string | null
           tipo_movimentacao: string
@@ -269,9 +271,10 @@ export type Database = {
         Update: {
           categoria_id?: string | null
           created_at?: string
-          data?: string
+          data_movimentacao?: string
           descricao?: string
           id?: string
+          is_deleted?: boolean
           observacoes?: string | null
           pedido_id?: string | null
           tipo_movimentacao?: string

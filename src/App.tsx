@@ -1,4 +1,5 @@
 
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -23,6 +24,10 @@ import NovoUsuarioPage from "./pages/admin/usuarios/novo";
 import EditarUsuarioPage from "./pages/admin/usuarios/editar";
 import NovoLoteInsumoPage from "./pages/admin/estoque/lotes/novo";
 import EditarLoteInsumoPage from "./pages/admin/estoque/lotes/editar/[id]";
+import CategoriasFinanceirasPage from "./pages/admin/financeiro/categorias/index";
+import NovaCategoriaPage from "./pages/admin/financeiro/categorias/novo";
+import EditarCategoriaPage from "./pages/admin/financeiro/categorias/editar";
+import FluxoCaixaPage from "./pages/admin/financeiro/caixa/index";
 import PrivateRoute from "./components/Auth/PrivateRoute";
 
 const queryClient = new QueryClient();
@@ -60,6 +65,12 @@ const App = () => (
               {/* Lotes Routes */}
               <Route path="/admin/estoque/lotes/novo" element={<NovoLoteInsumoPage />} />
               <Route path="/admin/estoque/lotes/editar/:id" element={<EditarLoteInsumoPage />} />
+              
+              {/* Financeiro Routes */}
+              <Route path="/admin/financeiro/categorias" element={<CategoriasFinanceirasPage />} />
+              <Route path="/admin/financeiro/categorias/novo" element={<NovaCategoriaPage />} />
+              <Route path="/admin/financeiro/categorias/editar/:id" element={<EditarCategoriaPage />} />
+              <Route path="/admin/financeiro/caixa" element={<FluxoCaixaPage />} />
               
               {/* Usuários Routes */}
               <Route path="/admin/usuarios" element={<UsuariosListPage />} />
