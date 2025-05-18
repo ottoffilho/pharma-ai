@@ -15,7 +15,9 @@ import PrescriptionDetailsPage from "./pages/admin/pedidos/detalhes";
 import InsumosPage from "./pages/admin/estoque/insumos/index";
 import NovoInsumoPage from "./pages/admin/estoque/insumos/novo";
 import EditarInsumoPage from "./pages/admin/estoque/insumos/editar";
-import EmbalagensListPage from "./pages/admin/estoque/embalagens/index"; // New import
+import EmbalagensListPage from "./pages/admin/estoque/embalagens/index";
+import NovaEmbalagemPage from "./pages/admin/estoque/embalagens/novo";
+import EditarEmbalagemPage from "./pages/admin/estoque/embalagens/editar";
 import PrivateRoute from "./components/Auth/PrivateRoute";
 
 const queryClient = new QueryClient();
@@ -45,8 +47,10 @@ const App = () => (
               <Route path="/admin/estoque/insumos/novo" element={<NovoInsumoPage />} />
               <Route path="/admin/estoque/insumos/editar/:id" element={<EditarInsumoPage />} />
               
-              {/* Embalagens Routes - new */}
+              {/* Embalagens Routes */}
               <Route path="/admin/estoque/embalagens" element={<EmbalagensListPage />} />
+              <Route path="/admin/estoque/embalagens/novo" element={<NovaEmbalagemPage />} />
+              <Route path="/admin/estoque/embalagens/editar/:id" element={<EditarEmbalagemPage />} />
             </Route>
 
             {/* Catch-all route - must be last */}
