@@ -6,8 +6,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Loader2, AlertTriangle } from "lucide-react";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import InsumoForm from "@/components/estoque/InsumoForm";
+import LotesInsumoTable from "@/components/estoque/LotesInsumoTable";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function EditarInsumoPage() {
   const { id } = useParams<{ id: string }>();
@@ -73,11 +75,24 @@ export default function EditarInsumoPage() {
   return (
     <AdminLayout>
       <div className="container py-6">
-        <InsumoForm 
-          initialData={insumo} 
-          isEditing={true} 
-          insumoId={id} 
-        />
+        <Tabs defaultValue="dados">
+          <TabsList className="mb-6">
+            <TabsTrigger value="dados">Dados do Insumo</TabsTrigger>
+            <TabsTrigger value="lotes">Lotes do Insumo</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="dados">
+            <InsumoForm 
+              initialData={insumo} 
+              isEditing={true} 
+              insumoId={id} 
+            />
+          </TabsContent>
+          
+          <TabsContent value="lotes">
+            {id && <LotesInsumoTable insumoId={id} insumoNome={insumo?.nome} />}
+          </TabsContent>
+        </Tabs>
       </div>
     </AdminLayout>
   );

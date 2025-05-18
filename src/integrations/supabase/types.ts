@@ -9,6 +9,30 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      categorias_financeiras: {
+        Row: {
+          descricao: string | null
+          id: string
+          is_deleted: boolean
+          nome: string
+          tipo: string
+        }
+        Insert: {
+          descricao?: string | null
+          id?: string
+          is_deleted?: boolean
+          nome: string
+          tipo: string
+        }
+        Update: {
+          descricao?: string | null
+          id?: string
+          is_deleted?: boolean
+          nome?: string
+          tipo?: string
+        }
+        Relationships: []
+      }
       embalagens: {
         Row: {
           created_at: string
@@ -154,40 +178,119 @@ export type Database = {
       lotes_insumos: {
         Row: {
           created_at: string
+          custo_unitario_lote: number | null
           data_validade: string | null
+          fornecedor_id: string | null
           id: string
           insumo_id: string
+          is_deleted: boolean
           localizacao: string | null
+          notas: string | null
           numero_lote: string
           quantidade: number
+          quantidade_atual: number
+          quantidade_inicial: number
           unidade_medida: string
         }
         Insert: {
           created_at?: string
+          custo_unitario_lote?: number | null
           data_validade?: string | null
+          fornecedor_id?: string | null
           id?: string
           insumo_id: string
+          is_deleted?: boolean
           localizacao?: string | null
+          notas?: string | null
           numero_lote: string
           quantidade: number
+          quantidade_atual?: number
+          quantidade_inicial?: number
           unidade_medida: string
         }
         Update: {
           created_at?: string
+          custo_unitario_lote?: number | null
           data_validade?: string | null
+          fornecedor_id?: string | null
           id?: string
           insumo_id?: string
+          is_deleted?: boolean
           localizacao?: string | null
+          notas?: string | null
           numero_lote?: string
           quantidade?: number
+          quantidade_atual?: number
+          quantidade_inicial?: number
           unidade_medida?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "lotes_insumos_fornecedor_id_fkey"
+            columns: ["fornecedor_id"]
+            isOneToOne: false
+            referencedRelation: "fornecedores"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "lotes_insumos_insumo_id_fkey"
             columns: ["insumo_id"]
             isOneToOne: false
             referencedRelation: "insumos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      movimentacoes_caixa: {
+        Row: {
+          categoria_id: string | null
+          created_at: string
+          data: string
+          descricao: string
+          id: string
+          observacoes: string | null
+          pedido_id: string | null
+          tipo_movimentacao: string
+          usuario_id: string | null
+          valor: number
+        }
+        Insert: {
+          categoria_id?: string | null
+          created_at?: string
+          data?: string
+          descricao: string
+          id?: string
+          observacoes?: string | null
+          pedido_id?: string | null
+          tipo_movimentacao: string
+          usuario_id?: string | null
+          valor: number
+        }
+        Update: {
+          categoria_id?: string | null
+          created_at?: string
+          data?: string
+          descricao?: string
+          id?: string
+          observacoes?: string | null
+          pedido_id?: string | null
+          tipo_movimentacao?: string
+          usuario_id?: string | null
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "movimentacoes_caixa_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "categorias_financeiras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "movimentacoes_caixa_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "pedidos"
             referencedColumns: ["id"]
           },
         ]
