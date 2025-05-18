@@ -19,6 +19,8 @@ import EmbalagensListPage from "./pages/admin/estoque/embalagens/index";
 import NovaEmbalagemPage from "./pages/admin/estoque/embalagens/novo";
 import EditarEmbalagemPage from "./pages/admin/estoque/embalagens/editar";
 import UsuariosListPage from "./pages/admin/usuarios/index";
+import NovoUsuarioPage from "./pages/admin/usuarios/novo";
+import EditarUsuarioPage from "./pages/admin/usuarios/editar";
 import PrivateRoute from "./components/Auth/PrivateRoute";
 
 const queryClient = new QueryClient();
@@ -55,6 +57,8 @@ const App = () => (
               
               {/* Usuários Routes */}
               <Route path="/admin/usuarios" element={<UsuariosListPage />} />
+              <Route path="/admin/usuarios/novo" element={<NovoUsuarioPage />} />
+              <Route path="/admin/usuarios/editar/:id" element={<EditarUsuarioPage />} />
             </Route>
 
             {/* Catch-all route - must be last */}
