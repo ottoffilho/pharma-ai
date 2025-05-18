@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -248,7 +249,8 @@ const NovaReceitaPage: React.FC = () => {
       const processedRecipeData = {
         raw_recipe_id: rawRecipeId,
         processed_by_user_id: mockUserId,
-        medications: extractedData.medications,
+        // Cast medications array to Json type to satisfy TypeScript
+        medications: extractedData.medications as unknown as Json,
         patient_name: extractedData.patient_name || null,
         patient_dob: extractedData.patient_dob || null,
         prescriber_name: extractedData.prescriber_name || null,
