@@ -223,6 +223,7 @@ const LoteInsumoForm = ({ initialData, isEditing = false, loteId, insumoId }: Lo
             data_validade: formattedDate,
             quantidade_inicial: values.quantidade_inicial,
             quantidade_atual: values.quantidade_atual,
+            quantidade: values.quantidade_atual, // Add this line to set quantidade to match quantidade_atual
             unidade_medida: values.unidade_medida,
             fornecedor_id: values.fornecedor_id || null,
             custo_unitario_lote: values.custo_unitario_lote || null,
@@ -242,6 +243,7 @@ const LoteInsumoForm = ({ initialData, isEditing = false, loteId, insumoId }: Lo
             data_validade: formattedDate,
             quantidade_inicial: values.quantidade_inicial,
             quantidade_atual: values.quantidade_atual,
+            quantidade: values.quantidade_atual, // Add this line to set quantidade to match quantidade_atual
             unidade_medida: values.unidade_medida,
             fornecedor_id: values.fornecedor_id || null,
             custo_unitario_lote: values.custo_unitario_lote || null,
