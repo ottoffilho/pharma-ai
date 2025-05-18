@@ -8,6 +8,7 @@ import AdminLayout from '@/components/layouts/AdminLayout';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { Json } from '@/integrations/supabase/types';
 
 interface Medication {
   name: string;
@@ -45,14 +46,27 @@ const PedidosPage: React.FC = () => {
         }
 
         // Transform the data to ensure medications are properly typed
-        const typedPrescriptions = data.map(item => ({
-          id: item.id,
-          raw_recipe_id: item.raw_recipe_id,
-          processed_at: item.processed_at,
-          patient_name: item.patient_name,
-          validation_status: item.validation_status,
-          medications: Array.isArray(item.medications) ? item.medications : []
-        })) as ProcessedPrescription[];
+        const typedPrescriptions = data.map(item => {
+          // Safely convert the medications JSON to our Medication[] type
+          const medications = Array.isArray(item.medications) 
+            ? item.medications.map((med: any) => ({
+                name: med.name || '',
+                dinamization: med.dinamization,
+                form: med.form,
+                quantity: med.quantity,
+                dosage_instructions: med.dosage_instructions
+              }))
+            : [];
+            
+          return {
+            id: item.id,
+            raw_recipe_id: item.raw_recipe_id,
+            processed_at: item.processed_at,
+            patient_name: item.patient_name,
+            validation_status: item.validation_status,
+            medications: medications
+          };
+        });
 
         setPrescriptions(typedPrescriptions);
       } catch (err) {

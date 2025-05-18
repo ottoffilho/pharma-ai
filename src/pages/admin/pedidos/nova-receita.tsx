@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UploadCloud, FileText, Image, FileArchive, File, X, Loader2, CheckCircle, AlertTriangle } from 'lucide-react';
@@ -16,6 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import FileUploadDropzone from '@/components/FileUploadDropzone';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import PrescriptionReviewForm from '@/components/PrescriptionReviewForm';
+import { Json } from '@/integrations/supabase/types';
 
 interface Medication {
   name: string;
@@ -184,15 +184,16 @@ const NovaReceitaPage: React.FC = () => {
       }
 
       // Create a structured object for insert that conforms to the table schema
+      // We need to convert the strongly-typed Medication[] to Json for Supabase
       const dataToInsert = {
         raw_recipe_id: uploadedRecipeId,
         processed_by_user_id: user.id,
-        medications: validatedData.medications,
+        medications: validatedData.medications as unknown as Json, // Type cast to Json for Supabase
         patient_name: validatedData.patient_name,
         patient_dob: validatedData.patient_dob,
         prescriber_name: validatedData.prescriber_name,
         prescriber_identifier: validatedData.prescriber_identifier,
-        raw_ia_output: extractedData
+        raw_ia_output: extractedData as unknown as Json // Type cast to Json for Supabase
       };
 
       const { error } = await supabase
