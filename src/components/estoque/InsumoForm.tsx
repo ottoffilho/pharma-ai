@@ -117,11 +117,29 @@ export default function InsumoForm({
   // Função para salvar os dados
   const onSubmit = async (values: InsumoFormValues) => {
     try {
+      // Garantir que os campos obrigatórios estejam presentes
+      if (!values.nome || !values.tipo || !values.unidade_medida || values.custo_unitario === undefined) {
+        throw new Error("Campos obrigatórios faltando");
+      }
+
+      // Preparar objeto para salvar no Supabase
+      const insumoData = {
+        nome: values.nome,
+        tipo: values.tipo,
+        unidade_medida: values.unidade_medida,
+        custo_unitario: values.custo_unitario,
+        fornecedor_id: values.fornecedor_id || null,
+        descricao: values.descricao || null,
+        estoque_atual: values.estoque_atual || 0,
+        estoque_minimo: values.estoque_minimo || 0,
+        estoque_maximo: values.estoque_maximo,
+      };
+
       if (isEditing && insumoId) {
         // Atualizar insumo existente
         const { error } = await supabase
           .from("insumos")
-          .update(values)
+          .update(insumoData)
           .eq("id", insumoId);
 
         if (error) throw new Error(error.message);
@@ -132,7 +150,7 @@ export default function InsumoForm({
         });
       } else {
         // Criar novo insumo
-        const { error } = await supabase.from("insumos").insert([values]);
+        const { error } = await supabase.from("insumos").insert([insumoData]);
 
         if (error) throw new Error(error.message);
 
