@@ -12,6 +12,7 @@ import AdminDashboard from "./pages/admin/index";
 import PedidosPage from "./pages/admin/pedidos/index";
 import NovaReceitaPage from "./pages/admin/pedidos/nova-receita";
 import PrescriptionDetailsPage from "./pages/admin/pedidos/detalhes";
+import PrivateRoute from "./components/Auth/PrivateRoute";
 
 const queryClient = new QueryClient();
 
@@ -24,13 +25,19 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
+            {/* Public Routes */}
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
-            <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/admin/pedidos" element={<PedidosPage />} />
-            <Route path="/admin/pedidos/nova-receita" element={<NovaReceitaPage />} />
-            <Route path="/admin/pedidos/:id" element={<PrescriptionDetailsPage />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            
+            {/* Protected Routes */}
+            <Route element={<PrivateRoute />}>
+              <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/admin/pedidos" element={<PedidosPage />} />
+              <Route path="/admin/pedidos/nova-receita" element={<NovaReceitaPage />} />
+              <Route path="/admin/pedidos/:id" element={<PrescriptionDetailsPage />} />
+            </Route>
+
+            {/* Catch-all route - must be last */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
