@@ -130,11 +130,15 @@ export function ContaPagarForm({ contaId, onSuccess }: ContaPagarFormProps) {
 
   const createMutation = useMutation({
     mutationFn: async (values: FormValues) => {
-      // Format dates as ISO strings for Supabase
+      // Format dates as ISO strings for Supabase and ensure required fields are present
       const formattedValues = {
-        ...values,
+        descricao: values.descricao, // Ensuring descricao is passed explicitly
+        valor_previsto: values.valor_previsto, // Ensuring valor_previsto is passed explicitly
         data_emissao: values.data_emissao ? values.data_emissao.toISOString().split('T')[0] : null,
         data_vencimento: values.data_vencimento.toISOString().split('T')[0],
+        categoria_id: values.categoria_id,
+        fornecedor_id: values.fornecedor_id,
+        observacoes: values.observacoes,
         usuario_id_registro: userData?.id
       };
 
@@ -168,11 +172,15 @@ export function ContaPagarForm({ contaId, onSuccess }: ContaPagarFormProps) {
 
   const updateMutation = useMutation({
     mutationFn: async (values: FormValues) => {
-      // Format dates as ISO strings for Supabase
+      // Format dates as ISO strings for Supabase and ensure required fields are present
       const formattedValues = {
-        ...values,
+        descricao: values.descricao, // Ensuring descricao is passed explicitly
+        valor_previsto: values.valor_previsto, // Ensuring valor_previsto is passed explicitly
         data_emissao: values.data_emissao ? values.data_emissao.toISOString().split('T')[0] : null,
-        data_vencimento: values.data_vencimento.toISOString().split('T')[0]
+        data_vencimento: values.data_vencimento.toISOString().split('T')[0],
+        categoria_id: values.categoria_id,
+        fornecedor_id: values.fornecedor_id,
+        observacoes: values.observacoes
       };
 
       const { data, error } = await supabase
