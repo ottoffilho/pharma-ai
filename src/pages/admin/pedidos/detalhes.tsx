@@ -1,7 +1,6 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Printer, Loader2 } from 'lucide-react';
+import { ArrowLeft, Printer, Loader2, RefreshCw } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
@@ -12,7 +11,14 @@ import { Badge } from '@/components/ui/badge';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Json } from '@/integrations/supabase/types';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface Medication {
   name: string;
@@ -36,71 +42,157 @@ interface ProcessedPrescription {
   validation_notes: string | null;
 }
 
+interface OrderData {
+  id: string;
+  status: string;
+  payment_status: string;
+  // Other order fields if needed
+}
+
+const STATUS_OPTIONS = [
+  { value: 'draft', label: 'Rascunho' },
+  { value: 'awaiting_quote', label: 'Aguardando Orçamento' },
+  { value: 'quote_sent', label: 'Orçamento Enviado' },
+  { value: 'awaiting_approval', label: 'Aguardando Aprovação Cliente' },
+  { value: 'approved', label: 'Pedido Aprovado' },
+  { value: 'awaiting_payment', label: 'Aguardando Pagamento' },
+  { value: 'payment_confirmed', label: 'Pagamento Confirmado' },
+  { value: 'in_progress', label: 'Em Manipulação' },
+  { value: 'ready_for_pickup', label: 'Pronto para Retirada' },
+  { value: 'ready_for_delivery', label: 'Pronto para Entrega' },
+  { value: 'shipped', label: 'Enviado' },
+  { value: 'delivered', label: 'Entregue' },
+  { value: 'canceled', label: 'Cancelado' }
+];
+
 const PrescriptionDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [prescription, setPrescription] = useState<ProcessedPrescription | null>(null);
+  const [selectedStatus, setSelectedStatus] = useState<string | undefined>();
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    const fetchPrescription = async () => {
-      if (!id) return;
+  // Query to fetch prescription details
+  const prescriptionQuery = useQuery({
+    queryKey: ['prescription', id],
+    queryFn: async () => {
+      if (!id) throw new Error('ID não fornecido');
       
-      try {
-        setIsLoading(true);
-        const { data, error } = await supabase
-          .from('receitas_processadas')
-          .select('*')
-          .eq('id', id)
-          .single();
+      const { data, error } = await supabase
+        .from('receitas_processadas')
+        .select('*')
+        .eq('id', id)
+        .single();
 
-        if (error) {
-          throw error;
-        }
+      if (error) throw error;
 
-        // Transform the data to ensure medications are properly typed
-        const transformedMedications = Array.isArray(data.medications) 
-          ? data.medications.map((med: any) => ({
-              name: med.name || '', // Ensure name always exists
-              dinamization: med.dinamization,
-              form: med.form,
-              quantity: med.quantity,
-              unit: med.unit || 'unidades',
-              dosage_instructions: med.dosage_instructions
-            }))
-          : [];
+      // Transform the data to ensure medications are properly typed
+      const transformedMedications = Array.isArray(data.medications) 
+        ? data.medications.map((med: any) => ({
+            name: med.name || '',
+            dinamization: med.dinamization,
+            form: med.form,
+            quantity: med.quantity,
+            unit: med.unit || 'unidades',
+            dosage_instructions: med.dosage_instructions
+          }))
+        : [];
 
-        // Create a properly typed ProcessedPrescription object
-        const typedPrescription: ProcessedPrescription = {
-          id: data.id,
-          raw_recipe_id: data.raw_recipe_id,
-          processed_at: data.processed_at,
-          patient_name: data.patient_name,
-          patient_dob: data.patient_dob,
-          prescriber_name: data.prescriber_name,
-          prescriber_identifier: data.prescriber_identifier,
-          medications: transformedMedications,
-          validation_status: data.validation_status,
-          validation_notes: data.validation_notes
-        };
+      // Create a properly typed ProcessedPrescription object
+      const typedPrescription: ProcessedPrescription = {
+        id: data.id,
+        raw_recipe_id: data.raw_recipe_id,
+        processed_at: data.processed_at,
+        patient_name: data.patient_name,
+        patient_dob: data.patient_dob,
+        prescriber_name: data.prescriber_name,
+        prescriber_identifier: data.prescriber_identifier,
+        medications: transformedMedications,
+        validation_status: data.validation_status,
+        validation_notes: data.validation_notes
+      };
 
-        setPrescription(typedPrescription);
-      } catch (err: any) {
-        console.error('Error fetching prescription:', err);
-        setError('Não foi possível carregar os detalhes da receita.');
-        toast({
-          title: "Erro ao carregar receita",
-          description: err.message || "Ocorreu um erro ao carregar os detalhes da receita.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
+      return typedPrescription;
+    },
+    enabled: Boolean(id),
+    onSuccess: (data) => {
+      setPrescription(data);
+      setIsLoading(false);
+    },
+    onError: (err: any) => {
+      console.error('Error fetching prescription:', err);
+      setError('Não foi possível carregar os detalhes da receita.');
+      toast({
+        title: "Erro ao carregar receita",
+        description: err.message || "Ocorreu um erro ao carregar os detalhes da receita.",
+        variant: "destructive",
+      });
+      setIsLoading(false);
+    }
+  });
+
+  // Query to fetch order details
+  const orderQuery = useQuery({
+    queryKey: ['order', id],
+    queryFn: async () => {
+      if (!id) throw new Error('ID não fornecido');
+      
+      // Find order where processed_recipe_id matches the current prescription id
+      const { data, error } = await supabase
+        .from('pedidos')
+        .select('*')
+        .eq('processed_recipe_id', id)
+        .single();
+
+      if (error) throw error;
+
+      return data as OrderData;
+    },
+    enabled: Boolean(id),
+    onSuccess: (data) => {
+      setSelectedStatus(data.status);
+    }
+  });
+
+  // Mutation to update order status
+  const updateStatusMutation = useMutation({
+    mutationFn: async (newStatus: string) => {
+      if (!orderQuery.data?.id) {
+        throw new Error('ID do pedido não encontrado');
       }
-    };
 
-    fetchPrescription();
-  }, [id, toast]);
+      const { data, error } = await supabase
+        .from('pedidos')
+        .update({ status: newStatus })
+        .eq('id', orderQuery.data.id);
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Status atualizado",
+        description: "O status do pedido foi atualizado com sucesso.",
+        variant: "success",
+      });
+      queryClient.invalidateQueries({ queryKey: ['order', id] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro ao atualizar status",
+        description: error.message || "Ocorreu um erro ao atualizar o status do pedido.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const handleStatusUpdate = () => {
+    if (selectedStatus) {
+      updateStatusMutation.mutate(selectedStatus);
+    }
+  };
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return 'Data não informada';
@@ -115,22 +207,53 @@ const PrescriptionDetailsPage: React.FC = () => {
     switch (status) {
       case 'validated':
         return (
-          <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">
+          <Badge variant="success">
             Validado
           </Badge>
         );
       case 'rejected':
         return (
-          <Badge variant="outline" className="bg-red-100 text-red-800 border-red-200">
+          <Badge variant="destructive">
             Rejeitado
           </Badge>
         );
       default:
         return (
-          <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-200">
+          <Badge variant="warning">
             Pendente
           </Badge>
         );
+    }
+  };
+
+  const getOrderStatusBadge = (status: string) => {
+    switch (status) {
+      case 'draft':
+        return <Badge variant="outline" className="bg-gray-100 text-gray-800">Rascunho</Badge>;
+      case 'awaiting_quote':
+      case 'quote_sent':
+      case 'awaiting_approval':
+      case 'awaiting_payment':
+        return <Badge variant="warning">
+          {STATUS_OPTIONS.find(opt => opt.value === status)?.label || status}
+        </Badge>;
+      case 'approved':
+      case 'payment_confirmed':
+      case 'in_progress':
+        return <Badge variant="info">
+          {STATUS_OPTIONS.find(opt => opt.value === status)?.label || status}
+        </Badge>;
+      case 'ready_for_pickup':
+      case 'ready_for_delivery':
+      case 'shipped':
+      case 'delivered':
+        return <Badge variant="success">
+          {STATUS_OPTIONS.find(opt => opt.value === status)?.label || status}
+        </Badge>;
+      case 'canceled':
+        return <Badge variant="destructive">Cancelado</Badge>;
+      default:
+        return <Badge>{STATUS_OPTIONS.find(opt => opt.value === status)?.label || status}</Badge>;
     }
   };
 
@@ -138,7 +261,7 @@ const PrescriptionDetailsPage: React.FC = () => {
     window.print();
   };
 
-  if (isLoading) {
+  if (isLoading || prescriptionQuery.isLoading) {
     return (
       <AdminLayout>
         <div className="container-section py-8">
@@ -194,10 +317,20 @@ const PrescriptionDetailsPage: React.FC = () => {
           {/* Status and Date Card */}
           <Card>
             <CardContent className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <div>
-                  <h3 className="text-sm font-medium text-muted-foreground mb-1">Status</h3>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">Status da Receita</h3>
                   <div className="mt-1">{getStatusBadge(prescription.validation_status)}</div>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">Status do Pedido</h3>
+                  <div className="mt-1">
+                    {orderQuery.data ? (
+                      getOrderStatusBadge(orderQuery.data.status)
+                    ) : (
+                      <Badge variant="outline">Pedido não encontrado</Badge>
+                    )}
+                  </div>
                 </div>
                 <div>
                   <h3 className="text-sm font-medium text-muted-foreground mb-1">Data de Processamento</h3>
@@ -210,6 +343,54 @@ const PrescriptionDetailsPage: React.FC = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Status Update Card */}
+          {orderQuery.data && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Atualizar Status do Pedido</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+                  <div className="w-full sm:w-2/3">
+                    <Select
+                      value={selectedStatus}
+                      onValueChange={setSelectedStatus}
+                      disabled={updateStatusMutation.isPending}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Selecione um novo status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {STATUS_OPTIONS.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button 
+                    onClick={handleStatusUpdate}
+                    disabled={updateStatusMutation.isPending || selectedStatus === orderQuery.data.status}
+                    className="w-full sm:w-auto"
+                  >
+                    {updateStatusMutation.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Atualizando...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="mr-2 h-4 w-4" />
+                        Atualizar Status
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Patient and Prescriber Info */}
           <Card>
