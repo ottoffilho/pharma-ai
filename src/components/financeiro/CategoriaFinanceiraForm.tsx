@@ -80,7 +80,7 @@ export const CategoriaFinanceiraForm: React.FC<CategoriaFinanceiraFormProps> = (
         // Criando nova categoria
         const { data, error } = await supabase
           .from('categorias_financeiras')
-          .insert([values])
+          .insert(values)
           .select();
 
         if (error) throw error;

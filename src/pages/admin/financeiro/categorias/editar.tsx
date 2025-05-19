@@ -6,6 +6,15 @@ import { supabase } from '@/integrations/supabase/client';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { CategoriaFinanceiraForm } from '@/components/financeiro/CategoriaFinanceiraForm';
 
+// Define the shape of our categoria object
+interface CategoriaFinanceira {
+  id: string;
+  nome: string;
+  tipo: 'receita' | 'despesa';
+  descricao: string | null;
+  is_deleted: boolean;
+}
+
 export default function EditarCategoriaPage() {
   const { id } = useParams<{ id: string }>();
   
@@ -22,7 +31,13 @@ export default function EditarCategoriaPage() {
         .single();
       
       if (error) throw error;
-      return data;
+      
+      // Ensure tipo is properly typed as 'receita' | 'despesa'
+      if (data && (data.tipo === 'receita' || data.tipo === 'despesa')) {
+        return data as CategoriaFinanceira;
+      }
+      
+      throw new Error('Tipo de categoria inválido');
     },
     enabled: !!id,
   });
@@ -44,7 +59,14 @@ export default function EditarCategoriaPage() {
       return <div className="py-8 text-center">Categoria não encontrada</div>;
     }
     
-    return <CategoriaFinanceiraForm id={id} defaultValues={categoria} />;
+    // Convert the database object to the form's expected format
+    const formDefaultValues = {
+      nome: categoria.nome,
+      tipo: categoria.tipo,
+      descricao: categoria.descricao || '',
+    };
+    
+    return <CategoriaFinanceiraForm id={id} defaultValues={formDefaultValues} />;
   };
 
   return (
