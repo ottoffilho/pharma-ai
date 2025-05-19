@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Printer, Loader2, RefreshCw } from 'lucide-react';
@@ -117,19 +118,21 @@ const PrescriptionDetailsPage: React.FC = () => {
       return typedPrescription;
     },
     enabled: Boolean(id),
-    onSuccess: (data) => {
-      setPrescription(data);
-      setIsLoading(false);
-    },
-    onError: (err: any) => {
-      console.error('Error fetching prescription:', err);
-      setError('Não foi possível carregar os detalhes da receita.');
-      toast({
-        title: "Erro ao carregar receita",
-        description: err.message || "Ocorreu um erro ao carregar os detalhes da receita.",
-        variant: "destructive",
-      });
-      setIsLoading(false);
+    meta: {
+      onSuccess: (data: ProcessedPrescription) => {
+        setPrescription(data);
+        setIsLoading(false);
+      },
+      onError: (err: any) => {
+        console.error('Error fetching prescription:', err);
+        setError('Não foi possível carregar os detalhes da receita.');
+        toast({
+          title: "Erro ao carregar receita",
+          description: err.message || "Ocorreu um erro ao carregar os detalhes da receita.",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+      }
     }
   });
 
@@ -151,8 +154,10 @@ const PrescriptionDetailsPage: React.FC = () => {
       return data as OrderData;
     },
     enabled: Boolean(id),
-    onSuccess: (data) => {
-      setSelectedStatus(data.status);
+    meta: {
+      onSuccess: (data: OrderData) => {
+        setSelectedStatus(data.status);
+      }
     }
   });
 
@@ -261,7 +266,19 @@ const PrescriptionDetailsPage: React.FC = () => {
     window.print();
   };
 
-  if (isLoading || prescriptionQuery.isLoading) {
+  useEffect(() => {
+    // Use the direct data from useQuery instead of relying solely on state variables
+    if (prescriptionQuery.data) {
+      setPrescription(prescriptionQuery.data);
+      setIsLoading(false);
+    }
+    
+    if (orderQuery.data) {
+      setSelectedStatus(orderQuery.data.status);
+    }
+  }, [prescriptionQuery.data, orderQuery.data]);
+
+  if (prescriptionQuery.isLoading || isLoading) {
     return (
       <AdminLayout>
         <div className="container-section py-8">
@@ -273,7 +290,7 @@ const PrescriptionDetailsPage: React.FC = () => {
     );
   }
 
-  if (error || !prescription) {
+  if (prescriptionQuery.error || error || !prescription) {
     return (
       <AdminLayout>
         <div className="container-section py-8">
