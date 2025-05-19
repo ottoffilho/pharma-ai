@@ -33,6 +33,85 @@ export type Database = {
         }
         Relationships: []
       }
+      contas_a_pagar: {
+        Row: {
+          categoria_id: string | null
+          created_at: string
+          data_emissao: string | null
+          data_pagamento: string | null
+          data_vencimento: string
+          descricao: string
+          fornecedor_id: string | null
+          id: string
+          is_deleted: boolean
+          movimentacao_caixa_id: string | null
+          observacoes: string | null
+          status_conta: string
+          usuario_id_pagamento: string | null
+          usuario_id_registro: string | null
+          valor_pago: number | null
+          valor_previsto: number
+        }
+        Insert: {
+          categoria_id?: string | null
+          created_at?: string
+          data_emissao?: string | null
+          data_pagamento?: string | null
+          data_vencimento: string
+          descricao: string
+          fornecedor_id?: string | null
+          id?: string
+          is_deleted?: boolean
+          movimentacao_caixa_id?: string | null
+          observacoes?: string | null
+          status_conta?: string
+          usuario_id_pagamento?: string | null
+          usuario_id_registro?: string | null
+          valor_pago?: number | null
+          valor_previsto: number
+        }
+        Update: {
+          categoria_id?: string | null
+          created_at?: string
+          data_emissao?: string | null
+          data_pagamento?: string | null
+          data_vencimento?: string
+          descricao?: string
+          fornecedor_id?: string | null
+          id?: string
+          is_deleted?: boolean
+          movimentacao_caixa_id?: string | null
+          observacoes?: string | null
+          status_conta?: string
+          usuario_id_pagamento?: string | null
+          usuario_id_registro?: string | null
+          valor_pago?: number | null
+          valor_previsto?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contas_a_pagar_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "categorias_financeiras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contas_a_pagar_fornecedor_id_fkey"
+            columns: ["fornecedor_id"]
+            isOneToOne: false
+            referencedRelation: "fornecedores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contas_a_pagar_movimentacao_caixa_id_fkey"
+            columns: ["movimentacao_caixa_id"]
+            isOneToOne: false
+            referencedRelation: "movimentacoes_caixa"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       embalagens: {
         Row: {
           created_at: string

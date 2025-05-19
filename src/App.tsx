@@ -27,6 +27,9 @@ import CategoriasFinanceirasPage from "./pages/admin/financeiro/categorias/index
 import NovaCategoriaPage from "./pages/admin/financeiro/categorias/novo";
 import EditarCategoriaPage from "./pages/admin/financeiro/categorias/editar";
 import FluxoCaixaPage from "./pages/admin/financeiro/caixa/index";
+import ContasAPagarPage from "./pages/admin/financeiro/contas-a-pagar/index";
+import NovaContaPagarPage from "./pages/admin/financeiro/contas-a-pagar/novo";
+import EditarContaPagarPage from "./pages/admin/financeiro/contas-a-pagar/editar/[id]";
 import PrivateRoute from "./components/Auth/PrivateRoute";
 
 const queryClient = new QueryClient();
@@ -70,6 +73,9 @@ const App = () => (
               <Route path="/admin/financeiro/categorias/novo" element={<NovaCategoriaPage />} />
               <Route path="/admin/financeiro/categorias/editar/:id" element={<EditarCategoriaPage />} />
               <Route path="/admin/financeiro/caixa" element={<FluxoCaixaPage />} />
+              <Route path="/admin/financeiro/contas-a-pagar" element={<ContasAPagarPage />} />
+              <Route path="/admin/financeiro/contas-a-pagar/novo" element={<NovaContaPagarPage />} />
+              <Route path="/admin/financeiro/contas-a-pagar/editar/:id" element={<EditarContaPagarPage />} />
               
               {/* Usuários Routes */}
               <Route path="/admin/usuarios" element={<UsuariosListPage />} />
