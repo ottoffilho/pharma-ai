@@ -1,8 +1,13 @@
-
 import React from 'react';
 import { AlertTriangle, Clock, FileSearch, BarChart3, Brain } from 'lucide-react';
 
-const challenges = [
+interface ChallengeItem {
+  icon: JSX.Element;
+  title: string;
+  description: string;
+}
+
+const challenges: ChallengeItem[] = [
   {
     icon: <FileSearch className="h-8 w-8 text-homeo-green" />,
     title: 'Interpretação Manual de Receitas',
@@ -30,13 +35,13 @@ const challenges = [
   }
 ];
 
-const ProblemSection = () => {
+const ProblemSection: React.FC = () => {
   return (
     <section id="problemas" className="bg-white">
       <div className="container-section">
         <div className="max-w-3xl mx-auto text-center mb-16">
           <h2 className="heading-lg gradient-text mb-6">
-            Desafios das Farmácias Homeopáticas Hoje
+            Desafios das Farmácias de Manipulação Hoje
           </h2>
           <p className="paragraph">
             As farmácias de manipulação homeopáticas enfrentam desafios únicos que sistemas convencionais não conseguem resolver.
@@ -44,7 +49,7 @@ const ProblemSection = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {challenges.map((challenge, index) => (
+          {challenges.map((challenge: ChallengeItem, index: number) => (
             <div 
               key={index} 
               className="feature-card hover:border-l-4 hover:border-homeo-green transition-all"
