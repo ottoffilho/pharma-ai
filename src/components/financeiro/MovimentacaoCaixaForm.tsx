@@ -74,14 +74,14 @@ export const MovimentacaoCaixaForm: React.FC<MovimentacaoCaixaFormProps> = ({
   const processedInitialData = initialData 
     ? {
         ...initialData,
-        categoria_id: initialData.categoria_id || '',  // Converte null para string vazia
+        categoria_id: initialData.categoria_id || 'none',  // Converte null para "none" em vez de string vazia
       } 
     : {
         data_movimentacao: new Date(),
-        tipo_movimentacao: 'entrada',
+        tipo_movimentacao: 'entrada' as const,
         descricao: '',
         valor: undefined,
-        categoria_id: '',
+        categoria_id: 'none',
         observacoes: '',
       };
 
@@ -115,13 +115,13 @@ export const MovimentacaoCaixaForm: React.FC<MovimentacaoCaixaFormProps> = ({
       const { data: { user } } = await supabase.auth.getUser();
       const userId = user?.id;
 
-      // Preparar o payload, convertendo string vazia para null em categoria_id
+      // Preparar o payload, convertendo "none" para null em categoria_id
       const movimentacao = {
         data_movimentacao: formattedDate,
         tipo_movimentacao: values.tipo_movimentacao,
         descricao: values.descricao,
         valor: values.valor,
-        categoria_id: values.categoria_id === '' ? null : values.categoria_id,
+        categoria_id: values.categoria_id === 'none' ? null : values.categoria_id,
         observacoes: values.observacoes || null,
         usuario_id: userId,
       };
@@ -163,7 +163,7 @@ export const MovimentacaoCaixaForm: React.FC<MovimentacaoCaixaFormProps> = ({
           tipo_movimentacao: 'entrada',
           descricao: '',
           valor: undefined,
-          categoria_id: '',
+          categoria_id: 'none',
           observacoes: '',
         });
       }
@@ -311,7 +311,7 @@ export const MovimentacaoCaixaForm: React.FC<MovimentacaoCaixaFormProps> = ({
                 <FormLabel>Categoria (opcional)</FormLabel>
                 <Select
                   onValueChange={field.onChange}
-                  value={field.value || ''}
+                  value={field.value || 'none'}
                 >
                   <FormControl>
                     <SelectTrigger>
@@ -319,7 +319,7 @@ export const MovimentacaoCaixaForm: React.FC<MovimentacaoCaixaFormProps> = ({
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="">Nenhuma categoria</SelectItem>
+                    <SelectItem value="none">Nenhuma categoria</SelectItem>
                     {categoriasLoading ? (
                       <SelectItem value="loading" disabled>
                         Carregando...
