@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,17 +7,21 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';
+import type { AuthError } from '@supabase/supabase-js';
 
 const Login: React.FC = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [email, setEmail] = useState<string>('');
+  const [password, setPassword] = useState<string>('');
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+    const checkSession = async (): Promise<void> => {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (error) {
+        console.error("Erro ao buscar sessão:", error.message);
+      }
       if (session) {
         navigate('/admin/pedidos');
       }
@@ -26,7 +29,7 @@ const Login: React.FC = () => {
     checkSession();
   }, [navigate]);
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
     if (!email || !password) {
       toast({
@@ -40,22 +43,32 @@ const Login: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
 
       toast({
         title: "Login realizado com sucesso!",
         description: "Você está sendo redirecionado para a área administrativa.",
       });
       navigate('/admin/pedidos');
-    } catch (error: any) {
+    } catch (err) {
+      let errorMessage = "Verifique suas credenciais e tente novamente.";
+      if (err && typeof err === 'object' && 'message' in err && typeof (err as AuthError).message === 'string') {
+        errorMessage = (err as AuthError).message;
+      } else if (err instanceof Error) {
+        errorMessage = err.message;
+      } else if (typeof err === 'string') {
+        errorMessage = err;
+      }
       toast({
         title: "Erro ao realizar login",
-        description: error.message || "Verifique suas credenciais e tente novamente.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -81,7 +94,7 @@ const Login: React.FC = () => {
                 type="email"
                 placeholder="seu@email.com"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
                 disabled={isLoading}
                 required
               />
@@ -92,7 +105,7 @@ const Login: React.FC = () => {
                 id="password"
                 type="password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
                 disabled={isLoading}
                 required
               />
