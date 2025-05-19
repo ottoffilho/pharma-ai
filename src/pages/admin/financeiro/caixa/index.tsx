@@ -1,13 +1,13 @@
 
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, subDays, startOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { MovimentacaoCaixaForm } from '@/components/financeiro/MovimentacaoCaixaForm';
-import { CalendarIcon, Plus, ArrowDown, ArrowUp } from 'lucide-react';
+import { CalendarIcon, Plus, ArrowDown, ArrowUp, Edit, Trash2 } from 'lucide-react';
 
 import {
   Table,
@@ -25,7 +25,20 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogClose,
+  DialogDescription,
+  DialogFooter,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import {
   Card,
   CardContent,
@@ -50,7 +63,11 @@ import { cn } from '@/lib/utils';
 
 export default function FluxoCaixaPage() {
   const { toast } = useToast();
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const queryClient = useQueryClient();
+  
+  const [isNovaMovimentacaoOpen, setIsNovaMovimentacaoOpen] = useState(false);
+  const [isEditMovimentacaoOpen, setIsEditMovimentacaoOpen] = useState(false);
+  const [selectedMovimentacao, setSelectedMovimentacao] = useState<any>(null);
   const [tipoFiltro, setTipoFiltro] = useState<string>('todos');
   const [dataInicio, setDataInicio] = useState<Date>(startOfMonth(new Date()));
   const [dataFim, setDataFim] = useState<Date>(new Date());
@@ -75,6 +92,34 @@ export default function FluxoCaixaPage() {
       
       if (error) throw error;
       return data || [];
+    },
+  });
+
+  // Mutação para excluir movimentação (soft delete)
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('movimentacoes_caixa')
+        .update({ is_deleted: true })
+        .eq('id', id);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Movimentação excluída",
+        description: "A movimentação foi excluída com sucesso.",
+        variant: "success",
+      });
+      queryClient.invalidateQueries({ queryKey: ['movimentacoes-caixa'] });
+    },
+    onError: (error: any) => {
+      console.error('Erro ao excluir movimentação:', error);
+      toast({
+        title: "Erro ao excluir",
+        description: error.message || "Ocorreu um erro ao excluir a movimentação.",
+        variant: "destructive",
+      });
     },
   });
 
@@ -109,11 +154,37 @@ export default function FluxoCaixaPage() {
     }).format(valor);
   };
 
+  const handleExcluir = (id: string) => {
+    deleteMutation.mutate(id);
+  };
+
+  const handleEditar = (movimentacao: any) => {
+    // Converter a string de data para um objeto Date para o formulário
+    const dataMovimentacao = new Date(movimentacao.data_movimentacao);
+    
+    setSelectedMovimentacao({
+      ...movimentacao,
+      data_movimentacao: dataMovimentacao,
+    });
+    
+    setIsEditMovimentacaoOpen(true);
+  };
+
   const handleNovaMovimentacaoSuccess = () => {
-    setIsDialogOpen(false);
+    setIsNovaMovimentacaoOpen(false);
     toast({
       title: "Movimentação registrada",
       description: "A movimentação foi adicionada com sucesso.",
+      variant: "success",
+    });
+  };
+
+  const handleEditMovimentacaoSuccess = () => {
+    setIsEditMovimentacaoOpen(false);
+    setSelectedMovimentacao(null);
+    toast({
+      title: "Movimentação atualizada",
+      description: "A movimentação foi atualizada com sucesso.",
       variant: "success",
     });
   };
@@ -148,6 +219,7 @@ export default function FluxoCaixaPage() {
             <TableHead>Tipo</TableHead>
             <TableHead>Categoria</TableHead>
             <TableHead className="text-right">Valor</TableHead>
+            <TableHead className="text-right">Ações</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -186,6 +258,44 @@ export default function FluxoCaixaPage() {
               }`}>
                 {formatarValor(mov.valor)}
               </TableCell>
+              <TableCell className="text-right">
+                <div className="flex justify-end space-x-2">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => handleEditar(mov)}
+                  >
+                    <Edit className="h-4 w-4" />
+                    <span className="sr-only">Editar</span>
+                  </Button>
+                  
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="sm" className="text-red-600">
+                        <Trash2 className="h-4 w-4" />
+                        <span className="sr-only">Excluir</span>
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Tem certeza que deseja excluir esta movimentação? Esta ação não pode ser desfeita.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction 
+                          className="bg-red-600 hover:bg-red-700" 
+                          onClick={() => handleExcluir(mov.id)}
+                        >
+                          Excluir
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>
@@ -198,7 +308,7 @@ export default function FluxoCaixaPage() {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold">Fluxo de Caixa</h1>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <Dialog open={isNovaMovimentacaoOpen} onOpenChange={setIsNovaMovimentacaoOpen}>
             <DialogTrigger asChild>
               <Button>
                 <Plus className="h-4 w-4 mr-1" />
@@ -335,6 +445,24 @@ export default function FluxoCaixaPage() {
             {renderContent()}
           </div>
         </div>
+
+        {/* Dialog para editar movimentação */}
+        {selectedMovimentacao && (
+          <Dialog open={isEditMovimentacaoOpen} onOpenChange={setIsEditMovimentacaoOpen}>
+            <DialogContent className="sm:max-w-[500px]">
+              <DialogHeader>
+                <DialogTitle>Editar Movimentação</DialogTitle>
+              </DialogHeader>
+              <MovimentacaoCaixaForm 
+                onSuccess={handleEditMovimentacaoSuccess}
+                initialData={selectedMovimentacao}
+                mode="edit"
+                id={selectedMovimentacao.id}
+              />
+              <DialogClose className="hidden" />
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
     </AdminLayout>
   );

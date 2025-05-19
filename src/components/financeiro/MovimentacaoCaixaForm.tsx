@@ -56,17 +56,23 @@ type MovimentacaoFormValues = z.infer<typeof movimentacaoSchema>;
 
 interface MovimentacaoCaixaFormProps {
   onSuccess?: () => void;
+  initialData?: MovimentacaoFormValues;
+  mode?: 'create' | 'edit';
+  id?: string;
 }
 
 export const MovimentacaoCaixaForm: React.FC<MovimentacaoCaixaFormProps> = ({
   onSuccess,
+  initialData,
+  mode = 'create',
+  id,
 }) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const form = useForm<MovimentacaoFormValues>({
     resolver: zodResolver(movimentacaoSchema),
-    defaultValues: {
+    defaultValues: initialData || {
       data_movimentacao: new Date(),
       tipo_movimentacao: 'entrada',
       descricao: '',
@@ -101,7 +107,7 @@ export const MovimentacaoCaixaForm: React.FC<MovimentacaoCaixaFormProps> = ({
       const { data: { user } } = await supabase.auth.getUser();
       const userId = user?.id;
 
-      const newMovimentacao = {
+      const movimentacao = {
         data_movimentacao: formattedDate,
         tipo_movimentacao: values.tipo_movimentacao,
         descricao: values.descricao,
@@ -111,30 +117,47 @@ export const MovimentacaoCaixaForm: React.FC<MovimentacaoCaixaFormProps> = ({
         usuario_id: userId,
       };
 
-      const { data, error } = await supabase
-        .from('movimentacoes_caixa')
-        .insert([newMovimentacao])
-        .select();
+      if (mode === 'create') {
+        // Criar nova movimentação
+        const { data, error } = await supabase
+          .from('movimentacoes_caixa')
+          .insert([movimentacao])
+          .select();
 
-      if (error) throw error;
-      return data;
+        if (error) throw error;
+        return data;
+      } else {
+        // Editar movimentação existente
+        const { data, error } = await supabase
+          .from('movimentacoes_caixa')
+          .update(movimentacao)
+          .eq('id', id)
+          .select();
+
+        if (error) throw error;
+        return data;
+      }
     },
     onSuccess: () => {
       toast({
-        title: 'Movimentação registrada',
-        description: 'A movimentação foi registrada com sucesso.',
+        title: mode === 'create' ? 'Movimentação registrada' : 'Movimentação atualizada',
+        description: mode === 'create' 
+          ? 'A movimentação foi registrada com sucesso.'
+          : 'A movimentação foi atualizada com sucesso.',
         variant: 'success',
       });
       
-      // Resetar o formulário
-      form.reset({
-        data_movimentacao: new Date(),
-        tipo_movimentacao: 'entrada',
-        descricao: '',
-        valor: undefined,
-        categoria_id: undefined,
-        observacoes: '',
-      });
+      // Resetar o formulário se for modo criar
+      if (mode === 'create') {
+        form.reset({
+          data_movimentacao: new Date(),
+          tipo_movimentacao: 'entrada',
+          descricao: '',
+          valor: undefined,
+          categoria_id: undefined,
+          observacoes: '',
+        });
+      }
       
       // Invalidar a consulta para atualizar a listagem
       queryClient.invalidateQueries({ queryKey: ['movimentacoes-caixa'] });
@@ -144,10 +167,10 @@ export const MovimentacaoCaixaForm: React.FC<MovimentacaoCaixaFormProps> = ({
       }
     },
     onError: (error: any) => {
-      console.error('Erro ao registrar movimentação:', error);
+      console.error('Erro ao salvar movimentação:', error);
       toast({
-        title: 'Erro ao registrar',
-        description: error.message || 'Ocorreu um erro ao registrar a movimentação.',
+        title: 'Erro ao salvar',
+        description: error.message || 'Ocorreu um erro ao salvar a movimentação.',
         variant: 'destructive',
       });
     },
@@ -334,7 +357,11 @@ export const MovimentacaoCaixaForm: React.FC<MovimentacaoCaixaFormProps> = ({
         />
 
         <Button type="submit" className="w-full" disabled={mutation.isPending}>
-          {mutation.isPending ? 'Registrando...' : 'Registrar Movimentação'}
+          {mutation.isPending ? (
+            mode === 'create' ? 'Registrando...' : 'Atualizando...'
+          ) : (
+            mode === 'create' ? 'Registrar Movimentação' : 'Atualizar Movimentação'
+          )}
         </Button>
       </form>
     </Form>
