@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -520,8 +519,6 @@ export default function ContasAPagarPage() {
           conta={selectedConta}
           onSuccess={() => {
             queryClient.invalidateQueries({ queryKey: ['contas_a_pagar'] });
-            setIsPaymentDialogOpen(false);
-            setSelectedConta(null);
           }}
         />
       </div>

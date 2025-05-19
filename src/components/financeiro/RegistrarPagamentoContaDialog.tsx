@@ -34,15 +34,17 @@ const pagamentoSchema = z.object({
 type PagamentoFormValues = z.infer<typeof pagamentoSchema>;
 
 interface RegistrarPagamentoContaDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  conta: any; // Conta a pagar data
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  conta: any;
+  onSuccess?: () => void;
 }
 
 export function RegistrarPagamentoContaDialog({ 
-  isOpen, 
-  onClose, 
-  conta 
+  open, 
+  onOpenChange, 
+  conta,
+  onSuccess 
 }: RegistrarPagamentoContaDialogProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -111,7 +113,8 @@ export function RegistrarPagamentoContaDialog({
       });
       queryClient.invalidateQueries({ queryKey: ['contas_a_pagar'] });
       queryClient.invalidateQueries({ queryKey: ['movimentacoes_caixa'] });
-      onClose();
+      onOpenChange(false);
+      if (onSuccess) onSuccess();
     },
     onError: (error) => {
       console.error('Erro ao registrar pagamento:', error);
@@ -128,7 +131,7 @@ export function RegistrarPagamentoContaDialog({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Registrar Pagamento</DialogTitle>
@@ -196,13 +199,14 @@ export function RegistrarPagamentoContaDialog({
                         </Button>
                       </FormControl>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
+                    <PopoverContent className="w-auto p-0 pointer-events-auto" align="start">
                       <Calendar
                         mode="single"
                         selected={field.value}
                         onSelect={field.onChange}
                         initialFocus
                         locale={ptBR}
+                        className="pointer-events-auto"
                       />
                     </PopoverContent>
                   </Popover>
@@ -234,7 +238,7 @@ export function RegistrarPagamentoContaDialog({
               <Button 
                 variant="outline" 
                 type="button" 
-                onClick={onClose}
+                onClick={() => onOpenChange(false)}
                 disabled={registrarPagamentoMutation.isPending}
               >
                 Cancelar
