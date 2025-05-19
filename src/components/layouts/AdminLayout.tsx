@@ -139,7 +139,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                 </Collapsible>
               </SidebarMenuItem>
 
-              {/* Novo item do menu Financeiro */}
+              {/* Financeiro menu item */}
               <SidebarMenuItem>
                 <Collapsible>
                   <CollapsibleTrigger asChild>
