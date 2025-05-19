@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { 
   FileSearch, 
@@ -6,43 +5,64 @@ import {
   Users, 
   Calendar, 
   Database, 
-  ShieldCheck 
+  ShieldCheck, 
+  ChevronRight
 } from 'lucide-react';
 
-const features = [
+interface FeatureItem {
+  id: string;
+  icon: JSX.Element;
+  title: string;
+  description: string;
+  learnMoreLink: string;
+}
+
+const featuresData: FeatureItem[] = [
   {
+    id: 'atendimento-agil',
     icon: <FileSearch className="h-10 w-10 text-homeo-blue" />,
     title: 'Atendimento Ágil e Inteligente',
-    description: 'Interprete receitas homeopáticas com precisão e rapidez, reduzindo o tempo de atendimento e eliminando erros comuns.'
+    description: 'Interprete receitas homeopáticas com precisão e rapidez, reduzindo o tempo de atendimento e eliminando erros comuns.',
+    learnMoreLink: '#atendimento-agil-details'
   },
   {
+    id: 'gestao-clientes',
     icon: <Users className="h-10 w-10 text-homeo-green" />,
     title: 'Gestão de Clientes',
-    description: 'Mantenha um histórico completo de cada cliente, incluindo receitas anteriores, preferências e informações de contato.'
+    description: 'Mantenha um histórico completo de cada cliente, incluindo receitas anteriores, preferências e informações de contato.',
+    learnMoreLink: '#gestao-clientes-details'
   },
   {
+    id: 'orcamentacao-segundos',
     icon: <ChartBar className="h-10 w-10 text-homeo-blue" />,
     title: 'Orçamento em Segundos',
-    description: 'Gere orçamentos precisos e automáticos para qualquer fórmula homeopática complexa com apenas alguns cliques.'
+    description: 'Gere orçamentos precisos e automáticos para qualquer fórmula homeopática complexa com apenas alguns cliques.',
+    learnMoreLink: '#orcamentacao-segundos-details'
   },
   {
+    id: 'estoque-controle',
     icon: <Database className="h-10 w-10 text-homeo-green" />,
     title: 'Estoque Sob Controle',
-    description: 'Gerencie seu inventário de insumos homeopáticos com alertas automáticos para reposição e rastreamento de validade.'
+    description: 'Gerencie seu inventário de insumos homeopáticos com alertas automáticos para reposição e rastreamento de validade.',
+    learnMoreLink: '#estoque-controle-details'
   },
   {
+    id: 'agendamento-inteligente',
     icon: <Calendar className="h-10 w-10 text-homeo-blue" />,
     title: 'Agendamento Inteligente',
-    description: 'Organize retiradas e entregas com um sistema de agendamento que se integra ao fluxo de produção.'
+    description: 'Organize retiradas e entregas com um sistema de agendamento que se integra ao fluxo de produção.',
+    learnMoreLink: '#agendamento-inteligente-details'
   },
   {
+    id: 'seguranca-compliance',
     icon: <ShieldCheck className="h-10 w-10 text-homeo-green" />,
     title: 'Segurança e Compliance',
-    description: 'Mantenha-se em conformidade com regulamentações do setor e LGPD com nossa estrutura de segurança avançada.'
+    description: 'Mantenha-se em conformidade com regulamentações do setor e LGPD com nossa estrutura de segurança avançada.',
+    learnMoreLink: '#seguranca-compliance-details'
   }
 ];
 
-const FeaturesSection = () => {
+const FeaturesSection: React.FC = (): JSX.Element => {
   return (
     <section id="recursos" className="bg-white">
       <div className="container-section">
@@ -51,15 +71,15 @@ const FeaturesSection = () => {
             Recursos que Transformam sua Farmácia
           </h2>
           <p className="paragraph">
-            O Homeo-AI oferece um conjunto completo de funcionalidades desenvolvidas especificamente para farmácias homeopáticas, 
+            O Homeo-AI oferece um conjunto completo de funcionalidades desenvolvidas especificamente para Farmácias de Manipulação, 
             integrando todos os processos em uma única plataforma inteligente.
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-12">
-          {features.map((feature, index) => (
+          {featuresData.map((feature: FeatureItem) => (
             <div 
-              key={index}
+              key={feature.id}
               className="group"
             >
               <div className="bg-white rounded-lg p-6 shadow-md hover:shadow-xl transition-shadow duration-300 h-full flex flex-col relative overflow-hidden group-hover:-translate-y-1 transition-transform">
@@ -73,6 +93,12 @@ const FeaturesSection = () => {
                 <p className="text-homeo-gray flex-grow">
                   {feature.description}
                 </p>
+                <a
+                  href={feature.learnMoreLink}
+                  className="mt-auto inline-flex items-center text-sm font-medium text-homeo-green hover:underline pt-4"
+                >
+                  Saiba Mais <ChevronRight className="ml-1 h-4 w-4" />
+                </a>
               </div>
             </div>
           ))}
