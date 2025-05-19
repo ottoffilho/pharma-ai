@@ -29,6 +29,7 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { RegistrarPagamentoContaDialog } from '@/components/financeiro/RegistrarPagamentoContaDialog';
+import { DateRange } from 'react-day-picker';
 
 // Status badge variant mapping
 const getStatusVariant = (status: string) => {
@@ -61,10 +62,7 @@ export default function ContasAPagarPage() {
   
   // State for filters
   const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
-  const [dateRange, setDateRange] = useState<{
-    from: Date | undefined;
-    to: Date | undefined;
-  }>({
+  const [dateRange, setDateRange] = useState<DateRange>({
     from: subDays(new Date(), 30),
     to: addDays(new Date(), 30)
   });
@@ -260,12 +258,13 @@ export default function ContasAPagarPage() {
                       )}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="center">
+                  <PopoverContent className="w-auto p-0 pointer-events-auto" align="center">
                     <Calendar
                       mode="range"
                       selected={dateRange}
                       onSelect={setDateRange}
                       locale={ptBR}
+                      className="pointer-events-auto"
                     />
                   </PopoverContent>
                 </Popover>

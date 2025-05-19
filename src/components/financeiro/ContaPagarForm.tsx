@@ -130,12 +130,17 @@ export function ContaPagarForm({ contaId, onSuccess }: ContaPagarFormProps) {
 
   const createMutation = useMutation({
     mutationFn: async (values: FormValues) => {
+      // Format dates as ISO strings for Supabase
+      const formattedValues = {
+        ...values,
+        data_emissao: values.data_emissao ? values.data_emissao.toISOString().split('T')[0] : null,
+        data_vencimento: values.data_vencimento.toISOString().split('T')[0],
+        usuario_id_registro: userData?.id
+      };
+
       const { data, error } = await supabase
         .from('contas_a_pagar')
-        .insert({
-          ...values,
-          usuario_id_registro: userData?.id,
-        })
+        .insert(formattedValues)
         .select();
 
       if (error) throw error;
@@ -163,9 +168,16 @@ export function ContaPagarForm({ contaId, onSuccess }: ContaPagarFormProps) {
 
   const updateMutation = useMutation({
     mutationFn: async (values: FormValues) => {
+      // Format dates as ISO strings for Supabase
+      const formattedValues = {
+        ...values,
+        data_emissao: values.data_emissao ? values.data_emissao.toISOString().split('T')[0] : null,
+        data_vencimento: values.data_vencimento.toISOString().split('T')[0]
+      };
+
       const { data, error } = await supabase
         .from('contas_a_pagar')
-        .update(values)
+        .update(formattedValues)
         .eq('id', contaId)
         .select();
 
@@ -339,7 +351,7 @@ export function ContaPagarForm({ contaId, onSuccess }: ContaPagarFormProps) {
                       </Button>
                     </FormControl>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
+                  <PopoverContent className="w-auto p-0 pointer-events-auto" align="start">
                     <Calendar
                       mode="single"
                       selected={field.value || undefined}
@@ -379,7 +391,7 @@ export function ContaPagarForm({ contaId, onSuccess }: ContaPagarFormProps) {
                       </Button>
                     </FormControl>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
+                  <PopoverContent className="w-auto p-0 pointer-events-auto" align="start">
                     <Calendar
                       mode="single"
                       selected={field.value}
