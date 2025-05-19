@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Printer, Loader2, RefreshCw } from 'lucide-react';
@@ -168,18 +167,42 @@ const PrescriptionDetailsPage: React.FC = () => {
         throw new Error('ID do pedido não encontrado');
       }
 
-      const { data, error } = await supabase
+      // Get current user ID for history
+      const { data: { user } } = await supabase.auth.getUser();
+      const userId = user?.id;
+      
+      // Start a transaction to update both tables
+      // 1. Update the order status
+      const { data: updatedOrder, error: updateError } = await supabase
         .from('pedidos')
         .update({ status: newStatus })
-        .eq('id', orderQuery.data.id);
-
-      if (error) throw error;
-      return data;
+        .eq('id', orderQuery.data.id)
+        .select()
+        .single();
+        
+      if (updateError) throw updateError;
+      
+      // 2. Add a record to the history table
+      const historyRecord = {
+        pedido_id: orderQuery.data.id,
+        status_anterior: orderQuery.data.status,
+        status_novo: newStatus,
+        usuario_id: userId,
+        observacao: null // Could add an optional note field in the future
+      };
+      
+      const { error: historyError } = await supabase
+        .from('historico_status_pedidos')
+        .insert(historyRecord);
+        
+      if (historyError) throw historyError;
+      
+      return updatedOrder;
     },
     onSuccess: () => {
       toast({
         title: "Status atualizado",
-        description: "O status do pedido foi atualizado com sucesso.",
+        description: `O status do pedido foi atualizado para "${STATUS_OPTIONS.find(opt => opt.value === selectedStatus)?.label || selectedStatus}"`,
         variant: "success",
       });
       queryClient.invalidateQueries({ queryKey: ['order', id] });
@@ -276,9 +299,15 @@ const PrescriptionDetailsPage: React.FC = () => {
     if (orderQuery.data) {
       setSelectedStatus(orderQuery.data.status);
     }
-  }, [prescriptionQuery.data, orderQuery.data]);
+    
+    if (prescriptionQuery.error) {
+      console.error('Error fetching prescription:', prescriptionQuery.error);
+      setError('Não foi possível carregar os detalhes da receita.');
+      setIsLoading(false);
+    }
+  }, [prescriptionQuery.data, prescriptionQuery.error, orderQuery.data]);
 
-  if (prescriptionQuery.isLoading || isLoading) {
+  if (isLoading || prescriptionQuery.isLoading) {
     return (
       <AdminLayout>
         <div className="container-section py-8">
@@ -290,7 +319,7 @@ const PrescriptionDetailsPage: React.FC = () => {
     );
   }
 
-  if (prescriptionQuery.error || error || !prescription) {
+  if (error || prescriptionQuery.error || !prescription) {
     return (
       <AdminLayout>
         <div className="container-section py-8">

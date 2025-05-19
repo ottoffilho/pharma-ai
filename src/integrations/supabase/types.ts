@@ -119,6 +119,47 @@ export type Database = {
         }
         Relationships: []
       }
+      historico_status_pedidos: {
+        Row: {
+          created_at: string
+          data_alteracao: string
+          id: string
+          observacao: string | null
+          pedido_id: string
+          status_anterior: string
+          status_novo: string
+          usuario_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          data_alteracao?: string
+          id?: string
+          observacao?: string | null
+          pedido_id: string
+          status_anterior: string
+          status_novo: string
+          usuario_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          data_alteracao?: string
+          id?: string
+          observacao?: string | null
+          pedido_id?: string
+          status_anterior?: string
+          status_novo?: string
+          usuario_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "historico_status_pedidos_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "pedidos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       insumos: {
         Row: {
           created_at: string
