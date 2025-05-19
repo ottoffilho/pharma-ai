@@ -39,6 +39,13 @@ const categoriaSchema = z.object({
 
 type CategoriaFormValues = z.infer<typeof categoriaSchema>;
 
+// Tipo para a inserção no banco de dados
+type CategoriaInsertValues = {
+  nome: string;
+  tipo: 'receita' | 'despesa';
+  descricao?: string | null;
+};
+
 interface CategoriaFinanceiraFormProps {
   id?: string;
   defaultValues?: Partial<CategoriaFormValues>;
@@ -67,11 +74,18 @@ export const CategoriaFinanceiraForm: React.FC<CategoriaFinanceiraFormProps> = (
   // Mutação para criar/atualizar categoria
   const mutation = useMutation({
     mutationFn: async (values: CategoriaFormValues) => {
+      // Transforma os valores do formulário para o formato esperado pelo banco
+      const dbValues: CategoriaInsertValues = {
+        nome: values.nome,
+        tipo: values.tipo,
+        descricao: values.descricao || null,
+      };
+
       if (isEditing) {
         // Atualizando categoria existente
         const { data, error } = await supabase
           .from('categorias_financeiras')
-          .update(values)
+          .update(dbValues)
           .eq('id', id);
 
         if (error) throw error;
@@ -80,7 +94,7 @@ export const CategoriaFinanceiraForm: React.FC<CategoriaFinanceiraFormProps> = (
         // Criando nova categoria
         const { data, error } = await supabase
           .from('categorias_financeiras')
-          .insert(values)
+          .insert(dbValues)
           .select();
 
         if (error) throw error;
