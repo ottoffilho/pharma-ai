@@ -70,16 +70,24 @@ export const MovimentacaoCaixaForm: React.FC<MovimentacaoCaixaFormProps> = ({
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Processar os dados iniciais para lidar corretamente com categoria_id nulo
+  const processedInitialData = initialData 
+    ? {
+        ...initialData,
+        categoria_id: initialData.categoria_id || '',  // Converte null para string vazia
+      } 
+    : {
+        data_movimentacao: new Date(),
+        tipo_movimentacao: 'entrada',
+        descricao: '',
+        valor: undefined,
+        categoria_id: '',
+        observacoes: '',
+      };
+
   const form = useForm<MovimentacaoFormValues>({
     resolver: zodResolver(movimentacaoSchema),
-    defaultValues: initialData || {
-      data_movimentacao: new Date(),
-      tipo_movimentacao: 'entrada',
-      descricao: '',
-      valor: undefined,
-      categoria_id: undefined,
-      observacoes: '',
-    },
+    defaultValues: processedInitialData,
   });
 
   // Consultar categorias financeiras
@@ -107,12 +115,13 @@ export const MovimentacaoCaixaForm: React.FC<MovimentacaoCaixaFormProps> = ({
       const { data: { user } } = await supabase.auth.getUser();
       const userId = user?.id;
 
+      // Preparar o payload, convertendo string vazia para null em categoria_id
       const movimentacao = {
         data_movimentacao: formattedDate,
         tipo_movimentacao: values.tipo_movimentacao,
         descricao: values.descricao,
         valor: values.valor,
-        categoria_id: values.categoria_id || null,
+        categoria_id: values.categoria_id === '' ? null : values.categoria_id,
         observacoes: values.observacoes || null,
         usuario_id: userId,
       };
@@ -154,7 +163,7 @@ export const MovimentacaoCaixaForm: React.FC<MovimentacaoCaixaFormProps> = ({
           tipo_movimentacao: 'entrada',
           descricao: '',
           valor: undefined,
-          categoria_id: undefined,
+          categoria_id: '',
           observacoes: '',
         });
       }
@@ -232,7 +241,7 @@ export const MovimentacaoCaixaForm: React.FC<MovimentacaoCaixaFormProps> = ({
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Tipo</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione o tipo" />
@@ -302,8 +311,7 @@ export const MovimentacaoCaixaForm: React.FC<MovimentacaoCaixaFormProps> = ({
                 <FormLabel>Categoria (opcional)</FormLabel>
                 <Select
                   onValueChange={field.onChange}
-                  defaultValue={field.value}
-                  value={field.value}
+                  value={field.value || ''}
                 >
                   <FormControl>
                     <SelectTrigger>
@@ -311,6 +319,7 @@ export const MovimentacaoCaixaForm: React.FC<MovimentacaoCaixaFormProps> = ({
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
+                    <SelectItem value="">Nenhuma categoria</SelectItem>
                     {categoriasLoading ? (
                       <SelectItem value="loading" disabled>
                         Carregando...
