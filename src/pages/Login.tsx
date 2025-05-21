@@ -8,11 +8,13 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';
 import type { AuthError } from '@supabase/supabase-js';
+import { checkLoginAttempts, recordLoginAttempt } from '@/lib/auth-utils';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [loginBlocked, setLoginBlocked] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -29,6 +31,16 @@ const Login: React.FC = () => {
     checkSession();
   }, [navigate]);
 
+  // Verificar status de bloqueio quando o email mudar
+  useEffect(() => {
+    if (email) {
+      const { canLogin, message } = checkLoginAttempts(email);
+      setLoginBlocked(canLogin ? null : message || "Conta temporariamente bloqueada devido a muitas tentativas.");
+    } else {
+      setLoginBlocked(null);
+    }
+  }, [email]);
+
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
     if (!email || !password) {
@@ -37,6 +49,18 @@ const Login: React.FC = () => {
         description: "Por favor, preencha todos os campos para continuar.",
         variant: "destructive",
       });
+      return;
+    }
+
+    // Verificar se o login está bloqueado
+    const { canLogin, message } = checkLoginAttempts(email);
+    if (!canLogin) {
+      toast({
+        title: "Acesso bloqueado",
+        description: message || "Muitas tentativas falhas. Tente novamente mais tarde.",
+        variant: "destructive",
+      });
+      setLoginBlocked(message || null);
       return;
     }
 
@@ -52,23 +76,31 @@ const Login: React.FC = () => {
         throw error;
       }
 
+      // Registrar login bem-sucedido
+      recordLoginAttempt(email, true);
+
       toast({
         title: "Login realizado com sucesso!",
         description: "Você está sendo redirecionado para a área administrativa.",
       });
       navigate('/admin/pedidos');
     } catch (err) {
-      let errorMessage = "Verifique suas credenciais e tente novamente.";
-      if (err && typeof err === 'object' && 'message' in err && typeof (err as AuthError).message === 'string') {
-        errorMessage = (err as AuthError).message;
-      } else if (err instanceof Error) {
-        errorMessage = err.message;
-      } else if (typeof err === 'string') {
-        errorMessage = err;
+      // Registrar tentativa falha
+      recordLoginAttempt(email, false);
+      
+      // Registrar o erro detalhado apenas para depuração
+      console.error("Erro detalhado de login:", err);
+      
+      // Verificar novamente após a tentativa falha
+      const { canLogin, message } = checkLoginAttempts(email);
+      if (!canLogin) {
+        setLoginBlocked(message || null);
       }
+      
+      // Mensagem genérica para o usuário
       toast({
         title: "Erro ao realizar login",
-        description: errorMessage,
+        description: loginBlocked || "Credenciais inválidas ou problema no servidor. Tente novamente.",
         variant: "destructive",
       });
     } finally {
@@ -110,9 +142,14 @@ const Login: React.FC = () => {
                 required
               />
             </div>
+            {loginBlocked && (
+              <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive">
+                {loginBlocked}
+              </div>
+            )}
           </CardContent>
           <CardFooter>
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button type="submit" className="w-full" disabled={isLoading || !!loginBlocked}>
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

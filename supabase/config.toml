@@ -1,1 +1,2 @@
-project_id = "hjwebmpvaaeogbfqxwub"
+# O ID do projeto deve ser definido como variável de ambiente
+# project_id = process.env.SUPABASE_PROJECT_ID

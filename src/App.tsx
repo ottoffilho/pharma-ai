@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -35,7 +34,7 @@ import PrivateRoute from "./components/Auth/PrivateRoute";
 const queryClient = new QueryClient();
 
 // Wrap the entire app with React.StrictMode
-const App = () => (
+const App = (): JSX.Element => (
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>

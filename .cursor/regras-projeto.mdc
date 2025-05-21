@@ -1,0 +1,280 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# 🧠 Regras Gerais do Projeto Homeo-AI
+
+Sempre fale em português.
+
+## 🎯 Objetivo
+Desenvolver e manter o Homeo-AI como um sistema escalável, modular, com código limpo e de alta qualidade. Cada componente e funcionalidade deve ter um propósito claro, com documentação e comentários que agreguem valor, facilitando a manutenção, colaboração e evolução do projeto.
+
+## 📌 Diretrizes Técnicas Fundamentais
+- **Modularidade:** Divida funcionalidades complexas em módulos, funções e componentes menores, coesos e reutilizáveis.
+- **Legibilidade:** Priorize código claro e autoexplicativo. Utilize nomes de variáveis, funções e classes que descrevam seu propósito.
+- **DRY (Don't Repeat Yourself):** Evite duplicação de código. Crie abstrações e utilize componentes/funções reutilizáveis.
+- **Simplicidade (KISS - Keep It Simple, Stupid):** Prefira soluções diretas e simples sempre que possível, evitando complexidade desnecessária.
+- **Escalabilidade:** Ao projetar novas funcionalidades ou refatorar existentes, considere o impacto no desempenho e na capacidade de crescimento do sistema.
+- **Organização:** Mantenha uma estrutura de pastas lógica e consistente, seguindo as convenções já estabelecidas no frontend (React/Vite) e backend (FastAPI).
+- **Versionamento:** Utilize o Git de forma eficaz, com mensagens de commit claras e significativas. Crie branches para novas funcionalidades e correções.
+
+## ✍️ Código e Comentários
+- **Comentários:**
+    - Comente lógica de negócios complexa, decisões de design não óbvias, workarounds e algoritmos intrincados. O foco do comentário deve ser o *PORQUÊ* e não o *O QUÊ* (quando este for óbvio pela leitura do código).
+    - Evite comentários redundantes ou que apenas parafraseiam o código.
+    - Utilize `// TODO:` ou `# TODO:` para marcar tarefas pendentes, explicando o que precisa ser feito.
+- **Documentação (Docstrings/JSDoc):**
+    - Para o backend Python (FastAPI), utilize docstrings para todas as funções públicas, classes e módulos, explicando seu propósito, argumentos e o que retornam.
+    - Para o frontend TypeScript (React), utilize JSDoc/TSDoc para descrever o propósito de componentes, hooks customizados e funções complexas, incluindo seus props e tipos.
+- **Tipagem:**
+    - Utilize TypeScript de forma rigorosa no frontend e type hints em Python no backend para garantir a segurança de tipo e melhorar a legibilidade e manutenibilidade.
+- **Nomenclatura:**
+    - Prefira nomes expressivos e descritivos a abreviações obscuras para variáveis, funções, classes e arquivos. Siga as convenções de cada linguagem (camelCase para TS/JS, snake_case para Python).
+
+## ⚙️ Ambientes e Configuração
+- Desenvolva sempre considerando os diferentes ambientes: **desenvolvimento (dev)**, **testes (test)** e **produção (prod)**.
+- Gerencie configurações sensíveis (chaves de API, credenciais de banco de dados) exclusivamente através de variáveis de ambiente e arquivos `.env`. Nunca versione arquivos `.env` preenchidos ou dados sensíveis diretamente no código.
+- O arquivo `.env.example` deve ser mantido atualizado com todas as variáveis necessárias para cada ambiente.
+
+## 🛠️ Tecnologias Específicas do Homeo-AI
+
+### Supabase
+- **Migrações:** Gerencie migrações de esquema do banco de dados Supabase utilizando a CLI do Supabase. Armazene os arquivos de migração no versionamento (ex: `supabase/migrations/`).
+- **Segurança de Dados (RLS):** Implemente e mantenha políticas de Row Level Security (RLS) robustas para todas as tabelas sensíveis no Supabase. A RLS deve ser a principal camada de controle de acesso aos dados.
+- **Interação (Backend):** No backend Python, utilize a biblioteca `supabase-py` de forma segura e otimizada para interações com o banco de dados.
+- **Interação (Frontend):** No frontend React, utilize `supabase-js` para autenticação, subscrições em tempo real e outras interações diretas, encapsulando essa lógica em hooks (`useAuth`, `useSubscription`) ou serviços dedicados.
+
+### FastAPI (Backend Python)
+- **Schemas Pydantic:** Defina schemas Pydantic claros e precisos para todas as requisições e respostas da API, garantindo validação de dados e documentação automática (Swagger UI / ReDoc).
+- **Injeção de Dependências:** Utilize o sistema de injeção de dependências do FastAPI (ex: `Depends`) para gerenciar autenticação, acesso ao banco de dados e outras lógicas transversais de forma limpa.
+- **Estrutura de Endpoints:** Organize os endpoints da API de forma lógica por recurso (ex: `routers/profile.py`, `routers/routes.py`), seguindo a estrutura estabelecida.
+
+### React (Frontend TypeScript)
+- **Gerenciamento de Estado:**
+    - Utilize React Context para estados globais simples e bem definidos (ex: tema da UI, informações de autenticação do usuário).
+    - Utilize TanStack Query (React Query) para gerenciar o estado de dados do servidor (fetching, caching, synchronizing, updating).
+- **Componentização:**
+    - Crie componentes React pequenos, focados em uma única responsabilidade e reutilizáveis.
+    - Utilize hooks customizados para encapsular lógica de estado e efeitos colaterais reutilizáveis.
+- **Shadcn/UI e Tailwind CSS:** Siga as convenções do shadcn/ui para utilização e customização de componentes. Utilize Tailwind CSS de forma consistente para estilização.
+- **Variáveis de Ambiente:** Gerencie chaves de API do frontend (Mapbox, Supabase URL/anon key) através de variáveis de ambiente (`VITE_APP_*`).
+
+### Integração com Strava
+- **Lógica Encapsulada:** A lógica de integração com a API do Strava (autenticação OAuth 2.0, requisições, tratamento de erros, rate limiting) deve ser encapsulada em módulos específicos no backend (ex: `services/strava_service.py`).
+- **Segurança de Tokens:** Armazene os tokens de acesso e refresh do Strava de forma segura (ex: criptografados no banco de dados Supabase) e gerencie seu ciclo de vida adequadamente.
+
+### Integração com Mapbox
+- **Componentes Dedicados:** Encapsule a lógica de interação com Mapbox GL JS em componentes React ou hooks customizados dedicados para facilitar a reutilização e manutenção no frontend.
+
+## 🧪 Testes
+- **Backend:** Priorize testes unitários para lógica de negócios crítica, funções utilitárias e serviços. Considere testes de integração para os endpoints da API FastAPI, cobrindo os principais fluxos de usuário.
+- **Frontend:** Escreva testes unitários para hooks customizados complexos e funções utilitárias. Considere testes de componentes para os principais elementos da UI e testes E2E (End-to-End) para os fluxos de usuário críticos.
+- **Cobertura:** Busque uma cobertura de testes razoável que traga confiança nas entregas, focando nas áreas mais críticas e complexas do sistema.
+
+## 🛡️ Segurança
+- **Validação de Entradas:** Valide todas as entradas do usuário rigorosamente, tanto no frontend (para melhor UX) quanto no backend (como principal barreira de segurança).
+- **Princípio do Menor Privilégio:** Garanta que usuários e sistemas tenham apenas as permissões estritamente necessárias para realizar suas funções.
+- **OWASP:** Esteja ciente das principais vulnerabilidades web (OWASP Top 10) e adote práticas para mitigá-las.
+- **Dependências:** Mantenha as dependências do projeto (frontend e backend) atualizadas para corrigir vulnerabilidades conhecidas.
+
+## 🤝 Colaboração e Versionamento (Git)
+- **Branches:** Crie branches separadas para cada nova funcionalidade (`feature/nome-da-feature`), correção (`fix/descricao-do-bug`) ou refatoração (`refactor/area-refatorada`).
+- **Commits:** Escreva mensagens de commit claras, concisas e no imperativo (ex: "Adiciona funcionalidade de login com Strava", "Corrige bug na listagem de rotas").
+- **Pull Requests (PRs):**
+    - Descreva o propósito e as mudanças realizadas no PR.
+    - Garanta que o código do PR esteja alinhado com estas regras do projeto.
+    - Revise PRs de outros membros da equipe de forma construtiva.
+- **Merge:** Faça merge de PRs preferencialmente com squash (se apropriado) para manter um histórico limpo na branch principal (ex: `main` ou `develop`).
+
+## 🤖 Regras para Interação com a Inteligência Artificial (Assistente)
+
+### 💡 Geral
+- O código e as sugestões geradas pela IA devem seguir rigorosamente todas as regras deste documento.
+- Toda sugestão ou código gerado pela IA deve ser revisado criticamente por um desenvolvedor humano antes de ser integrado ao projeto.
+- Utilize a IA como uma ferramenta para acelerar o desenvolvimento, gerar insights, prototipar e auxiliar na depuração, mas a responsabilidade final pelas decisões de arquitetura e implementação é sempre humana.
+- Antes de modificar ou apagar arquivos/código existente, a IA deve sempre pedir confirmação, explicando o impacto da mudança.
+- A IA nunca deve sobrescrever arquivos de configuração críticos (ex: `.env`, `vite.config.ts`, `tailwind.config.ts`) sem confirmação explícita e uma explicação clara das alterações.
+
+### 🛠️ Desenvolvimento e Implementação
+- Ao solicitar a implementação de um novo recurso, forneça um contexto claro e, se possível, um rascunho da funcionalidade esperada.
+- A IA deve dividir implementações complexas em etapas menores e testáveis.
+
+### 🔍 Debugging (Modo Depurador)
+- Ao encontrar um problema, a IA deve:
+    1.  Solicitar informações detalhadas sobre o erro (mensagens, logs, comportamento observado).
+    2.  Listar de 3 a 5 possíveis causas raiz do problema.
+    3.  Sugerir formas de obter mais informações diagnósticas (ex: logs específicos, testes pontuais).
+    4.  Propor soluções claras e concisas, explicando o racional por trás delas.
+    5.  Pedir aprovação antes de aplicar correções ou remover logs temporários.
+
+### 🗺️ Planejamento (Modo Planejador)
+- Para tarefas de planejamento, a IA deve:
+    1.  Fazer perguntas esclarecedoras para entender completamente os requisitos (se necessário).
+    2.  Mapear as principais alterações em arquivos e componentes.
+    3.  Elaborar um plano de ação passo a passo.
+    4.  Pedir aprovação do plano antes de iniciar a implementação.
+    5.  Ao final de cada etapa significativa, informar o que foi concluído, o que será feito a seguir e o que ainda resta.
+
+## ✨ Qualidade e Manutenção Contínua
+- **Refatoração:** Refatore proativamente código que se tornou complexo, duplicado ou difícil de manter. Sempre explique o motivo e os benefícios da refatoração.
+- **Débito Técnico:** Esteja atento ao acúmulo de débito técnico e planeje iniciativas para reduzi-lo.
+- **Revisão de Código:** Participe ativamente das revisões de código, oferecendo feedback construtivo e ajudando a manter a qualidade do projeto.
+- **Melhoria Contínua:** Esteja aberto a aprender novas práticas, ferramentas e tecnologias que possam beneficiar o projeto Homeo-AI.
+
+## 1. Padrões de Código Limpo
+
+- **Nomenclatura Consistente**: Use `camelCase` para variáveis e funções, `PascalCase` para componentes e tipos, e `snake_case` para respeitar os campos do banco de dados Supabase.
+- **Componentes Funcionais**: Utilize sempre React Functional Components com TypeScript.
+- **Organização de Importações**: Agrupe as importações por categorias (React, componentes, hooks, utils, tipos) e ordene alfabeticamente dentro de cada grupo.
+- **Comentários Significativos**: Adicione comentários apenas quando necessário para explicar a lógica não-trivial.
+- **Componentização**: Evite componentes com mais de 300 linhas; extraia subcomponentes quando necessário.
+- **Tipagem Estrita**: Utilize TypeScript com tipagem rigorosa (evite `any` e `unknown`).
+- **Uso de Constantes**: Extraia strings e valores mágicos para constantes nomeadas.
+- **Design Simples**: Prefira composição a herança, e funções puras quando possível.
+
+```typescript
+// ✅ Exemplo de bom código
+import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { Button } from '@/components/ui/button';
+import { supabase } from '@/integrations/supabase/client';
+import type { Insumo } from '@/integrations/supabase/types';
+
+const ESTOQUE_MINIMO_ALERTA = 10;
+
+const InsumosComponent: React.FC = () => {
+  const [filtroTipo, setFiltroTipo] = useState<string | null>(null);
+  
+  const { data: insumos } = useQuery({
+    queryKey: ['insumos', filtroTipo],
+    queryFn: async () => {
+      const query = supabase.from('insumos').select('*');
+      
+      if (filtroTipo) {
+        query.eq('tipo', filtroTipo);
+      }
+      
+      const { data, error } = await query;
+      if (error) throw new Error(error.message);
+      return data as Insumo[];
+    }
+  });
+  
+  return (
+    <div>
+      {insumos?.map(insumo => (
+        <div key={insumo.id} className={insumo.estoque_atual <= ESTOQUE_MINIMO_ALERTA ? 'text-red-500' : ''}>
+          {insumo.nome}
+        </div>
+      ))}
+    </div>
+  );
+};
+```
+
+## 2. Arquitetura do Projeto
+
+### 2.1 Estrutura de Pastas
+
+- **`/src/components`**: Componentes reutilizáveis
+  - **`/ui`**: Componentes básicos da UI (shadcn)
+  - **`/layouts`**: Templates de layout
+  - **`/Auth`**: Componentes relacionados à autenticação
+- **`/src/pages`**: Páginas da aplicação, organizadas por funcionalidade
+  - **`/admin`**: Área administrativa, com subpastas por módulo
+- **`/src/hooks`**: Hooks customizados
+- **`/src/integrations`**: Código para integração com serviços externos
+  - **`/supabase`**: Cliente e tipos do Supabase
+- **`/src/lib`**: Funções utilitárias
+- **`/public`**: Arquivos estáticos
+
+### 2.2 Padrões de Design de Interface
+
+- Seguir o design system implementado com shadcn/ui e Tailwind CSS
+- Manter consistência visual em toda a aplicação
+- Design responsivo para funcionar em desktop e tablets
+- Cores do tema aplicadas conforme a identidade visual
+- Feedback visual claro para ações do usuário (loading states, toasts, etc.)
+
+## 3. Fluxos de Trabalho e Desenvolvimento
+
+### 3.1 Ciclo de Desenvolvimento
+
+1. **Planejamento**: Definir objetivos claros para cada nova funcionalidade
+2. **Desenvolvimento**: Implementar código seguindo os padrões definidos
+3. **Testes**: Verificar o funcionamento em ambientes locais
+4. **Revisão**: Validar a implementação contra requisitos
+5. **Deploy**: Publicar em ambiente de produção
+
+### 3.2 Controle de Versão
+
+- Utilize Git para versionamento do código
+- Cada feature deve ser desenvolvida em uma branch separada
+- Commits devem ser atômicos e com mensagens descritivas
+- Pull requests devem incluir descrição da mudança e possivelmente screenshots
+- Versione alterações em banco de dados utilizando migrations (quando aplicável)
+
+### 3.3 Ambientes
+
+- **Desenvolvimento**: Ambiente local para implementação e testes
+- **Produção**: Ambiente final para uso dos usuários
+- Cada ambiente deve ter seu próprio projeto Supabase
+
+## 4. Segurança
+
+- Nunca exponha chaves de API diretamente no código
+- Utilize a autenticação do Supabase para controle de acesso
+- Implemente validação de dados em todos os formulários
+- Proteja rotas administrativas com verificação de permissões
+- Sanitize dados de entrada para evitar injeção de SQL ou XSS
+
+## 5. Gestão de Estado
+
+- Use React Query para estado do servidor, com configurações adequadas de cache
+- Estado local via useState ou useReducer conforme necessidade
+- Evite prop drilling excessivo - considere contexts para estado global
+- Prefira otimizações de performance com useMemo e useCallback
+
+## 6. Performance
+
+- Implemente carregamento com lazy loading quando necessário
+- Otimize consultas ao Supabase para retornar apenas os dados necessários
+- Utilize indexes apropriados nas tabelas do banco de dados
+- Minimize rerenderings utilizando memoização quando apropriado
+
+## 7. Integrações
+
+### 7.1 Supabase
+
+- Utilize o cliente gerado com tipagem para todas as operações
+- Prefira RLS (Row Level Security) para garantir segurança no nível do banco
+- Estruture o schema do banco de dados de forma normalizada
+- Mantenha a documentação das tabelas e relacionamentos atualizada
+
+## 8. Testes
+
+- Escreva testes unitários para lógica de negócio crítica
+- Teste manualmente os fluxos de usuário principais após cada mudança significativa
+- Verifique o comportamento em diferentes dispositivos e navegadores
+
+## 9. Documentação
+
+- Mantenha o README atualizado com instruções de execução
+- Documente decisões arquiteturais importantes
+- Comente código complexo e não óbvio
+- Mantenha a documentação de API e tipos atualizada
+
+## 10. Considerações para Novos Recursos
+
+- Novas funcionalidades devem se integrar com o design system existente
+- Mudanças no schema de banco devem ser cuidadosamente planejadas
+- Novos componentes devem seguir os mesmos padrões dos existentes
+- Considere a escalabilidade e manutenibilidade de longo prazo
+
+Estas regras servem como guia para manter a consistência e qualidade do projeto Homeo-AI ao longo do seu desenvolvimento e evolução.
+
+---
+
+Última atualização: 2023-11-10
+

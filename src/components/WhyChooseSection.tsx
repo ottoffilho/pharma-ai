@@ -34,7 +34,7 @@ const WhyChooseSection = () => {
             Por Que Escolher o Homeo-AI
           </h2>
           <p className="paragraph">
-            Descubra o que torna nossa solução única e perfeitamente adaptada às necessidades específicas das farmácias homeopáticas.
+            Descubra o que torna nossa solução única e perfeitamente adaptada às necessidades específicas das Farmácias de Manipulação.
           </p>
         </div>
 

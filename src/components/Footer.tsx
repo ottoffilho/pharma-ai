@@ -9,7 +9,7 @@ const Footer = () => {
           <div>
             <h3 className="text-xl font-montserrat font-semibold mb-4">Homeo-AI</h3>
             <p className="text-white/70 leading-relaxed">
-              Sistema de gestão inteligente para farmácias homeopáticas, potencializado por IA.
+              Sistema de gestão inteligente para Farmácias de Manipulação, potencializado por IA.
             </p>
           </div>
           

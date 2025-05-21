@@ -1,7 +1,6 @@
-
 import React, { useEffect } from 'react';
 import NavBar from '@/components/NavBar';
-import HeroSection from '@/components/HeroSection';
+import { HeroSection } from '@/components/HeroSection';
 import ProblemSection from '@/components/ProblemSection';
 import SolutionSection from '@/components/SolutionSection';
 import FeaturesSection from '@/components/FeaturesSection';
@@ -12,7 +11,7 @@ import TestimonialsSection from '@/components/TestimonialsSection';
 import CTASection from '@/components/CTASection';
 import Footer from '@/components/Footer';
 
-const Index = () => {
+const Index: React.FC = () => {
   // Update the document title
   useEffect(() => {
     document.title = "Homeo-AI | Sistema de Gestão para Farmácias Homeopáticas";

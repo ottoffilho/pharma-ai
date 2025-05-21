@@ -1,39 +1,8 @@
+
 import React from 'react';
 import { Check } from 'lucide-react';
 
-interface SolutionItem {
-  icon: JSX.Element;
-  text: string;
-}
-
-const solutionFeatures: SolutionItem[] = [
-  {
-    icon: <Check className="h-4 w-4 text-homeo-green" />,
-    text: 'Interpretação de receitas via IA',
-  },
-  {
-    icon: <Check className="h-4 w-4 text-homeo-green" />,
-    text: 'Gestão completa de estoque',
-  },
-  {
-    icon: <Check className="h-4 w-4 text-homeo-green" />,
-    text: 'Cadastro e controle de clientes',
-  },
-  {
-    icon: <Check className="h-4 w-4 text-homeo-green" />,
-    text: 'Orçamento automático de fórmulas',
-  },
-  {
-    icon: <Check className="h-4 w-4 text-homeo-green" />,
-    text: 'Análises e relatórios detalhados',
-  },
-  {
-    icon: <Check className="h-4 w-4 text-homeo-green" />,
-    text: 'Segurança e conformidade com LGPD',
-  },
-];
-
-const SolutionSection: React.FC = () => {
+const SolutionSection = () => {
   return (
     <section className="bg-homeo-green-light/50">
       <div className="container-section">
@@ -103,14 +72,47 @@ const SolutionSection: React.FC = () => {
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-8">
-              {solutionFeatures.map((feature: SolutionItem, index: number) => (
-                <div key={index} className="flex items-start space-x-3">
-                  <div className="mt-1 bg-homeo-green/20 p-1 rounded-full">
-                    {feature.icon}
-                  </div>
-                  <span className="text-homeo-gray-dark">{feature.text}</span>
+              <div className="flex items-start space-x-3">
+                <div className="mt-1 bg-homeo-green/20 p-1 rounded-full">
+                  <Check className="h-4 w-4 text-homeo-green" />
                 </div>
-              ))}
+                <span className="text-homeo-gray-dark">Interpretação de receitas via IA</span>
+              </div>
+              
+              <div className="flex items-start space-x-3">
+                <div className="mt-1 bg-homeo-green/20 p-1 rounded-full">
+                  <Check className="h-4 w-4 text-homeo-green" />
+                </div>
+                <span className="text-homeo-gray-dark">Gestão completa de estoque</span>
+              </div>
+              
+              <div className="flex items-start space-x-3">
+                <div className="mt-1 bg-homeo-green/20 p-1 rounded-full">
+                  <Check className="h-4 w-4 text-homeo-green" />
+                </div>
+                <span className="text-homeo-gray-dark">Cadastro e controle de clientes</span>
+              </div>
+              
+              <div className="flex items-start space-x-3">
+                <div className="mt-1 bg-homeo-green/20 p-1 rounded-full">
+                  <Check className="h-4 w-4 text-homeo-green" />
+                </div>
+                <span className="text-homeo-gray-dark">Orçamento automático de fórmulas</span>
+              </div>
+              
+              <div className="flex items-start space-x-3">
+                <div className="mt-1 bg-homeo-green/20 p-1 rounded-full">
+                  <Check className="h-4 w-4 text-homeo-green" />
+                </div>
+                <span className="text-homeo-gray-dark">Análises e relatórios detalhados</span>
+              </div>
+              
+              <div className="flex items-start space-x-3">
+                <div className="mt-1 bg-homeo-green/20 p-1 rounded-full">
+                  <Check className="h-4 w-4 text-homeo-green" />
+                </div>
+                <span className="text-homeo-gray-dark">Segurança e conformidade com LGPD</span>
+              </div>
             </div>
           </div>
         </div>

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,27 +8,42 @@ const PrivateRoute: React.FC = () => {
   const location = useLocation();
 
   useEffect(() => {
+    let isMounted = true;
+    
     const checkAuth = async () => {
       try {
-        // Set up auth state listener FIRST
+        // Verificar sessão existente primeiro
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (isMounted) {
+          setIsAuthenticated(!!session);
+        }
+        
+        // Configurar listener para mudanças de estado após confirmar estado inicial
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
           (event, session) => {
-            setIsAuthenticated(!!session);
+            if (isMounted) {
+              setIsAuthenticated(!!session);
+            }
           }
         );
-
-        // THEN check for existing session
-        const { data: { session } } = await supabase.auth.getSession();
-        setIsAuthenticated(!!session);
-
-        return () => subscription.unsubscribe();
+        
+        return () => {
+          subscription.unsubscribe();
+        };
       } catch (error) {
         console.error('Error checking authentication status:', error);
-        setIsAuthenticated(false);
+        if (isMounted) {
+          setIsAuthenticated(false);
+        }
       }
     };
-
+    
     checkAuth();
+    
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   if (isAuthenticated === null) {

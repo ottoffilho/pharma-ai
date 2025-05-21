@@ -1,0 +1,360 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+---
+# METADADOS PARA PROCESSAMENTO POR IA
+version: 1.0 # Versão inicial para TrailSynk
+formato: yaml
+linguagem: pt-BR
+codificacao: UTF-8
+ultima_atualizacao: 2024-07-26T10:00:00-03:00 # Substituir pela data/hora atual
+contexto_ia:
+  - tipo_regras: diretrizes_desenvolvimento
+  - dominio: plataforma_ciclismo_trailsynk
+  - complexidade: alta
+
+# CATEGORIAS PRINCIPAIS
+regras:
+  compreensao_codigo:
+    prioridade: alta
+    diretrizes:
+      - "analise_codigo_existente_antes_solucao: Antes de propor soluções, analisar o código existente para entender a estrutura atual e como a nova funcionalidade se encaixará."
+      - "identificacao_causa_raiz_antes_correcao: Ao encontrar problemas, identificar a causa raiz antes de sugerir correções, focando em diagnósticos precisos."
+  
+  estilo_codigo:
+    prioridade: media
+    diretrizes:
+      - "preferencia_solucoes_simples: Preferir soluções simples e diretas, evitando padrões excessivamente complexos."
+      - "consistencia_estilo_projeto: Adaptar-se ao estilo de código já utilizado no projeto (TypeScript/React para frontend, Python/FastAPI para backend), mantendo consistência com as convenções existentes."
+      - "prevencao_duplicacao_codigo: Evitar duplicação de código, verificando o projeto por funcionalidades semelhantes antes de implementar algo novo. Utilizar componentes, hooks e serviços reutilizáveis."
+      - "convencoes_typescript_react_frontend: Seguir as melhores práticas e convenções para TypeScript no React, incluindo nomenclatura, organização de componentes e hooks."
+      - "convencoes_python_fastapi_backend: Seguir as melhores práticas e convenções para Python no FastAPI, incluindo PEP 8, tipagem, e estruturação de routers e services."
+
+  seguranca:
+    prioridade: critica
+    diretrizes:
+      - "priorizacao_seguranca_dados_sensiveis: Ao implementar recursos que envolvam autenticação ou dados sensíveis (tokens de API, dados de usuário), priorizar a segurança e explicar as implicações de cada decisão."
+      - "implementacao_rls_supabase: Utilizar Row Level Security (RLS) no Supabase de forma rigorosa para controlar o acesso aos dados no nível da linha, garantindo que os usuários acessem apenas os dados permitidos."
+      - "gerenciamento_seguro_tokens_api_externas: Armazenar e gerenciar tokens de API (Strava, Mapbox) de forma segura, utilizando variáveis de ambiente e, quando necessário, criptografia para tokens armazenados."
+      - "validacao_entrada_dados_completa: Validar todas as entradas de dados no frontend (para UX) e, crucialmente, no backend (para segurança)."
+
+  implementacao:
+    prioridade: alta
+    diretrizes:
+      - "divisao_tarefas_complexas_etapas: Dividir implementações complexas em etapas incrementais e testáveis, permitindo validação a cada passo."
+      - "estrategia_testes_para_solucoes: Para cada solução proposta, fornecer uma estratégia de testes (unitários, integração, E2E quando aplicável) e validação."
+      - "foco_modificacoes_relevantes: Ao sugerir mudanças em arquivos existentes, mostrar apenas as partes relevantes que precisam ser alteradas, usando '// ... existing code ...' ou similar para indicar código não alterado."
+      - "commits_atomicos_significativos: Fazer commits pequenos, focados em uma única mudança lógica, com mensagens claras e descritivas."
+
+  formato_respostas_ia: # Renomeado para clareza
+    prioridade: media
+    diretrizes:
+      - "detalhamento_tecnico_funcionamento_codigo: Fornecer explicações técnicas detalhadas sobre como e por que o código proposto funciona, não apenas o que ele faz."
+      - "estrutura_resposta_visao_geral_primeiro: Dar uma visão geral do problema e da solução no início da resposta antes de mergulhar nos detalhes técnicos."
+
+  adaptacao_projeto:
+    prioridade: alta
+    diretrizes:
+      - "preferencia_recursos_existentes: Antes de sugerir bibliotecas externas, verificar se a funcionalidade pode ser implementada com o que já existe no projeto (Supabase, FastAPI, bibliotecas React já instaladas)."
+      - "consideracao_ambientes_multiplos: Considerar os diferentes ambientes (desenvolvimento, teste, produção) ao propor soluções, especialmente ao lidar com variáveis de ambiente e configurações."
+      - "analise_pos_implementacao: Após implementar uma solução, fornecer uma análise crítica sobre possíveis melhorias futuras ou otimizações."
+
+  integracoes_e_baas: # Nova categoria para TrailSynk
+    prioridade: alta
+    diretrizes:
+      - "encapsulamento_logica_integracao: Isolar a lógica de comunicação com APIs externas (Strava, Mapbox) e Supabase em módulos, serviços ou hooks dedicados para promover reutilização e manutenibilidade."
+      - "uso_eficiente_recursos_supabase: Escrever queries otimizadas para o Supabase, utilizar índices quando necessário e considerar o uso de Edge Functions para lógica serverless que precise estar próxima ao banco."
+      - "tratamento_erros_integracoes: Implementar tratamento de erros robusto para chamadas a APIs externas e Supabase, incluindo retentativas (quando apropriado) e logging."
+      - "monitoramento_saude_integracoes: Considerar mecanismos para monitorar a disponibilidade e o desempenho das integrações críticas (ex: logging de falhas, alertas)."
+
+# METADADOS TÉCNICOS
+controle_versao:
+  politica_atualizacao_regras: mensal # Atualização das regras em si
+  historico_mudancas: auto_registrado_pela_ia_ou_git
+
+dependencias_tecnologicas: # Nome mais claro
+  sistemas_principais:
+    - trailsynk_frontend_react_ts
+    - trailsynk_backend_fastapi_python
+    - supabase_baas
+    - strava_api_v3
+    - mapbox_gl_js_api
+  ferramentas_desenvolvimento:
+    - git
+    - vite
+    - eslint
+    - prettier # Adicionado para formatação
+    - typescript
+    - react_devtools
+    - fastapi
+    - pydantic
+    - uvicorn
+    - pytest # Assumindo uso para testes no backend
+    # - playwright ou cypress # Para testes E2E, se aplicável
+
+# PRIORIZAÇÃO DE FOCO
+niveis_prioridade_desenvolvimento:
+  critica:
+    - seguranca # Inclui segurança de dados, RLS, tokens
+    - disponibilidade_sistema_core # Funcionalidades essenciais
+  
+  alta:
+    - compreensao_codigo
+    - implementacao # Inclui testes
+    - adaptacao_projeto
+    - integracoes_e_baas # Funcionalidade e estabilidade das integrações
+  
+  media:
+    - estilo_codigo
+    - formato_respostas_ia
+
+# POLÍTICAS DE EXECUÇÃO E QUALIDADE
+fluxo_validacao_codigo:
+  - analise_estatica_codigo_lint_format # ESLint, Prettier
+  - verificacao_conformidade_estilo_tipagem # TypeScript, Python type hints
+  - teste_unitario_automatizado
+  - teste_integracao_apis_servicos
+  - revisao_humana_pr # Pull Request review
+  # - teste_e2e_fluxos_criticos # Opcional, mas recomendado
+
+tratamento_excecoes_runtime:
+  - registro_logs_detalhados_erros # Em todos os ambientes
+  - notificacoes_alertas_erros_criticos_producao # Ex: Sentry, ou similar
+  # - rollback_automatico_deploy_falho # Se houver CI/CD
+
+# MANUTENÇÃO DAS REGRAS
+ciclo_vida_regras_projeto:
+  revisao_periodica: trimestral # Revisão da eficácia das regras
+  atualizacao_conforme_necessario: continua # Atualizações pontuais quando surgem novas necessidades
+  depreciacao_regras_obsoletas: anual
+
+# Diretrizes Específicas do Projeto Homeo-AI
+
+Este documento contém regras específicas para garantir a consistência, qualidade e segurança no desenvolvimento do projeto Homeo-AI. Essas diretrizes devem ser seguidas rigorosamente.
+
+## 1. Padrões de Interação
+
+### 1.1 Interação com o Usuário
+
+- Todas as operações críticas (exclusão, alterações importantes em pedidos ou estoque) **DEVEM** ter confirmação explícita do usuário.
+- Forneça feedback visual imediato para ações do usuário (toast notifications, estados de loading).
+- Mensagens de erro devem ser claras e orientadas à solução. 
+- Interface de usuário deve ser intuitiva e consistente em todas as áreas do sistema.
+- Priorize a acessibilidade em todos os componentes UI.
+
+### 1.2 Fluxos de Usuário
+
+- Fluxos principais devem ter no máximo 3-4 etapas para conclusão.
+- Forneça indicações visuais de progresso em fluxos de múltiplas etapas.
+- Sempre permita ao usuário voltar ou cancelar uma operação em andamento.
+- Garanta que dados inseridos pelo usuário sejam preservados em caso de navegação acidental ou erro.
+
+## 2. Estilo de Código Obrigatório
+
+### 2.1 Convenções de Nomenclatura
+
+- **Componentes**: `PascalCase` (ex: `PedidosList.tsx`)
+- **Hooks**: `camelCase` com prefixo "use" (ex: `useInsumos.ts`)
+- **Funções utilitárias**: `camelCase` (ex: `formatCurrency.ts`)
+- **Constantes**: `UPPER_SNAKE_CASE` (ex: `MAX_INSUMOS_POR_PAGINA`)
+- **Tipos/Interfaces**: `PascalCase` (ex: `interface InsumoDetalhado`)
+- **Arquivos de página**: `camelCase` ou `kebab-case` (ex: `nova-receita.tsx`)
+
+### 2.2 Estrutura de Arquivos e Componentes
+
+- Todo componente deve estar em seu próprio arquivo.
+- Componentes complexos devem ser divididos em subcomponentes.
+- A estrutura de pastas deve refletir a organização funcional do sistema.
+- Organize importações em ordem de: 1) React/bibliotecas externas, 2) Componentes internos, 3) Hooks, 4) Utilitários, 5) Tipos.
+
+```typescript
+// ✅ Padrão de importação recomendado
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+
+import { Button } from '@/components/ui/button';
+import { Table } from '@/components/ui/table';
+import AdminLayout from '@/components/layouts/AdminLayout';
+
+import { useToast } from '@/hooks/use-toast';
+
+import { supabase } from '@/integrations/supabase/client';
+import { formatCurrency } from '@/lib/formatters';
+
+import type { Insumo } from '@/integrations/supabase/types';
+```
+
+### 2.3 Padrões de Código React
+
+- Prefira sempre Functional Components.
+- Use React Query para toda comunicação com o backend.
+- Evite manipulação direta do DOM.
+- Utilize React Hook Form para todos os formulários.
+- Implemente validação com Zod em todos os formulários.
+- Extraia lógica complexa para hooks customizados.
+
+```typescript
+// ✅ Exemplo de componente bem estruturado
+const InsumosFilters: React.FC<InsumosFiltersProps> = ({ 
+  onFilterChange 
+}) => {
+  const [tipoSelecionado, setTipoSelecionado] = useState<string | null>(null);
+  
+  const handleTipoChange = (tipo: string | null) => {
+    setTipoSelecionado(tipo);
+    onFilterChange({ tipo });
+  };
+  
+  return (
+    <div className="space-y-4">
+      <h3 className="text-lg font-medium">Filtros</h3>
+      {/* Conteúdo do componente */}
+    </div>
+  );
+};
+```
+
+## 3. Protocolos de Segurança
+
+### 3.1 Autenticação e Autorização
+
+- Todas as rotas administrativas devem ser protegidas pelo componente `PrivateRoute`.
+- Implemente verificações de permissão para funcionalidades sensíveis.
+- Nunca exponha tokens ou credenciais no código front-end.
+- Utilize o Supabase Auth para todo o fluxo de autenticação.
+- Implemente timeouts de sessão conforme necessário para segurança.
+
+### 3.2 Segurança de Dados
+
+- Sempre valide dados de entrada tanto no cliente quanto no servidor (RLS).
+- Implemente sanitização para evitar XSS e injeção SQL.
+- Use Row Level Security (RLS) no Supabase para proteger dados.
+- Nunca armazene dados sensíveis não criptografados.
+- Implemente logs de auditoria para operações críticas.
+
+## 4. Estratégias de Escalabilidade
+
+### 4.1 Performance
+
+- Otimize consultas ao Supabase para minimizar transferência de dados.
+- Implemente paginação em todas as listas com potencial de crescimento.
+- Utilize memoização para cálculos intensivos ou renderizações complexas.
+- Implemente lazy loading para componentes pesados ou raramente usados.
+- Considere estratégias de cache para dados frequentemente acessados.
+
+### 4.2 Arquitetura Escalável
+
+- Mantenha alta coesão e baixo acoplamento entre componentes.
+- Projete para extensibilidade - novos módulos devem se integrar facilmente.
+- Defina e documente interfaces claras entre módulos.
+- Considere o impacto de escala em cada nova funcionalidade.
+- Utilize padrões de design que facilitem futuras expansões.
+
+## 5. Formato de Respostas Esperado
+
+### 5.1 Tratamento de Erros
+
+- Toda operação assíncrona deve ter tratamento de erros explícito.
+- Erros devem ser capturados e exibidos de forma amigável ao usuário.
+- Utilize o componente Toast para notificações de erro.
+- Implemente logging adequado para facilitar depuração.
+- Categorize erros por tipo (rede, validação, autenticação, etc.).
+
+```typescript
+// ✅ Exemplo de tratamento de erro adequado
+try {
+  const { data, error } = await supabase
+    .from('insumos')
+    .update({ nome: novoNome })
+    .eq('id', insumoId);
+    
+  if (error) throw error;
+  
+  toast({
+    title: "Sucesso!",
+    description: "Insumo atualizado com sucesso.",
+  });
+  
+  return data;
+} catch (error: any) {
+  console.error('Erro ao atualizar insumo:', error);
+  
+  toast({
+    title: "Erro ao atualizar insumo",
+    description: error.message || "Verifique sua conexão e tente novamente.",
+    variant: "destructive",
+  });
+  
+  throw error;
+}
+```
+
+### 5.2 Formatação de Dados
+
+- Utilize formatadores consistentes para valores monetários, datas e quantidades.
+- Separe a lógica de formatação em funções utilitárias reutilizáveis.
+- Mantenha consistência na exibição de valores nulos ou indefinidos.
+- Formate datas considerando o fuso horário do usuário.
+- Utilize o sistema de i18n para textos e formatos localizáveis.
+
+## 6. Testes e Qualidade
+
+### 6.1 Testes
+
+- Implemente testes unitários para lógica de negócios crítica.
+- Teste todos os fluxos principais da aplicação.
+- Verifique a responsividade em diferentes tamanhos de tela.
+- Teste os cenários de erro e como a aplicação se recupera.
+- Implemente validação de acessibilidade.
+
+### 6.2 Revisão de Código
+
+- Todo código deve passar por revisão antes de ser integrado.
+- Utilize ferramentas de linting para garantir consistência.
+- Verifique que o código segue todas as diretrizes deste documento.
+- Priorize a legibilidade do código.
+- Mantenha a complexidade ciclomática baixa.
+
+## 7. Diretriz para Módulos Específicos
+
+### 7.1 Gestão de Prescrições
+
+- Implemente validação rigorosa de dados de prescrição.
+- Garanta a rastreabilidade completa das prescrições processadas.
+- Separe claramente a lógica de processamento da lógica de visualização.
+- Armazene logs detalhados de todo o processamento de IA.
+- Respeite requisitos regulatórios de farmácias.
+
+### 7.2 Controle de Estoque
+
+- Mantenha histórico completo de movimentações de estoque.
+- Implemente alertas visuais para estoque abaixo do mínimo.
+- Garanta a consistência dos dados de estoque em todas as operações.
+- Implemente mecanismos para evitar condições de corrida em atualizações de estoque.
+- Calcule corretamente custos médios ponderados.
+
+### 7.3 Financeiro
+
+- Utilize cálculos de ponto fixo para valores monetários (evite imprecisões de ponto flutuante).
+- Implemente reconciliação para garantir consistência de transações.
+- Separe por categorias todos os movimentos financeiros.
+- Associe cada transação a uma entidade de origem (pedido, fornecedor, etc.).
+- Implemente relatórios financeiros claros e precisos.
+
+## 8. Considerações de Deployment
+
+- Todo deploy deve ser precedido por testes em ambiente de desenvolvimento.
+- Implemente mecanismos de rollback para casos de falha.
+- Monitore o desempenho da aplicação em produção.
+- Utilize variáveis de ambiente para configurações específicas do ambiente.
+- Documente o processo de deployment para garantir consistência.
+
+---
+
+Estas diretrizes são essenciais para garantir a qualidade e longevidade do projeto Homeo-AI. Todos os desenvolvedores devem segui-las rigorosamente.
+
+Última atualização: 2023-11-10
+

@@ -40,7 +40,7 @@ const AISection = () => {
           </h2>
           <p className="text-white/80 text-lg leading-relaxed max-w-2xl mx-auto">
             Nossa tecnologia de IA especializada em homeopatia oferece precisão e agilidade nunca antes vistas
-            no setor, revolucionando a maneira como as farmácias homeopáticas operam.
+            no setor, revolucionando a maneira como as Farmácias de Manipulação operam.
           </p>
         </div>
 

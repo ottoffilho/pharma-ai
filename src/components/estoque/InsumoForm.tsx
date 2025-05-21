@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -8,6 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Save, ArrowLeft } from "lucide-react";
+import logger from "@/lib/logger";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -137,9 +137,16 @@ export default function InsumoForm({
 
       if (isEditing && insumoId) {
         // Atualizar insumo existente
+        // Sanitizar dados antes de enviar ao banco
+        const sanitizedData = Object.entries(insumoData).reduce((acc, [key, value]) => {
+          // Sanitizar string inputs
+          acc[key] = typeof value === 'string' ? value.trim().replace(/['";<>]/g, '') : value;
+          return acc;
+        }, {} as Record<string, any>);
+        
         const { error } = await supabase
           .from("insumos")
-          .update(insumoData)
+          .update(sanitizedData)
           .eq("id", insumoId);
 
         if (error) throw new Error(error.message);
@@ -150,7 +157,14 @@ export default function InsumoForm({
         });
       } else {
         // Criar novo insumo
-        const { error } = await supabase.from("insumos").insert([insumoData]);
+        // Sanitizar dados antes de enviar ao banco
+        const sanitizedData = Object.entries(insumoData).reduce((acc, [key, value]) => {
+          // Sanitizar string inputs
+          acc[key] = typeof value === 'string' ? value.trim().replace(/['";<>]/g, '') : value;
+          return acc;
+        }, {} as Record<string, any>);
+        
+        const { error } = await supabase.from("insumos").insert([sanitizedData]);
 
         if (error) throw new Error(error.message);
 
@@ -163,10 +177,11 @@ export default function InsumoForm({
       // Navegar de volta para a listagem
       navigate("/admin/estoque/insumos");
     } catch (error: any) {
-      console.error("Erro ao salvar insumo:", error);
+      // Usar o logger para sanitizar informações sensíveis
+      logger.error("Erro ao salvar insumo", { errorCode: error.code || 'unknown', errorType: error.constructor.name });
       toast({
         title: "Erro",
-        description: `Não foi possível salvar o insumo: ${error.message}`,
+        description: `Não foi possível salvar o insumo. Tente novamente.`,
         variant: "destructive",
       });
     }
