@@ -2,141 +2,161 @@
 
 ## 1. Visão Geral do Projeto
 
-Homeo-AI é uma aplicação web abrangente projetada para Farmácias de Manipulação, oferecendo uma plataforma rica em funcionalidades para gerenciamento de prescrições, inventário, pedidos, transações financeiras e gerenciamento de usuários. O nome "Homeo-AI" sugere um foco na aplicação de inteligência artificial para processamento de prescrições homeopáticas.
+Homeo-AI é uma aplicação web abrangente projetada para Farmácias de Manipulação, oferecendo uma plataforma rica em funcionalidades para gerenciamento de prescrições, inventário, pedidos, transações financeiras e gerenciamento de usuários. O projeto utiliza inteligência artificial em diversos módulos para otimizar processos, desde o processamento de receitas até previsão de demanda e precificação.
 
-A aplicação é dividida em um frontend moderno e interativo e um backend robusto baseado em Supabase para gerenciamento de dados e autenticação.
+A aplicação segue uma arquitetura híbrida com um monólito modular para o núcleo do sistema e microsserviços para funcionalidades de IA. O desenvolvimento está estruturado em três fases principais: MVP, Expansão Funcional, e Inteligência Artificial Plena.
 
-## 2. Funcionalidades Principais
+## 2. Arquitetura Técnica
+
+### 2.1. Visão Geral da Arquitetura
+
+O Homeo-AI utiliza uma arquitetura híbrida com quatro componentes principais:
+* **Monolito Modular**: Núcleo do sistema (cadastros, pedidos, estoque, financeiro)
+* **Microsserviços de IA**: Processamento de receitas, modelos preditivos, chatbots
+* **Automação n8n**: Fluxos de trabalho automáticos, notificações
+* **Gateway de Notificações**: Gerenciamento de comunicações multicanal
+
+### 2.2. Stack Tecnológica
+
+#### Frontend
+* **Framework Principal**: React/TypeScript (v18.0.0+)
+* **UI/Estilização**: Shadcn/UI + Tailwind CSS
+* **Roteamento**: React Router DOM (v6.0.0+)
+* **Gerenciamento de Estado**: React Query (TanStack Query v4.0.0+)
+* **Validação**: Zod (v3.0.0+)
+
+#### Backend
+* **Backend-as-a-Service**: Supabase
+  * PostgreSQL (Banco de dados principal)
+  * Auth (Autenticação)
+  * Storage (Armazenamento de arquivos)
+  * Realtime (Atualizações em tempo real)
+  * Edge Functions/Functions (Lógica de negócios)
+* **Microsserviços**:
+  * Python/FastAPI (Microsserviços de IA)
+  * Node.js/TypeScript (Funções serverless complementares)
+
+#### IA/ML
+* **OCR**: Google Vision AI, AWS Textract
+* **NLU/NLP**: spaCy, Transformers
+* **LLMs**: OpenAI, Gemini
+* **Modelos Preditivos**: scikit-learn, TensorFlow
+* **Armazenamento de Embeddings**: pgvector
+
+#### Automação
+* **Ferramenta de Fluxos**: n8n
+
+## 3. Fases de Implementação e Módulos
+
+O desenvolvimento do Homeo-AI está organizado em três fases principais:
+
+### 3.1. FASE 1: MVP (Produto Mínimo Viável)
+Duração estimada: 3-6 meses
+Objetivo: Implementar cadastros essenciais e fluxo básico de receita até financeiro.
+
+**Módulos principais**:
+* **M01-CADASTROS_ESSENCIAIS**: Base de dados fundamental (insumos, lotes, embalagens)
+* **M09-USUARIOS_PERMISSOES**: Gerenciamento de acesso e segurança
+* **M02-ATENDIMENTO_BASICO**: Registro inicial de solicitações de clientes
+* **M04-ESTOQUE_BASICO**: Controle inicial de insumos e embalagens
+* **M03-ORCAMENTACAO_SIMPLES**: Criação de orçamentos para clientes
+* **M06-FINANCEIRO_BASICO**: Gerenciamento financeiro elementar
+* **M05-MANIPULACAO_BASICA**: Controle inicial do processo de manipulação
+* **MXX-CADASTROS_AUXILIARES**: Gerenciamento de tabelas auxiliares
+* **M0X-CONFIGURACOES_SISTEMA**: Configurações globais do sistema
+
+### 3.2. FASE 2: Expansão Funcional e Primeiras IA's
+Duração estimada: 6-9 meses após MVP
+Objetivo: Integrar primeiras funcionalidades de IA de alto impacto, expandir módulos fiscal e de atendimento.
+
+**Módulos principais**:
+* **M02-ATENDIMENTO_AVANCADO**: Inteligência na entrada de receitas
+* **M10-FISCAL_BASICO**: Conformidade fiscal básica (NF-e, NFS-e)
+* **M06-FINANCEIRO_AVANCADO**: Conciliação bancária, IA para classificação
+* **M11-PDV_BASICO**: Ponto de Venda para atendimento rápido
+* **M03-ORCAMENTACAO_INTELIGENTE**: Orçamentos com sugestões inteligentes
+* **M04-ESTOQUE_AVANCADO**: Gestão de estoque com insights preditivos
+* **M21-RASTREABILIDADE_PROCESSOS**: Sistema completo para rastreabilidade
+* **M22-PROMOCOES_MARKETING**: Gerenciamento de campanhas promocionais
+* **M18-FORMULAS_PRODUCAO_INTERNA**: Gestão de fórmulas padronizadas
+* **M20-SNGPC_CONTROLADOS**: Escrituração eletrônica para SNGPC e RMNR
+
+### 3.3. FASE 3: Inteligência Artificial Plena e Módulos Complementares
+Duração estimada: 9-12 meses após Fase 2
+Objetivo: Implementar IA avançada em todos os módulos principais, adicionar módulos de valor agregado.
+
+**Módulos principais**:
+* **M02-ATENDIMENTO_IA_COMPLETO**: Interpretação de receitas em áudio/vídeo, chatbot avançado
+* **M06-FINANCEIRO_PREDITIVO**: Previsão de fluxo de caixa, detecção de anomalias
+* **M04-ESTOQUE_OTIMIZADO**: Otimização de compras via IA
+* **M16-BI_RELATORIOS**: Business Intelligence com insights via IA
+* **Módulos Complementares**: RH, Convênios, Fidelidade, Gestão de Processos
+
+## 4. Funcionalidades Principais
 
 A aplicação oferece uma vasta gama de funcionalidades, incluindo:
 
-*   **Gerenciamento de Usuário e Autenticação:**
-    *   Autenticação completa (login, logout).
-    *   Proteção de rotas com verificação de autenticação.
-    *   Diferentes níveis de acesso para usuários internos.
+### 4.1 Gestão de Cadastros (M01)
+* Cadastro completo de insumos, lotes, embalagens
+* Vinculação entre matérias-primas e embalagens
+* Cadastro de fornecedores, fabricantes, e categorias
+* Controle de dados para produtos de revenda
+* Configuração de formas farmacêuticas e suas embalagens
 
-*   **Gestão de Prescrições:**
-    *   Upload e processamento de prescrições médicas.
-    *   Análise de prescrições potencialmente com assistência de IA.
-    *   Validação e acompanhamento do status das prescrições.
-    *   Detalhamento de medicamentos prescritos.
+### 4.2 Gestão de Atendimento (M02)
+* Entrada manual e inteligente de receitas
+* OCR e NLU para processamento de receitas
+* Omni-channel para recebimento de pedidos digitais
+* Integração com canais como WhatsApp
 
-*   **Gestão de Estoque:**
-    *   Cadastro e gerenciamento de insumos (matérias-primas).
-    *   Controle de estoque com alertas de estoque mínimo.
-    *   Gestão de custos unitários e informações de fornecedores.
-    *   Controle de lotes de insumos com rastreamento de validade.
-    *   Gerenciamento de embalagens e seu estoque.
+### 4.3 Gestão de Estoque (M04)
+* Controle de lotes e validades
+* Gestão de etiquetas para produtos de revenda
+* Previsão de demanda baseada em IA
+* Rastreabilidade de insumos
 
-*   **Gestão de Pedidos:**
-    *   Criação de pedidos a partir de prescrições processadas.
-    *   Acompanhamento do status de pedidos.
-    *   Previsão de data de entrega.
-    *   Gestão de pagamentos e valores.
+### 4.4 Produção e Rastreabilidade (M18, M21)
+* Cadastro detalhado de fórmulas com componentes
+* Rastreabilidade completa de etapas do processo produtivo
+* Controle de qualidade dos produtos manipulados
+* Gestão de ordens de produção interna
 
-*   **Controle Financeiro:**
-    *   Categorização de transações financeiras.
-    *   Registro de fluxo de caixa (receitas e despesas).
-    *   Vinculação de transações com pedidos.
-    *   Relatórios financeiros básicos.
+### 4.5 Comercial e Marketing (M03, M22)
+* Orçamentos inteligentes com precificação dinâmica
+* Gestão de campanhas promocionais
+* Programas de fidelidade
+* Ponto de venda integrado
 
-*   **Gestão de Usuários Internos:**
-    *   Administração de usuários da plataforma.
-    *   Atribuição de cargos e perfis de acesso.
-    *   Associação de ações com usuários específicos.
+### 4.6 Fiscal e Regulatório (M10, M20)
+* Conformidade com SNGPC e RMNR
+* Emissão de documentos fiscais (NF-e, NFS-e)
+* Controle de medicamentos controlados
+* Rastreabilidade para auditorias regulatórias
 
-## 3. Arquitetura Técnica
+### 4.7 Business Intelligence (M16)
+* Relatórios dinâmicos e consultas personalizadas
+* Dashboards operacionais e gerenciais
+* Análise avançada com insights via IA
+* Consultas em linguagem natural
 
-O Homeo-AI utiliza uma arquitetura moderna com um frontend React e Supabase como Backend-as-a-Service (BaaS).
+## 5. Integração de Inteligência Artificial
 
-### 3.1. Frontend
+A IA é integrada em diversos módulos do sistema:
 
-*   **Framework/Biblioteca:** React.js com TypeScript.
-*   **Build Tool:** Vite.
-*   **Estilização:** Tailwind CSS com componentes shadcn/ui (construídos sobre Radix UI).
-*   **Roteamento:** React Router DOM.
-*   **Gerenciamento de Estado (Dados do Servidor):** TanStack Query (React Query).
-*   **Formulários:** React Hook Form com validação Zod.
-*   **Comunicação com Backend:**
-    *   Interage diretamente com Supabase via `supabase-js` para autenticação, banco de dados e armazenamento.
-*   **Outras Bibliotecas:** Lucide Icons, Sonner (toasts), date-fns, recharts, etc.
-*   **Componentes UI Reutilizáveis:**
-    *   Estão organizados em `src/components/` incluindo componentes de UI base e layouts específicos.
-    *   AdminLayout: Template para todas as páginas administrativas.
-    *   Diversos componentes específicos para cada área funcional (pedidos, estoque, etc.).
-*   **Hooks Customizados:**
-    *   Utilizados para lógica de negócios reutilizável e interações com Supabase.
+* **Processamento de Documentos**: OCR para receitas e notas fiscais
+* **Análise de Linguagem Natural**: Extração de dados de receitas, interpretação de textos
+* **Previsão e Otimização**: Demanda de insumos, precificação, compras, estoques
+* **Assistência ao Usuário**: Chatbots, sugestões contextuais, detecção de erros
+* **Detecção de Anomalias**: Transações financeiras, movimentações de estoque
+* **Geração de Conteúdo**: Textos para rótulos, POPs, descrições de produto
 
-### 3.2. Backend (Supabase)
+## 6. Próximos Passos e Roadmap
 
-*   **Banco de Dados:** PostgreSQL hospedado no Supabase.
-*   **Autenticação:** Supabase Auth para gerenciamento de usuários e sessões.
-*   **Storage:** Armazenamento de arquivos (potencialmente para imagens de prescrições).
-*   **Tabelas Principais:**
-    *   `insumos`: Matérias-primas do inventário.
-    *   `embalagens`: Materiais de embalagem.
-    *   `lotes_insumos`: Lotes do inventário.
-    *   `fornecedores`: Fornecedores de insumos e embalagens.
-    *   `receitas_raw`: Prescrições brutas.
-    *   `receitas_processadas`: Prescrições analisadas e processadas.
-    *   `pedidos`: Pedidos gerados a partir de prescrições.
-    *   `categorias_financeiras`: Categorias para transações financeiras.
-    *   `movimentacoes_caixa`: Transações financeiras (entrada/saída).
-    *   `usuarios_internos`: Usuários da plataforma.
+O desenvolvimento atual está focado na conclusão da Fase 1 (MVP), com ênfase nos módulos de cadastros essenciais e usuários/permissões. O roadmap de alto nível segue as três fases definidas, com entregas incrementais.
 
-## 4. Estrutura de Pastas Relevantes
+### Marcos Principais:
+* **MVP Funcional & Operacional**: 6 meses (módulos core da Fase 1)
+* **Sistema Expandido com IA Inicial**: 9 meses após MVP
+* **Sistema Completo com IA Avançada**: 12 meses após expansão
 
-*   **`/` (Raiz):**
-    *   `package.json`: Dependências e scripts do frontend.
-    *   `vite.config.ts`: Configuração do Vite.
-    *   `tailwind.config.ts`: Configuração do Tailwind CSS.
-    *   `tsconfig.json`: Configuração do TypeScript.
-    *   `index.html`: Ponto de entrada do HTML.
-    *   `README.md`: Informações gerais do projeto.
-*   **`src/`:** Código fonte do frontend React.
-    *   `main.tsx`: Ponto de entrada da aplicação React.
-    *   `App.tsx`: Componente principal, configuração de rotas e providers globais.
-    *   `components/`: Componentes UI reutilizáveis.
-        *   `ui/`: Componentes de UI base (shadcn).
-        *   `layouts/`: Templates de layout como AdminLayout.
-        *   `Auth/`: Componentes relacionados à autenticação.
-    *   `pages/`: Componentes de página para cada funcionalidade.
-        *   `admin/`: Páginas administrativas organizadas por funcionalidade.
-            *   `pedidos/`: Gestão de pedidos e prescrições.
-            *   `estoque/`: Gestão de insumos, embalagens e lotes.
-            *   `financeiro/`: Gestão financeira.
-            *   `usuarios/`: Gestão de usuários.
-    *   `hooks/`: Hooks customizados para lógica de negócios.
-    *   `integrations/`: Código para interagir com serviços externos.
-        *   `supabase/`: Cliente e tipos do Supabase.
-    *   `lib/`: Utilitários e funções auxiliares.
-*   **`public/`:** Arquivos estáticos servidos diretamente.
-*   **`supabase/`:** Configuração para a CLI do Supabase.
-    *   `config.toml`: ID do projeto Supabase.
-
-## 5. Como Executar o Projeto
-
-1.  Clone o repositório.
-2.  Instale as dependências: `npm install`.
-3.  Inicie o servidor de desenvolvimento: `npm run dev`.
-4.  Acesse a aplicação no endereço fornecido (geralmente `http://localhost:5173`).
-
-**Nota:** Como o backend é totalmente baseado no Supabase, não é necessário executar um servidor de backend separadamente. No entanto, para desenvolvimento local, podem ser necessárias configurações adicionais (como variáveis de ambiente) para conectar ao projeto Supabase correto.
-
-## 6. Pontos de Destaque e Complexidade
-
-*   **Análise de Prescrições:** Potencial uso de IA para processar e entender receitas médicas (homeopáticas).
-*   **Gerenciamento de Estoque Farmacêutico:** Controle detalhado de matérias-primas, lotes e validade.
-*   **Controle Financeiro:** Sistema integrado para rastreamento de transações relacionadas a pedidos.
-*   **Fluxo Completo:** Da prescrição ao pedido finalizado, passando por validação e produção.
-*   **Dashboard Administrativo:** Visão consolidada de métricas chave do negócio.
-*   **Potencial de Escalabilidade:** A estrutura permite expansão para módulos adicionais (como faturamento detalhado, análise de custos e tendências).
-
-## 7. Próximos Passos (Planejados)
-
-*   **Alertas de Estoque Avançados:** Notificações automáticas quando o estoque estiver abaixo do mínimo.
-*   **Módulo Financeiro Expandido:** Relatórios financeiros detalhados e análise de rentabilidade.
-*   **Cálculo de Custos por Pedido:** Análise detalhada de custos de produção.
-*   **Gráficos e Análises de Tendências:** Visualizações de dados para pedidos e faturamento ao longo do tempo.
-
-Este documento fornece um contexto inicial sobre o projeto Homeo-AI. A análise foi baseada no código disponível, estrutura de arquivos e funcionalidades implementadas. 
+Última atualização da análise do sistema: 2024-05-21 
