@@ -18,6 +18,8 @@ import pharmaLogo from '@/assets/logo/phama-horizon.png';
 const N8N_WEBHOOK_URL = import.meta.env.VITE_N8N_LEAD_WEBHOOK_URL || "https://ottoffilho.app.n8n.cloud/webhook-test/pharma-ai";
 // URL do Handler do LLM (deve vir de uma variável de ambiente)
 const CHATBOT_LLM_HANDLER_URL = import.meta.env.VITE_CHATBOT_LLM_HANDLER_URL;
+// URL da Edge Function AI Agent
+const AI_AGENT_URL = import.meta.env.VITE_SUPABASE_URL + '/functions/v1/chatbot-ai-agent';
 
 interface ChatMessage {
   id: string;
@@ -45,6 +47,8 @@ const LeadCaptureChatbot: React.FC<LeadCaptureChatbotProps> = ({ isOpen, onClose
   const [conversationStep, setConversationStep] = useState('greeting');
   const [leadData, setLeadData] = useState<Partial<LeadData>>({});
   const [hasInitialized, setHasInitialized] = useState(false);
+  const [leadAlreadySent, setLeadAlreadySent] = useState(false);
+  const [currentSessionId, setCurrentSessionId] = useState<string>('');
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -113,6 +117,8 @@ const LeadCaptureChatbot: React.FC<LeadCaptureChatbotProps> = ({ isOpen, onClose
       setIsLoading(false);
       setConversationStep('initial_greeting');
       setLeadData({});
+      setLeadAlreadySent(false);
+      setCurrentSessionId(`session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
       setHasInitialized(true);
       
       // Initial bot message with typing effect
@@ -143,6 +149,12 @@ const LeadCaptureChatbot: React.FC<LeadCaptureChatbotProps> = ({ isOpen, onClose
   };
 
   const submitLeadToSupabaseAndN8n = async (finalLeadData: LeadData, conversationTranscript: ChatMessage[]) => {
+    // Verificar se o lead já foi enviado para evitar duplicatas
+    if (leadAlreadySent) {
+      console.log("Lead já foi enviado, pulando envio para n8n");
+      return;
+    }
+    
     setIsLoading(true);
     addMessage("Obrigado! Estamos processando suas informações...", 'system');
     
@@ -178,12 +190,65 @@ const LeadCaptureChatbot: React.FC<LeadCaptureChatbotProps> = ({ isOpen, onClose
       const n8nResponseData = await n8nResponse.json();
       console.log("Resposta do n8n:", n8nResponseData);
       
-      addMessage("Seus dados foram enviados com sucesso! Nossa equipe entrará em contato em breve.", 'bot', true);
-      setConversationStep('finished');
+      // Marcar que o lead foi enviado com sucesso
+      setLeadAlreadySent(true);
+      
+      // Nova mensagem final com opção de continuar conversa
+      addMessage(`🎯 Perfeito, ${finalLeadData.nomeFarmacia}! 
+
+Seus dados foram registrados e nossa equipe comercial entrará em contato em breve para apresentar uma proposta personalizada.
+
+🤖 Enquanto isso, que tal conhecer melhor como o Pharma.AI pode revolucionar sua farmácia?
+
+Posso explicar:
+• Como nossa IA lê receitas automaticamente
+• Sistema completo de gestão (estoque, financeiro, fiscal)
+• Automações que economizam horas de trabalho
+• E muito mais...
+
+💬 Digite **SIM** para saber mais ou **OBRIGADO** para finalizar.`, 'bot', true);
+      setConversationStep('offering_additional_info');
       
     } catch (error) {
       console.error('Erro ao processar lead:', error);
       addMessage("Desculpe, tivemos um problema ao processar seus dados. Por favor, tente novamente mais tarde ou entre em contato por outro canal.", 'bot', true);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Nova função para chamar o AI Agent
+  const callAIAgent = async (userMessage: string) => {
+    try {
+      setIsLoading(true);
+      
+      const response = await fetch(AI_AGENT_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          sessionId: currentSessionId,
+          userMessage: userMessage,
+          leadData: leadData,
+          action: 'ai_conversation'
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`AI Agent error: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('Resposta do AI Agent:', result);
+      
+      // Adicionar resposta do AI Agent
+      addMessage(result.botResponse, 'bot', true);
+      
+    } catch (error) {
+      console.error('Erro ao chamar AI Agent:', error);
+      addMessage("Desculpe, estou com dificuldades técnicas no momento. Nossa equipe pode esclarecer suas dúvidas pessoalmente. Em breve entraremos em contato!", 'bot', true);
     } finally {
       setIsLoading(false);
     }
@@ -199,6 +264,12 @@ const LeadCaptureChatbot: React.FC<LeadCaptureChatbotProps> = ({ isOpen, onClose
 
     // Manter foco no input após enviar mensagem
     ensureInputFocus();
+
+    // Se estivermos no step de conversa detalhada, chamar AI Agent diretamente
+    if (conversationStep === 'detailed_conversation') {
+      await callAIAgent(userMessageText);
+      return;
+    }
 
     // Se não houver URL do LLM configurada, simula a coleta de dados
     if (!CHATBOT_LLM_HANDLER_URL) {
@@ -245,6 +316,47 @@ const LeadCaptureChatbot: React.FC<LeadCaptureChatbotProps> = ({ isOpen, onClose
                   extracted.telefone = userMessageText;
                 }
                 nextStep = 'data_collection_complete';
+            } else if (conversationStep === 'offering_additional_info') {
+                const positiveResponses = ['sim', 'yes', 'quero', 'gostaria', 'claro', 'pode', 'vamos'];
+                const negativeResponses = ['obrigado', 'obrigada', 'não', 'nao', 'tchau', 'bye', 'finalizar'];
+                
+                const userText = userMessageText.toLowerCase();
+                const isPositive = positiveResponses.some(response => userText.includes(response));
+                const isNegative = negativeResponses.some(response => userText.includes(response));
+                
+                if (isPositive) {
+                    botResponse = `Perfeito! Vou te ajudar a conhecer melhor o Pharma.AI.
+                    
+🚀 Agora estou conectado com nossa IA especializada que conhece todos os detalhes do sistema!
+
+Sobre o que gostaria de saber mais?
+• Gestão de receitas com IA
+• Controle de estoque inteligente  
+• Módulo fiscal e NF-e
+• Relatórios e análises
+• Módulos específicos do sistema
+
+Digite sua pergunta e eu vou te dar uma resposta detalhada! 😊`;
+                    nextStep = 'detailed_conversation';
+                } else if (isNegative) {
+                    botResponse = `Muito obrigado pela sua atenção! 
+                    
+✅ Seus dados foram registrados com sucesso
+📞 Nossa equipe entrará em contato em breve
+🌟 Aguarde nossa proposta personalizada
+
+Tenha um ótimo dia e até logo! 👋`;
+                    nextStep = 'finished';
+                } else {
+                    botResponse = `Não entendi sua resposta. 
+                    
+Digite **SIM** se quiser saber mais sobre o Pharma.AI ou **OBRIGADO** para finalizar.`;
+                    nextStep = 'offering_additional_info'; // Mantém no mesmo step
+                }
+            } else if (conversationStep === 'detailed_conversation') {
+                // Chamar AI Agent para resposta inteligente - não usar setTimeout aqui
+                botResponse = "Processando sua pergunta...";
+                nextStep = 'detailed_conversation';
             }
             
             handleLlmResponse(botResponse, nextStep, extracted);
