@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Star, Shield, Zap, Leaf } from 'lucide-react';
 
@@ -27,18 +26,12 @@ const differentiators = [
 
 const WhyChooseSection = () => {
   return (
-    <section id="diferenciais" className="bg-white">
-      <div className="container-section">
-        <div className="max-w-3xl mx-auto text-center mb-16">
-          <h2 className="heading-lg gradient-text mb-6">
-            Por Que Escolher o Homeo-AI
-          </h2>
-          <p className="paragraph">
-            Descubra o que torna nossa solução única e perfeitamente adaptada às necessidades específicas das Farmácias de Manipulação.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-12">
+    <section id="why-choose-us" className="py-16 bg-gray-50">
+      <div className="container mx-auto px-6">
+        <h2 className="text-3xl font-bold text-center text-gray-800 mb-12">
+          Por Que Escolher o Pharma.AI
+        </h2>
+        <div className="grid md:grid-cols-3 gap-8">
           {differentiators.map((item, index) => (
             <div 
               key={index}
@@ -67,7 +60,7 @@ const WhyChooseSection = () => {
               Desenvolvido com e para Profissionais do Setor
             </h3>
             <p className="text-center paragraph">
-              O Homeo-AI foi criado em colaboração com farmacêuticos homeopatas experientes, 
+              O Pharma.AI foi criado em colaboração com farmacêuticos experientes, 
               garantindo que cada funcionalidade atenda às necessidades reais da sua farmácia. 
               Nossa solução evolui constantemente com feedback de usuários profissionais do setor.
             </p>

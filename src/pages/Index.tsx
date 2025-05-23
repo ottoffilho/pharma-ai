@@ -7,14 +7,14 @@ import FeaturesSection from '@/components/FeaturesSection';
 import AISection from '@/components/AISection';
 import HowItWorksSection from '@/components/HowItWorksSection';
 import WhyChooseSection from '@/components/WhyChooseSection';
-import TestimonialsSection from '@/components/TestimonialsSection';
+// import TestimonialsSection from '@/components/TestimonialsSection';
 import CTASection from '@/components/CTASection';
 import Footer from '@/components/Footer';
 
 const Index: React.FC = () => {
   // Update the document title
   useEffect(() => {
-    document.title = "Homeo-AI | Sistema de Gestão para Farmácias Homeopáticas";
+    document.title = "Pharma.AI | Sistema de Gestão para Farmácias Homeopáticas";
   }, []);
 
   return (
@@ -28,7 +28,7 @@ const Index: React.FC = () => {
         <AISection />
         <HowItWorksSection />
         <WhyChooseSection />
-        <TestimonialsSection />
+        {/* <TestimonialsSection /> */}
         <CTASection />
       </main>
       <Footer />

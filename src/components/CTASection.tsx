@@ -1,26 +1,73 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Phone, Mail, MapPin } from 'lucide-react';
+import { Phone, Mail, MapPin, Loader2 } from 'lucide-react';
+import PharmaLogo from '@/assets/logo/pharma-image.png';
+
+// URL da Edge Function para salvar o lead do formulário
+// const SAVE_FORM_LEAD_URL = `${Deno.env.get('SUPABASE_URL')}/functions/v1/save-form-lead`; // Ajuste se SUPABASE_URL não estiver disponível globalmente assim no frontend, pode precisar ser de import.meta.env
+// Melhor abordagem para URL no frontend:
+const FORM_LEAD_SUBMIT_URL = import.meta.env.VITE_SAVE_FORM_LEAD_FUNCTION_URL || 'https://hjwebmpvaaeogbfqxwub.supabase.co/functions/v1/save-form-lead';
 
 const CTASection = () => {
   const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
   
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
-    // In a real implementation, you would send this data to your backend
-    toast({
-      title: "Formulário enviado!",
-      description: "Entraremos em contato em breve.",
-      duration: 5000,
-    });
-    
-    // Reset form
-    e.currentTarget.reset();
+    setIsLoading(true);
+
+    // Capturar referência do formulário antes das operações assíncronas
+    const formElement = e.currentTarget;
+
+    // DEBUG: Logar a chave anon para verificar seu valor
+    console.log("VITE_SUPABASE_ANON_KEY sendo usada:", import.meta.env.VITE_SUPABASE_ANON_KEY);
+
+    const formData = new FormData(formElement); // Usando formElement em vez de e.currentTarget
+    const leadData = {
+      nome_contato: formData.get('name') as string,
+      nome_farmacia: formData.get('pharmacy') as string,
+      email: formData.get('email') as string,
+      telefone: formData.get('phone') as string,
+      mensagem: formData.get('message') as string | null,
+    };
+
+    try {
+      const response = await fetch(FORM_LEAD_SUBMIT_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          // Tentando ambas as formas de autenticação para Edge Functions
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY as string,
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY as string}`,
+        },
+        body: JSON.stringify(leadData),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || `Erro ao enviar formulário: ${response.statusText}`);
+      }
+
+      toast({
+        title: "Formulário enviado com sucesso!",
+        description: "Obrigado pelo seu contato. Entraremos em contato em breve.",
+        variant: "success",
+      });
+      formElement.reset(); // Usando formElement em vez de e.currentTarget
+    } catch (error: any) {
+      console.error("Falha ao enviar formulário:", error);
+      toast({
+        title: "Erro ao enviar formulário!",
+        description: error.message || "Não foi possível enviar seus dados. Tente novamente mais tarde.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
   
   return (
@@ -30,15 +77,14 @@ const CTASection = () => {
           <div className="bg-white rounded-xl shadow-xl overflow-hidden">
             <div className="grid grid-cols-1 lg:grid-cols-2">
               {/* Form */}
-              <div className="p-8 md:p-12">
-                <h2 className="heading-md gradient-text mb-6">
-                  Pronto para Transformar sua Farmácia?
-                </h2>
-                <p className="text-homeo-gray mb-8">
-                  Solicite uma demonstração gratuita ou entre em contato para saber mais sobre como o Homeo-AI pode revolucionar sua farmácia homeopática.
-                </p>
+              <div className="p-8 md:p-12 flex flex-col items-center">
+                <img 
+                  src={PharmaLogo} 
+                  alt="Pharma.AI Logo" 
+                  className="w-32 h-auto mb-6"
+                />
                 
-                <form onSubmit={handleSubmit} className="space-y-5">
+                <form onSubmit={handleSubmit} className="space-y-5 w-full max-w-md">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <div>
                       <label htmlFor="name" className="block text-sm font-medium mb-1 text-homeo-gray-dark">
@@ -110,8 +156,12 @@ const CTASection = () => {
                     />
                   </div>
                   
-                  <Button type="submit" className="btn-primary w-full">
-                    Solicitar Demonstração Gratuita
+                  <Button type="submit" className="btn-primary w-full" disabled={isLoading}>
+                    {isLoading ? (
+                      <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processando...</>
+                    ) : (
+                      'Solicitar Demonstração Gratuita'
+                    )}
                   </Button>
                 </form>
               </div>
@@ -139,7 +189,7 @@ const CTASection = () => {
                       <Mail className="h-6 w-6 text-white/90 mt-1" />
                       <div>
                         <h4 className="font-medium text-white">E-mail</h4>
-                        <p className="text-white/80">contato@homeo-ai.com</p>
+                        <p className="text-white/80">contato@pharma.ai</p>
                       </div>
                     </div>
                     

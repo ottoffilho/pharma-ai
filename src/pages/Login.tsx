@@ -112,9 +112,10 @@ const Login: React.FC = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-homeo p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1 text-center">
-          <CardTitle className="text-2xl font-bold">Homeo-AI</CardTitle>
+          <img src="/assets/logo.svg" alt="Logo" className="w-24 h-24 mx-auto mb-4" />
+          <CardTitle className="text-2xl font-bold">Pharma.AI</CardTitle>
           <CardDescription>
-            Entre com suas credenciais para acessar o sistema
+            Bem-vindo! Faça login para acessar sua conta.
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleLogin}>

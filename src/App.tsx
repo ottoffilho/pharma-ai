@@ -30,6 +30,7 @@ import ContasAPagarPage from "./pages/admin/financeiro/contas-a-pagar/index";
 import NovaContaPagarPage from "./pages/admin/financeiro/contas-a-pagar/novo";
 import EditarContaPagarPage from "./pages/admin/financeiro/contas-a-pagar/editar/[id]";
 import PrivateRoute from "./components/Auth/PrivateRoute";
+import FloatingChatbotWidget from "@/components/chatbot/FloatingChatbotWidget";
 
 const queryClient = new QueryClient();
 
@@ -40,6 +41,7 @@ const App = (): JSX.Element => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
+        <FloatingChatbotWidget />
         <BrowserRouter>
           <Routes>
             {/* Public Routes */}

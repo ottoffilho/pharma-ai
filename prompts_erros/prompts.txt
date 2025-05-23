@@ -1,0 +1,82 @@
+headers
+params
+query
+body
+webhookUrl
+executionMode
+host:ottoffilho.app.n8n.cloud
+user-agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36
+content-length:1202
+accept:*/*
+accept-encoding:gzip, br
+accept-language:pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7
+cache-control:no-cache
+cdn-loop:cloudflare; loops=1; subreqs=1
+cf-connecting-ip:2804:5f48:184:4e00:878:ca13:ae96:895b
+cf-ew-via:15
+cf-ipcountry:BR
+cf-ray:94401b9054cdf1e5-GRU
+cf-visitor:{"scheme":"https"}
+cf-worker:n8n.cloud
+content-type:application/json
+origin:http://localhost:8084
+pragma:no-cache
+priority:u=1, i
+referer:http://localhost:8084/
+sec-ch-ua:"Chromium";v="136", "Google Chrome";v="136", "Not.A/Brand";v="99"
+sec-ch-ua-mobile:?0
+sec-ch-ua-platform:"Windows"
+sec-fetch-dest:empty
+sec-fetch-mode:cors
+sec-fetch-site:cross-site
+x-forwarded-for:2804:5f48:184:4e00:878:ca13:ae96:895b, 172.69.138.162
+x-forwarded-host:ottoffilho.app.n8n.cloud
+x-forwarded-port:443
+x-forwarded-proto:https
+x-forwarded-server:traefik-prod-users-gwc-67-684bd97b65-dp6kn
+x-is-trusted:yes
+x-real-ip:2804:5f48:184:4e00:878:ca13:ae96:895b
+[empty object]	[empty object]	
+nomeFarmacia:farmatech
+nomeContato:otto
+email:otto@gmail.com
+telefone:nao quero informar
+messages_transcription
+0
+sender:bot
+text:Olá! Sou o assistente virtual do Pharma.AI. Nosso sistema de gestão para farmácias de manipulação está em desenvolvimento e usa IA para otimizar processos. Gostaria de saber mais ou ser contatado para uma demonstração futura?
+timestamp:2025-05-22T23:31:00.968Z
+1
+sender:user
+text:sim
+timestamp:2025-05-22T23:31:02.954Z
+2
+sender:bot
+text:Ótimo! Para começarmos, qual o nome da sua farmácia?
+timestamp:2025-05-22T23:31:03.957Z
+3
+sender:user
+text:farmatech
+timestamp:2025-05-22T23:31:08.176Z
+4
+sender:bot
+text:Entendido, farmatech. E qual o seu nome?
+timestamp:2025-05-22T23:31:09.177Z
+5
+sender:user
+text:otto
+timestamp:2025-05-22T23:31:11.526Z
+6
+sender:bot
+text:Prazer, otto! Qual o seu e-mail de contato?
+timestamp:2025-05-22T23:31:12.540Z
+7
+sender:user
+text:otto@gmail.com
+timestamp:2025-05-22T23:31:21.652Z
+8
+sender:bot
+text:Perfeito. E qual o seu telefone? (opcional)
+timestamp:2025-05-22T23:31:22.657Z
+origem:chatbot_landing
+https://ottoffilho.app.n8n.cloud/webhook-test/pharma-ai	test	

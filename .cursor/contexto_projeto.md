@@ -1,8 +1,8 @@
-# Contexto do Projeto Homeo-AI
+# Contexto do Projeto Pharma.AI
 
 ## 1. Visão Geral do Projeto
 
-Homeo-AI é uma aplicação web abrangente projetada para Farmácias de Manipulação, oferecendo uma plataforma rica em funcionalidades para gerenciamento de prescrições, inventário, pedidos, transações financeiras e gerenciamento de usuários. O projeto utiliza inteligência artificial em diversos módulos para otimizar processos, desde o processamento de receitas até previsão de demanda e precificação.
+Pharma.AI é uma aplicação web abrangente projetada para Farmácias de Manipulação, oferecendo uma plataforma rica em funcionalidades para gerenciamento de prescrições, inventário, pedidos, transações financeiras e gerenciamento de usuários. O projeto utiliza inteligência artificial em diversos módulos para otimizar processos, desde o processamento de receitas até previsão de demanda e precificação.
 
 A aplicação segue uma arquitetura híbrida com um monólito modular para o núcleo do sistema e microsserviços para funcionalidades de IA. O desenvolvimento está estruturado em três fases principais: MVP, Expansão Funcional, e Inteligência Artificial Plena.
 
@@ -10,7 +10,7 @@ A aplicação segue uma arquitetura híbrida com um monólito modular para o nú
 
 ### 2.1. Visão Geral da Arquitetura
 
-O Homeo-AI utiliza uma arquitetura híbrida com quatro componentes principais:
+O Pharma.AI utiliza uma arquitetura híbrida com quatro componentes principais:
 * **Monolito Modular**: Núcleo do sistema (cadastros, pedidos, estoque, financeiro)
 * **Microsserviços de IA**: Processamento de receitas, modelos preditivos, chatbots
 * **Automação n8n**: Fluxos de trabalho automáticos, notificações
@@ -48,7 +48,7 @@ O Homeo-AI utiliza uma arquitetura híbrida com quatro componentes principais:
 
 ## 3. Fases de Implementação e Módulos
 
-O desenvolvimento do Homeo-AI está organizado em três fases principais:
+O desenvolvimento do Pharma.AI está organizado em três fases principais:
 
 ### 3.1. FASE 1: MVP (Produto Mínimo Viável)
 Duração estimada: 3-6 meses

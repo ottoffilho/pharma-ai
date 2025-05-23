@@ -1,6 +1,8 @@
-# Regras Específicas de Implementação - Homeo-AI
+# Regras Específicas de Implementação - Pharma.AI
 
-Este documento estabelece as diretrizes específicas e técnicas para o desenvolvimento do projeto Homeo-AI, complementando as regras gerais. Estas diretrizes devem ser seguidas rigorosamente por todos os desenvolvedores.
+Este documento estabelece as diretrizes específicas e técnicas para o desenvolvimento do projeto Pharma.AI, complementando as regras gerais. Estas diretrizes devem ser seguidas rigorosamente por todos os desenvolvedores.
+
+### SEMPRE FALAR EM PT-BR ###
 
 ## 1. Padrões de Código por Tecnologia
 

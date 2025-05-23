@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Check } from 'lucide-react';
 
@@ -22,7 +21,7 @@ const SolutionSection = () => {
               {/* System interface mockup */}
               <div className="absolute inset-0 pt-8 px-4 pb-4 flex flex-col">
                 <div className="flex justify-between items-center mb-4 p-2 bg-homeo-blue-light rounded">
-                  <div className="text-homeo-blue-dark font-medium">Sistema Integrado Homeo-AI</div>
+                  <div className="text-pharma-blue-dark font-medium">Sistema Integrado Pharma.AI</div>
                   <div className="flex space-x-2">
                     <div className="w-8 h-8 bg-homeo-gray-light/50 rounded-full"></div>
                     <div className="w-8 h-8 bg-homeo-blue/20 rounded-full flex items-center justify-center text-xs font-bold text-homeo-blue">AI</div>
@@ -58,12 +57,13 @@ const SolutionSection = () => {
           {/* Content */}
           <div className="space-y-6">
             <h2 className="heading-lg gradient-text gradient-border pb-3">
-              A Solução Completa
+              A Solução Completa para Sua Farmácia de Manipulação
             </h2>
             
-            <p className="paragraph">
-              O Homeo-AI é um sistema de gestão especialmente desenvolvido para farmácias de manipulação homeopáticas, 
-              integrando todas as etapas do processo em uma única plataforma inteligente.
+            <p className="paragraph mb-8">
+              O Pharma.AI é um sistema de gestão especialmente desenvolvido para farmácias de manipulação homeopáticas,
+              oferecendo uma plataforma completa e intuitiva para otimizar todas as áreas do seu negócio.
+              Desde o atendimento ao cliente até a gestão financeira e de estoque, nossa solução integra
             </p>
             
             <p className="paragraph">

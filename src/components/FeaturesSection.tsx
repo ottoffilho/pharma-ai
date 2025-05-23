@@ -64,17 +64,12 @@ const featuresData: FeatureItem[] = [
 
 const FeaturesSection: React.FC = (): JSX.Element => {
   return (
-    <section id="recursos" className="bg-white">
-      <div className="container-section">
-        <div className="max-w-3xl mx-auto text-center mb-16">
-          <h2 className="heading-lg gradient-text mb-6">
-            Recursos que Transformam sua Farmácia
-          </h2>
-          <p className="paragraph">
-            O Homeo-AI oferece um conjunto completo de funcionalidades desenvolvidas especificamente para Farmácias de Manipulação, 
-            integrando todos os processos em uma única plataforma inteligente.
-          </p>
-        </div>
+    <section id="features" className="py-16">
+      <div className="container mx-auto px-6">
+        <h2 className="text-3xl font-bold text-center text-gray-800 mb-12">
+          O Pharma.AI oferece um conjunto completo de funcionalidades desenvolvidas especificamente para Farmácias de Manipulação,
+          garantindo eficiência, conformidade e crescimento para o seu negócio.
+        </h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-12">
           {featuresData.map((feature: FeatureItem) => (

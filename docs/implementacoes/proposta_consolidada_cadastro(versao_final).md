@@ -1,4 +1,4 @@
-# HOMEO.AI - PLANO DE IMPLEMENTAÇÃO ESTRUTURADO
+# PHARMA.AI - PLANO DE IMPLEMENTAÇÃO ESTRUTURADO
 ## Documento Guia para Inteligência Artificial e Desenvolvedores
 
 **Instruções para IA:** Este documento detalha o plano de implementação do projeto Homeo.AI. Utilize a estrutura YAML fornecida para entender a arquitetura, stack tecnológica, fases, módulos, prioridades, dependências e critérios de aceitação. A ordem de implementação é definida pelas FASES e, dentro delas, pelas PRIORIDADES e DEPENDÊNCIAS dos módulos.

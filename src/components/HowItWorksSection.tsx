@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { FileSearch, Database, ChartBar, ArrowRight } from 'lucide-react';
 
@@ -25,17 +24,11 @@ const steps = [
 
 const HowItWorksSection = () => {
   return (
-    <section id="funcionamento" className="bg-homeo-gray-light/50">
-      <div className="container-section">
-        <div className="max-w-3xl mx-auto text-center mb-16">
-          <h2 className="heading-lg gradient-text mb-6">
-            Como Funciona
-          </h2>
-          <p className="paragraph">
-            Conheça o fluxo de trabalho simplificado e inteligente que o Homeo-AI proporciona para sua farmácia.
-          </p>
-        </div>
-
+    <section id="how-it-works" className="py-16">
+      <div className="container mx-auto px-6">
+        <h2 className="text-3xl font-bold text-center text-gray-800 mb-12">
+          Conheça o fluxo de trabalho simplificado e inteligente que o Pharma.AI proporciona para sua farmácia.
+        </h2>
         <div className="relative">
           {/* Connecting line */}
           <div className="absolute top-1/2 left-0 w-full h-1 bg-gradient-to-r from-homeo-blue via-homeo-green to-homeo-accent transform -translate-y-1/2 hidden md:block"></div>

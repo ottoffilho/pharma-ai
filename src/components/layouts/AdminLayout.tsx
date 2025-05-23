@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
@@ -138,9 +137,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         <div className="p-4 flex items-center justify-between border-b h-16">
           <div className={cn("flex items-center", !isSidebarOpen && "justify-center w-full")}>
             {isSidebarOpen ? (
-              <Link to="/admin" className="font-bold text-xl">Homeo-AI</Link>
+              <Link to="/admin" className="font-bold text-xl">Pharma.AI</Link>
             ) : (
-              <Link to="/admin" className="font-bold text-xl">H</Link>
+              <Link to="/admin" className="font-bold text-xl">P</Link>
             )}
           </div>
           <Button
@@ -247,7 +246,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       <div className="md:hidden fixed top-0 inset-x-0 z-50 h-16 border-b bg-background/95 backdrop-blur">
         <div className="flex items-center justify-between px-4 h-full">
           <Link to="/admin" className="font-bold text-xl">
-            Homeo-AI
+            Pharma.AI
           </Link>
           <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
             <SheetTrigger asChild>
@@ -257,7 +256,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             </SheetTrigger>
             <SheetContent side="left" className="w-[300px] sm:w-[400px]">
               <SheetHeader className="pb-4">
-                <SheetTitle>Homeo-AI</SheetTitle>
+                <SheetTitle>Pharma.AI</SheetTitle>
               </SheetHeader>
               <Separator />
               <nav className="flex flex-col mt-4 space-y-1">

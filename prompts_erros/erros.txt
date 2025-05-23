@@ -1,0 +1,27 @@
+[plugin:vite:react-swc] × await isn't allowed in non-async function
+     ╭─[C:/Users/ottof/OneDrive/Documentos/GitHub/pharma.ai/src/components/chatbot/LeadCaptureChatbot.tsx:180:1]
+ 177 │             
+ 178 │             handleLlmResponse(botResponse, nextStep, extracted);
+ 179 │ 
+ 180 │                         if (nextStep === 'data_collection_complete') {                const completeLeadData = { ...leadData, ...extracted } as LeadData;                 if (completeLeadData.email && completeLeadData.nomeFarmacia) {                    await submitLeadToN8n(completeLeadData, messages);                } else {                    addMessage("Parece que faltaram informações essenciais (nome da farmácia ou e-mail). Poderia tentar novamente?", 'bot');                    setConversationStep('initial_greeting'); // Reinicia para tentar de novo                }            }
+     ·                                                                                                                                                                                                                                                                   ───────────────
+ 181 │         }, 1000);
+ 182 │         return;
+ 182 │     }
+     ╰────
+  × Expression expected
+     ╭─[C:/Users/ottof/OneDrive/Documentos/GitHub/pharma.ai/src/components/chatbot/LeadCaptureChatbot.tsx:181:1]
+ 178 │             handleLlmResponse(botResponse, nextStep, extracted);
+ 179 │ 
+ 180 │                         if (nextStep === 'data_collection_complete') {                const completeLeadData = { ...leadData, ...extracted } as LeadData;                 if (completeLeadData.email && completeLeadData.nomeFarmacia) {                    await submitLeadToN8n(completeLeadData, messages);                } else {                    addMessage("Parece que faltaram informações essenciais (nome da farmácia ou e-mail). Poderia tentar novamente?", 'bot');                    setConversationStep('initial_greeting'); // Reinicia para tentar de novo                }            }
+ 181 │         }, 1000);
+     ·          ─
+ 182 │         return;
+ 183 │     }
+ 183 │ 
+     ╰────
+
+
+Caused by:
+    Syntax Error
+C:/Users/ottof/OneDrive/Documentos/GitHub/pharma.ai/src/components/chatbot/LeadCaptureChatbot.tsx:180:1

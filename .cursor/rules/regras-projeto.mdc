@@ -1,8 +1,13 @@
-# Regras do Projeto Pharma.AI
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Regras do Projeto Homeo-AI
 
 Sempre Fale em PT-BR
 
-Este documento define as diretrizes gerais para o desenvolvimento do projeto Pharma.AI, estabelecendo padrões, fluxos de trabalho e critérios de qualidade a serem seguidos por todos os contribuidores.
+Este documento define as diretrizes gerais para o desenvolvimento do projeto Homeo-AI, estabelecendo padrões, fluxos de trabalho e critérios de qualidade a serem seguidos por todos os contribuidores.
 
 ## 1. Padrões de Código e Arquitetura
 

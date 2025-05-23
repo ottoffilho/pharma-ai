@@ -1,8 +1,8 @@
-# Relatório de Segurança - Homeo-AI
+# Relatório de Segurança - Pharma.AI
 
 ## Resumo Executivo
 
-Após análise completa do código-fonte do projeto Homeo-AI, foram identificadas vulnerabilidades que requerem atenção. Este relatório apresenta os problemas encontrados, classificados por severidade, e recomendações para mitigação.
+Após análise completa do código-fonte do projeto Pharma.AI, foram identificadas vulnerabilidades que requerem atenção. Este relatório apresenta os problemas encontrados, classificados por severidade, e recomendações para mitigação.
 
 | Métrica               | Quantidade |
 |-----------------------|------------|

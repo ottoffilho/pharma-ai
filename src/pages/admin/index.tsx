@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -69,7 +68,7 @@ const AdminDashboard: React.FC = () => {
     <AdminLayout>
       <div className="container-section py-8">
         <h1 className="heading-lg mb-4">Dashboard</h1>
-        <p className="text-gray-600 mb-8">Bem-vindo ao painel administrativo do Homeo-AI.</p>
+        <p className="text-gray-600 mb-8">Bem-vindo ao painel administrativo do Pharma.AI.</p>
         
         <div className="mb-10">
           <h2 className="text-xl font-semibold mb-2">Métricas Principais</h2>

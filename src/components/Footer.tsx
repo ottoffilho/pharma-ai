@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 const Footer = () => {
@@ -7,7 +6,7 @@ const Footer = () => {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
           <div>
-            <h3 className="text-xl font-montserrat font-semibold mb-4">Homeo-AI</h3>
+            <h3 className="text-xl font-montserrat font-semibold mb-4">Pharma.AI</h3>
             <p className="text-white/70 leading-relaxed">
               Sistema de gestão inteligente para Farmácias de Manipulação, potencializado por IA.
             </p>
@@ -95,7 +94,7 @@ const Footer = () => {
         <div className="border-t border-white/10 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p className="text-white/50 text-sm mb-4 md:mb-0">
-              &copy; {new Date().getFullYear()} Homeo-AI. Todos os direitos reservados.
+              &copy; {new Date().getFullYear()} Pharma.AI. Todos os direitos reservados.
             </p>
             
             <div className="flex space-x-6">

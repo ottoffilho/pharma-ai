@@ -1,7 +1,7 @@
 === INÍCIO DO PROTOCOLO DE CONTEXTO ===
 
 [COMENTÁRIO PARA IA]
-Este arquivo define os requisitos para integração com o contexto do projeto "Homeo-AI".
+Este arquivo define os requisitos para integração com o contexto do projeto "Pharma.AI".
 Leia atentamente e siga rigorosamente todas as instruções abaixo.
 [/COMENTÁRIO]
 

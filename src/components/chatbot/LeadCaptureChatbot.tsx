@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Send, X, Loader2, User, Bot } from 'lucide-react';
 import pharmaLogo from '@/assets/logo/phama-horizon.png';
-import { supabase } from '@/integrations/supabase/client';
+// import { supabase } from '@/integrations/supabase/client'; // Temporariamente removido
 
 // URL do Webhook do n8n (deve vir de uma variável de ambiente)
 const N8N_WEBHOOK_URL = import.meta.env.VITE_N8N_LEAD_WEBHOOK_URL || "https://ottoffilho.app.n8n.cloud/webhook-test/pharma-ai";
@@ -144,35 +144,11 @@ const LeadCaptureChatbot: React.FC<LeadCaptureChatbotProps> = ({ isOpen, onClose
 
   const submitLeadToSupabaseAndN8n = async (finalLeadData: LeadData, conversationTranscript: ChatMessage[]) => {
     setIsLoading(true);
-    addMessage("Obrigado! Estamos salvando suas informações...", 'system');
+    addMessage("Obrigado! Estamos processando suas informações...", 'system');
     
     try {
-      // 1. Salvar no Supabase primeiro (dados principais)
-      console.log("Salvando no Supabase:", finalLeadData);
-      
-      const { data: supabaseData, error: supabaseError } = await (supabase as any)
-        .rpc('insert_lead_chatbot', {
-          p_nome_contato: finalLeadData.nomeContato,
-          p_nome_farmacia: finalLeadData.nomeFarmacia,
-          p_email: finalLeadData.email,
-          p_telefone: finalLeadData.telefone || null,
-          p_transcricao: JSON.stringify(conversationTranscript.map(m => ({
-            sender: m.sender,
-            text: m.text,
-            timestamp: m.timestamp
-          })).slice(0, 20))
-        });
-
-      if (supabaseError) {
-        console.error("Erro ao salvar no Supabase:", supabaseError);
-        throw new Error('Falha ao salvar no banco de dados.');
-      }
-
-      console.log("Dados salvos no Supabase:", supabaseData);
-
-      // 2. Enviar para n8n (notificações, automações, etc.)
-      const leadId = Array.isArray(supabaseData) && (supabaseData as any).length > 0 ? (supabaseData as any)[0]?.id : 'unknown';
-      console.log("Enviando para n8n:", { ...finalLeadData, supabase_id: leadId });
+      // Enviar para n8n (por enquanto, até configurar Supabase)
+      console.log("Enviando dados para n8n:", finalLeadData);
       
       const n8nResponse = await fetch(N8N_WEBHOOK_URL, {
         method: 'POST',
@@ -181,31 +157,33 @@ const LeadCaptureChatbot: React.FC<LeadCaptureChatbotProps> = ({ isOpen, onClose
         },
         body: JSON.stringify({ 
           ...finalLeadData,
-          supabase_id: leadId,
           messages_transcription: conversationTranscript.map(m => ({
             sender: m.sender, 
             text: m.text, 
             timestamp: m.timestamp 
           })).slice(0, 20),
           origem: 'chatbot_landing',
-          saved_to_supabase: true
+          timestamp: new Date().toISOString(),
+          // Informações adicionais
+          user_agent: navigator.userAgent,
+          page_url: window.location.href
         }),
       });
 
       if (!n8nResponse.ok) {
-        console.warn("N8N submission failed but data was saved to Supabase:", n8nResponse.status);
-        // Não falha aqui pois o dado principal já foi salvo
-      } else {
-        const n8nResponseData = await n8nResponse.json();
-        console.log("Resposta do n8n:", n8nResponseData);
+        console.error("Falha ao enviar para n8n:", n8nResponse.status);
+        throw new Error('Falha ao processar seus dados.');
       }
+
+      const n8nResponseData = await n8nResponse.json();
+      console.log("Resposta do n8n:", n8nResponseData);
       
-      addMessage("Seus dados foram salvos com sucesso! Nossa equipe entrará em contato em breve.", 'bot', true);
+      addMessage("Seus dados foram enviados com sucesso! Nossa equipe entrará em contato em breve.", 'bot', true);
       setConversationStep('finished');
       
     } catch (error) {
       console.error('Erro ao processar lead:', error);
-      addMessage("Desculpe, tivemos um problema ao salvar seus dados. Por favor, tente novamente mais tarde ou entre em contato por outro canal.", 'bot', true);
+      addMessage("Desculpe, tivemos um problema ao processar seus dados. Por favor, tente novamente mais tarde ou entre em contato por outro canal.", 'bot', true);
     } finally {
       setIsLoading(false);
     }
