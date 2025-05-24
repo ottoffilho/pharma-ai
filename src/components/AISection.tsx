@@ -1,7 +1,4 @@
-
-import React from 'react';
 import { Brain, FlaskConical, FileSearch, ChartPie } from 'lucide-react';
-import { Button } from "@/components/ui/button";
 
 const aiFeatures = [
   {

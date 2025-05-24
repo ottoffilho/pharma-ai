@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   ChevronRight, 
   ChevronsLeft, 
+  ChevronDown,
   Home, 
   LayoutDashboard, 
   ListFilter, 
@@ -17,10 +18,17 @@ import {
   DollarSign,
   PieChart,
   Receipt,
+  Brain,
+  Sparkles,
+  TrendingUp,
+  Target,
+  BarChart3,
+  Monitor,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { AdminHeader } from '@/components/layouts/AdminHeader';
 
 import {
   Sheet,
@@ -39,6 +47,7 @@ interface AdminLayoutProps {
 export default function AdminLayout({ children }: AdminLayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({});
   const { toast } = useToast();
   const location = useLocation();
   const navigate = useNavigate();
@@ -83,17 +92,34 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     navigate('/login');
   };
 
+  const toggleSubmenu = (menuTitle: string) => {
+    setExpandedMenus(prev => ({
+      ...prev,
+      [menuTitle]: !prev[menuTitle]
+    }));
+  };
+
   // Navigation links
   const navLinks = [
     {
       title: 'Dashboard',
       href: '/admin',
-      icon: <LayoutDashboard className="h-5 w-5" />,
+      icon: <LayoutDashboard className="h-5 w-5 text-homeo-blue" />,
+    },
+    {
+      title: 'Inteligência Artificial',
+      icon: <Brain className="h-5 w-5 text-homeo-accent" />,
+      submenu: [
+        { title: 'Processamento de Receitas', href: '/admin/ia/processamento-receitas' },
+        { title: 'Previsão de Demanda', href: '/admin/ia/previsao-demanda' },
+        { title: 'Otimização de Compras', href: '/admin/ia/otimizacao-compras' },
+        { title: 'Análise de Clientes', href: '/admin/ia/analise-clientes' },
+        { title: 'Monitoramento IA', href: '/admin/ia/monitoramento' },
+      ],
     },
     {
       title: 'Pedidos',
-      href: '/admin/pedidos',
-      icon: <FileText className="h-5 w-5" />,
+      icon: <FileText className="h-5 w-5 text-homeo-green" />,
       submenu: [
         { title: 'Listar Pedidos', href: '/admin/pedidos' },
         { title: 'Nova Receita', href: '/admin/pedidos/nova-receita' },
@@ -101,7 +127,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     },
     {
       title: 'Estoque',
-      icon: <Box className="h-5 w-5" />,
+      icon: <Box className="h-5 w-5 text-orange-500" />,
       submenu: [
         { title: 'Insumos', href: '/admin/estoque/insumos' },
         { title: 'Embalagens', href: '/admin/estoque/embalagens' },
@@ -110,7 +136,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     },
     {
       title: 'Financeiro',
-      icon: <DollarSign className="h-5 w-5" />,
+      icon: <DollarSign className="h-5 w-5 text-emerald-600" />,
       submenu: [
         { title: 'Categorias', href: '/admin/financeiro/categorias' },
         { title: 'Fluxo de Caixa', href: '/admin/financeiro/caixa' },
@@ -120,7 +146,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     {
       title: 'Usuários',
       href: '/admin/usuarios',
-      icon: <Users className="h-5 w-5" />,
+      icon: <Users className="h-5 w-5 text-purple-500" />,
     },
   ];
 
@@ -166,6 +192,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             {navLinks.map((item) => {
               const isActive = item.href ? location.pathname === item.href : item.submenu?.some(subitem => location.pathname === subitem.href);
               const hasSubmenu = item.submenu && item.submenu.length > 0;
+              const isExpanded = expandedMenus[item.title] || isActive;
               
               return (
                 <div key={item.title} className="mb-1">
@@ -173,47 +200,56 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                     <Link
                       to={item.href}
                       className={cn(
-                        "flex items-center px-2 py-2 text-sm font-medium rounded-md group",
+                        "flex items-center px-3 py-2.5 text-sm font-medium rounded-lg group transition-all duration-200 hover:bg-primary/8",
                         isActive
-                          ? "bg-primary/10 text-primary"
-                          : "text-muted-foreground hover:bg-primary/5"
+                          ? "bg-primary/12 text-primary shadow-sm"
+                          : "text-muted-foreground hover:text-foreground"
                       )}
                     >
-                      <span className="mr-3">{item.icon}</span>
-                      {isSidebarOpen && <span>{item.title}</span>}
+                      <span className="mr-3 transition-transform duration-200 group-hover:scale-110">{item.icon}</span>
+                      {isSidebarOpen && <span className="font-medium">{item.title}</span>}
                     </Link>
                   ) : (
-                    <div
+                    <button
+                      onClick={() => hasSubmenu && toggleSubmenu(item.title)}
                       className={cn(
-                        "flex items-center px-2 py-2 text-sm font-medium rounded-md cursor-pointer",
+                        "w-full flex items-center px-3 py-2.5 text-sm font-medium rounded-lg cursor-pointer transition-all duration-200 hover:bg-primary/8",
                         isActive
-                          ? "bg-primary/10 text-primary"
-                          : "text-muted-foreground hover:bg-primary/5"
+                          ? "bg-primary/12 text-primary shadow-sm"
+                          : "text-muted-foreground hover:text-foreground"
                       )}
                     >
-                      <span className="mr-3">{item.icon}</span>
+                      <span className="mr-3 transition-transform duration-200 hover:scale-110">{item.icon}</span>
                       {isSidebarOpen && (
                         <div className="flex justify-between items-center w-full">
-                          <span>{item.title}</span>
-                          {hasSubmenu && <ChevronRight className={cn("h-4 w-4", isActive && "transform rotate-90")} />}
+                          <span className="font-medium">{item.title}</span>
+                          {hasSubmenu && (
+                            <ChevronDown 
+                              className={cn(
+                                "h-4 w-4 transition-transform duration-200", 
+                                isExpanded ? "transform rotate-180" : ""
+                              )} 
+                            />
+                          )}
                         </div>
                       )}
-                    </div>
+                    </button>
                   )}
 
-                  {isSidebarOpen && hasSubmenu && (
-                    <div className="ml-7 pl-3 border-l space-y-1 mt-1">
+                  {isSidebarOpen && hasSubmenu && isExpanded && (
+                    <div className="ml-7 pl-3 border-l-2 border-primary/20 space-y-1 mt-2 mb-2 animate-in slide-in-from-top-2 duration-200">
                       {item.submenu!.map((subitem) => (
                         <Link
                           key={subitem.href}
                           to={subitem.href}
                           className={cn(
-                            "flex items-center px-2 py-1.5 text-sm font-medium rounded-md",
+                            "flex items-center px-3 py-2 text-sm rounded-md transition-all duration-150",
                             location.pathname === subitem.href
-                              ? "text-primary"
-                              : "text-muted-foreground hover:text-primary"
+                              ? "text-primary bg-primary/8 font-medium"
+                              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                           )}
                         >
+                          <div className="w-2 h-2 rounded-full mr-3 bg-current opacity-60"></div>
                           {subitem.title}
                         </Link>
                       ))}
@@ -225,20 +261,11 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           </div>
         </nav>
 
-        {/* Sidebar Footer */}
+        {/* Sidebar Footer - Removido informações do usuário */}
         <div className="p-4 border-t">
-          {isSidebarOpen ? (
-            <div className="flex flex-col space-y-2">
-              <div className="text-sm font-medium">{user?.email}</div>
-              <Button variant="outline" size="sm" onClick={handleLogout}>
-                Sair
-              </Button>
-            </div>
-          ) : (
-            <Button variant="outline" size="icon" onClick={handleLogout} title="Sair">
-              <PanelLeftClose className="h-5 w-5" />
-            </Button>
-          )}
+          <div className="text-center text-xs text-muted-foreground">
+            Pharma.AI v1.0
+          </div>
         </div>
       </aside>
 
@@ -263,6 +290,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 {navLinks.map((item) => {
                   const isActive = item.href ? location.pathname === item.href : item.submenu?.some(subitem => location.pathname === subitem.href);
                   const hasSubmenu = item.submenu && item.submenu.length > 0;
+                  const isExpanded = expandedMenus[item.title] || isActive;
                   
                   return (
                     <div key={item.title} className="mb-1">
@@ -271,46 +299,55 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                           to={item.href}
                           onClick={() => setIsMobileMenuOpen(false)}
                           className={cn(
-                            "flex items-center px-2 py-2 text-sm font-medium rounded-md",
+                            "flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200",
                             isActive
-                              ? "bg-primary/10 text-primary"
-                              : "text-muted-foreground hover:bg-primary/5"
+                              ? "bg-primary/12 text-primary shadow-sm"
+                              : "text-muted-foreground hover:text-foreground hover:bg-primary/8"
                           )}
                         >
                           <span className="mr-3">{item.icon}</span>
-                          <span>{item.title}</span>
+                          <span className="font-medium">{item.title}</span>
                         </Link>
                       ) : (
-                        <div
+                        <button
+                          onClick={() => hasSubmenu && toggleSubmenu(item.title)}
                           className={cn(
-                            "flex items-center px-2 py-2 text-sm font-medium rounded-md",
+                            "w-full flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200",
                             isActive
-                              ? "bg-primary/10 text-primary"
-                              : "text-muted-foreground hover:bg-primary/5"
+                              ? "bg-primary/12 text-primary shadow-sm"
+                              : "text-muted-foreground hover:text-foreground hover:bg-primary/8"
                           )}
                         >
                           <span className="mr-3">{item.icon}</span>
                           <div className="flex justify-between items-center w-full">
-                            <span>{item.title}</span>
-                            {hasSubmenu && <ChevronRight className={cn("h-4 w-4", isActive && "transform rotate-90")} />}
+                            <span className="font-medium">{item.title}</span>
+                            {hasSubmenu && (
+                              <ChevronDown 
+                                className={cn(
+                                  "h-4 w-4 transition-transform duration-200", 
+                                  isExpanded ? "transform rotate-180" : ""
+                                )} 
+                              />
+                            )}
                           </div>
-                        </div>
+                        </button>
                       )}
 
-                      {hasSubmenu && (
-                        <div className="ml-7 pl-3 border-l space-y-1 mt-1">
+                      {hasSubmenu && isExpanded && (
+                        <div className="ml-7 pl-3 border-l-2 border-primary/20 space-y-1 mt-2 mb-2 animate-in slide-in-from-top-2 duration-200">
                           {item.submenu!.map((subitem) => (
                             <Link
                               key={subitem.href}
                               to={subitem.href}
                               onClick={() => setIsMobileMenuOpen(false)}
                               className={cn(
-                                "flex items-center px-2 py-1.5 text-sm font-medium rounded-md",
+                                "flex items-center px-3 py-2 text-sm rounded-md transition-all duration-150",
                                 location.pathname === subitem.href
-                                  ? "text-primary"
-                                  : "text-muted-foreground hover:text-primary"
+                                  ? "text-primary bg-primary/8 font-medium"
+                                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                               )}
                             >
+                              <div className="w-2 h-2 rounded-full mr-3 bg-current opacity-60"></div>
                               {subitem.title}
                             </Link>
                           ))}
@@ -321,12 +358,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 })}
               </nav>
               <Separator className="my-4" />
-              <div className="flex flex-col space-y-3">
-                <div className="text-sm font-medium">{user?.email}</div>
-                <Button variant="outline" size="sm" onClick={handleLogout}>
-                  Sair
-                </Button>
-              </div>
+              {/* Mobile também não precisa mais das informações do usuário aqui */}
             </SheetContent>
           </Sheet>
         </div>
@@ -335,7 +367,14 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       {/* Main Content */}
       <div className="flex-1 flex flex-col md:ml-0">
         <div className="md:hidden h-16" /> {/* Spacer for mobile header */}
-        <main className="flex-1">{children}</main>
+        
+        {/* AdminHeader - Novo header integrado */}
+        <AdminHeader user={user} onLogout={handleLogout} />
+        
+        {/* Main content with proper spacing */}
+        <main className="flex-1 p-6">
+          {children}
+        </main>
       </div>
     </div>
   );

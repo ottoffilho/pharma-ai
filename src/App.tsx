@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { ThemeProvider } from "next-themes";
 import React from "react"; // Explicitly import React
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
@@ -29,6 +30,13 @@ import FluxoCaixaPage from "./pages/admin/financeiro/caixa/index";
 import ContasAPagarPage from "./pages/admin/financeiro/contas-a-pagar/index";
 import NovaContaPagarPage from "./pages/admin/financeiro/contas-a-pagar/novo";
 import EditarContaPagarPage from "./pages/admin/financeiro/contas-a-pagar/editar/[id]";
+import PerfilPage from "./pages/admin/perfil";
+import ConfiguracoesPage from "./pages/admin/configuracoes";
+import ProcessamentoReceitasPage from "./pages/admin/ia/processamento-receitas";
+import PrevisaoDemandaPage from "./pages/admin/ia/previsao-demanda";
+import OtimizacaoComprasPage from "./pages/admin/ia/otimizacao-compras";
+import AnaliseClientesPage from "./pages/admin/ia/analise-clientes";
+import MonitoramentoPage from "./pages/admin/ia/monitoramento";
 import PrivateRoute from "./components/Auth/PrivateRoute";
 import FloatingChatbotWidget from "@/components/chatbot/FloatingChatbotWidget";
 import { ChatbotProvider } from "@/contexts/ChatbotContext";
@@ -39,12 +47,13 @@ const queryClient = new QueryClient();
 const App = (): JSX.Element => (
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <ChatbotProvider>
-          <Toaster />
-          <Sonner />
-          <FloatingChatbotWidget />
-          <BrowserRouter>
+      <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+        <TooltipProvider>
+          <ChatbotProvider>
+            <Toaster />
+            <Sonner />
+            <FloatingChatbotWidget />
+            <BrowserRouter>
             <Routes>
               {/* Public Routes */}
               <Route path="/" element={<Index />} />
@@ -84,6 +93,17 @@ const App = (): JSX.Element => (
                 <Route path="/admin/usuarios" element={<UsuariosListPage />} />
                 <Route path="/admin/usuarios/novo" element={<NovoUsuarioPage />} />
                 <Route path="/admin/usuarios/editar/:id" element={<EditarUsuarioPage />} />
+                
+                {/* IA Routes */}
+                <Route path="/admin/ia/processamento-receitas" element={<ProcessamentoReceitasPage />} />
+                <Route path="/admin/ia/previsao-demanda" element={<PrevisaoDemandaPage />} />
+                <Route path="/admin/ia/otimizacao-compras" element={<OtimizacaoComprasPage />} />
+                <Route path="/admin/ia/analise-clientes" element={<AnaliseClientesPage />} />
+                <Route path="/admin/ia/monitoramento" element={<MonitoramentoPage />} />
+                
+                {/* Perfil e Configurações Routes */}
+                <Route path="/admin/perfil" element={<PerfilPage />} />
+                <Route path="/admin/configuracoes" element={<ConfiguracoesPage />} />
               </Route>
 
               {/* Catch-all route - must be last */}
@@ -92,6 +112,7 @@ const App = (): JSX.Element => (
           </BrowserRouter>
         </ChatbotProvider>
       </TooltipProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   </React.StrictMode>
 );
