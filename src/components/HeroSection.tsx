@@ -2,11 +2,10 @@ import React from 'react';
 import { Button } from '@/components/ui/button'
 import heroBackgroundImage from '@/assets/images/Flux_Dev_Abstract_digital_art_flowing_lines_of_soft_green_and__3.jpg';
 // import heroImage from '@/assets/images/hero-image-placeholder.jpg' // Comentado pois a imagem não está sendo usada diretamente no código JSX por enquanto
+import { useChatbot } from '@/contexts/ChatbotContext';
 
 export const HeroSection: React.FC = () => {
-  const scrollToFeatures = (): void => {
-    document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })
-  }
+  const { openChat } = useChatbot();
 
   return (
     <section
@@ -32,24 +31,12 @@ export const HeroSection: React.FC = () => {
         </p>
         <div className="space-x-4">
           <Button
-            onClick={scrollToFeatures}
+            onClick={openChat}
             variant="default"
             size="lg"
             className="bg-white text-green-700 hover:bg-gray-100"
           >
-            Conheça os Recursos
-          </Button>
-          <Button
-            onClick={(): void =>
-              document
-                .getElementById('cta')
-                ?.scrollIntoView({ behavior: 'smooth' })
-            }
-            variant="default"
-            size="lg"
-            className="bg-gray-100 text-green-700 hover:bg-gray-200 border-gray-100"
-          >
-            Entre em Contato
+            Fale com nosso assistente Pharma-AI e saiba tudo do projeto
           </Button>
         </div>
       </div>

@@ -91,7 +91,7 @@ const LeadCaptureChatbot: React.FC<LeadCaptureChatbotProps> = ({ isOpen, onClose
           // Garantir foco após terminar de digitar
           ensureInputFocus();
         }
-      }, 30); // 30ms entre cada caractere para efeito suave
+      }, 23); // 30ms entre cada caractere para efeito suave -> Alterado para 15ms
     }
   };
 

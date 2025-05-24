@@ -54,9 +54,9 @@ Leia atentamente e siga rigorosamente todas as instruções abaixo.
 |--------------------------------------------------------|
 
 ✅ **CONFIRMAÇÃO DE COMPREENSÃO**  
-[ ] Confirmo análise completa dos 3 arquivos  
-[ ] Comprometo-me a seguir todas as diretrizes  
-[ ] Entendo que estas regras são prioritárias  
+[x] Confirmo análise completa dos 3 arquivos  
+[x] Comprometo-me a seguir todas as diretrizes  
+[x] Entendo que estas regras são prioritárias  
 
 [COMENTÁRIO PARA IA]
 Este protocolo deve ser revisado antes de qualquer ação relacionada ao projeto.

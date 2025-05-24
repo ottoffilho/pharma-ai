@@ -1,57 +1,56 @@
-import React from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Check } from 'lucide-react';
+// import ambienteInternoImg from '@/assets/images/ambiente_interno.jpg'; // Imagem antiga removida
+import video1Path from '@/assets/videos/Animação_D_PharmaAI_em_Ação.mp4'; 
+import video2Path from '@/assets/videos/Vídeo_PharmaAI_Solução_Completa.mp4';
 
 const SolutionSection = () => {
+  const [activeVideoKey, setActiveVideoKey] = useState<'video1' | 'video2'>('video1');
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  // Handler para quando o vídeo 1 terminar
+  const handleVideo1End = () => {
+    console.log("Vídeo 1 terminou. Ativando vídeo 2.");
+    setActiveVideoKey('video2');
+  };
+
+  useEffect(() => {
+    const videoElement = videoRef.current;
+    if (!videoElement) return;
+
+    // Parar e resetar listeners antigos para evitar múltiplos handlers
+    videoElement.onended = null;
+
+    if (activeVideoKey === 'video1') {
+      console.log("Configurando para vídeo 1");
+      videoElement.src = video1Path;
+      videoElement.loop = false;
+      videoElement.onended = handleVideo1End; // Anexar o handler específico
+      videoElement.load(); // Carregar a nova fonte
+      videoElement.play().catch(error => console.error("Erro ao tocar vídeo 1:", error));
+    } else if (activeVideoKey === 'video2') {
+      console.log("Configurando para vídeo 2");
+      videoElement.src = video2Path;
+      videoElement.loop = true;
+      // videoElement.onended = null; // Já resetado acima, e não é necessário para vídeo em loop
+      videoElement.load(); // Carregar a nova fonte
+      videoElement.play().catch(error => console.error("Erro ao tocar vídeo 2:", error));
+    }
+  }, [activeVideoKey]); // Re-executar este efeito quando activeVideoKey mudar
+
   return (
-    <section className="bg-homeo-green-light/50">
-      <div className="container-section">
+    <section className="relative bg-homeo-green-light/50">
+      <div className="container-section pb-32">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-          {/* Mockup/Image */}
-          <div className="relative rounded-lg shadow-xl overflow-hidden bg-white">
-            <div className="aspect-video relative">
-              {/* Browser-like header */}
-              <div className="absolute top-0 left-0 right-0 h-8 bg-homeo-gray-light flex items-center px-4 z-10">
-                <div className="flex space-x-2">
-                  <div className="w-3 h-3 bg-red-400 rounded-full"></div>
-                  <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
-                  <div className="w-3 h-3 bg-green-400 rounded-full"></div>
-                </div>
-              </div>
-              
-              {/* System interface mockup */}
-              <div className="absolute inset-0 pt-8 px-4 pb-4 flex flex-col">
-                <div className="flex justify-between items-center mb-4 p-2 bg-homeo-blue-light rounded">
-                  <div className="text-pharma-blue-dark font-medium">Sistema Integrado Pharma.AI</div>
-                  <div className="flex space-x-2">
-                    <div className="w-8 h-8 bg-homeo-gray-light/50 rounded-full"></div>
-                    <div className="w-8 h-8 bg-homeo-blue/20 rounded-full flex items-center justify-center text-xs font-bold text-homeo-blue">AI</div>
-                  </div>
-                </div>
-                
-                <div className="flex-1 grid grid-cols-3 gap-2">
-                  <div className="bg-homeo-gray-light/30 rounded p-2 col-span-1">
-                    <div className="h-4 bg-homeo-gray-light w-3/4 mb-2 rounded"></div>
-                    <div className="h-3 bg-homeo-gray-light w-full mb-1 rounded"></div>
-                    <div className="h-3 bg-homeo-gray-light w-5/6 mb-1 rounded"></div>
-                    <div className="h-3 bg-homeo-gray-light w-4/6 rounded"></div>
-                  </div>
-                  
-                  <div className="col-span-2 bg-homeo-green-light/30 rounded p-2">
-                    <div className="h-4 bg-homeo-gray-light w-2/3 mb-2 rounded"></div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <div className="h-3 bg-homeo-gray-light w-full mb-1 rounded"></div>
-                        <div className="h-3 bg-homeo-gray-light w-5/6 mb-1 rounded"></div>
-                      </div>
-                      <div>
-                        <div className="h-3 bg-homeo-gray-light w-full mb-1 rounded"></div>
-                        <div className="h-3 bg-homeo-gray-light w-5/6 mb-1 rounded"></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+          {/* Vídeo Player */}
+          <div className="relative rounded-lg shadow-xl overflow-hidden aspect-video">
+            <video 
+              ref={videoRef}
+              className="w-full h-full object-cover" 
+              muted
+              playsInline
+              aria-label="Vídeo demonstrando o Pharma.AI em ação"
+            />
           </div>
           
           {/* Content */}
@@ -61,13 +60,13 @@ const SolutionSection = () => {
             </h2>
             
             <p className="paragraph mb-8">
-              O Pharma.AI é um sistema de gestão especialmente desenvolvido para farmácias de manipulação homeopáticas,
+              O Pharma.AI é um sistema de gestão especialmente desenvolvido para farmácias de manipulação,
               oferecendo uma plataforma completa e intuitiva para otimizar todas as áreas do seu negócio.
               Desde o atendimento ao cliente até a gestão financeira e de estoque, nossa solução integra
             </p>
             
             <p className="paragraph">
-              Nossa plataforma utiliza inteligência artificial para interpretar receitas homeopáticas, 
+              Nossa plataforma utiliza inteligência artificial para interpretar receitas, 
               automatizar cálculos complexos e fornecer insights valiosos para o seu negócio.
             </p>
 
@@ -117,6 +116,9 @@ const SolutionSection = () => {
           </div>
         </div>
       </div>
+      
+      {/* Novo degradê com posicionamento absoluto */}
+      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-b from-homeo-green-light/50 via-homeo-green-light/25 to-white pointer-events-none"></div>
     </section>
   );
 };

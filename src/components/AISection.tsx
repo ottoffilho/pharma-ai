@@ -64,15 +64,6 @@ const AISection = () => {
             </div>
           ))}
         </div>
-        
-        <div className="flex justify-center">
-          <Button 
-            className="bg-homeo-accent hover:bg-opacity-90 text-white px-8 py-6 text-lg rounded-md shadow-lg hover:shadow-xl transition-all"
-            onClick={() => document.getElementById('contato')?.scrollIntoView({ behavior: 'smooth' })}
-          >
-            Descubra a IA para Homeopatia
-          </Button>
-        </div>
       </div>
     </section>
   );

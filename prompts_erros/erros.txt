@@ -1,27 +1,192 @@
-[plugin:vite:react-swc] × await isn't allowed in non-async function
-     ╭─[C:/Users/ottof/OneDrive/Documentos/GitHub/pharma.ai/src/components/chatbot/LeadCaptureChatbot.tsx:180:1]
- 177 │             
- 178 │             handleLlmResponse(botResponse, nextStep, extracted);
- 179 │ 
- 180 │                         if (nextStep === 'data_collection_complete') {                const completeLeadData = { ...leadData, ...extracted } as LeadData;                 if (completeLeadData.email && completeLeadData.nomeFarmacia) {                    await submitLeadToN8n(completeLeadData, messages);                } else {                    addMessage("Parece que faltaram informações essenciais (nome da farmácia ou e-mail). Poderia tentar novamente?", 'bot');                    setConversationStep('initial_greeting'); // Reinicia para tentar de novo                }            }
-     ·                                                                                                                                                                                                                                                                   ───────────────
- 181 │         }, 1000);
- 182 │         return;
- 182 │     }
-     ╰────
-  × Expression expected
-     ╭─[C:/Users/ottof/OneDrive/Documentos/GitHub/pharma.ai/src/components/chatbot/LeadCaptureChatbot.tsx:181:1]
- 178 │             handleLlmResponse(botResponse, nextStep, extracted);
- 179 │ 
- 180 │                         if (nextStep === 'data_collection_complete') {                const completeLeadData = { ...leadData, ...extracted } as LeadData;                 if (completeLeadData.email && completeLeadData.nomeFarmacia) {                    await submitLeadToN8n(completeLeadData, messages);                } else {                    addMessage("Parece que faltaram informações essenciais (nome da farmácia ou e-mail). Poderia tentar novamente?", 'bot');                    setConversationStep('initial_greeting'); // Reinicia para tentar de novo                }            }
- 181 │         }, 1000);
-     ·          ─
- 182 │         return;
- 183 │     }
- 183 │ 
-     ╰────
+Uncaught Error: useChatbot must be used within a ChatbotProvider
+    at useChatbot (ChatbotContext.tsx:27:11)
+    at FloatingChatbotWidget (FloatingChatbotWidget.tsx:8:47)
+    at renderWithHooks (chunk-W6L2VRDA.js?v=ad93f1ec:11548:26)
+    at mountIndeterminateComponent (chunk-W6L2VRDA.js?v=ad93f1ec:14926:21)
+    at beginWork (chunk-W6L2VRDA.js?v=ad93f1ec:15914:22)
+    at HTMLUnknownElement.callCallback2 (chunk-W6L2VRDA.js?v=ad93f1ec:3674:22)
+    at Object.invokeGuardedCallbackDev (chunk-W6L2VRDA.js?v=ad93f1ec:3699:24)
+    at invokeGuardedCallback (chunk-W6L2VRDA.js?v=ad93f1ec:3733:39)
+    at beginWork$1 (chunk-W6L2VRDA.js?v=ad93f1ec:19765:15)
+    at performUnitOfWork (chunk-W6L2VRDA.js?v=ad93f1ec:19198:20)
+useChatbot @ ChatbotContext.tsx:27
+FloatingChatbotWidget @ FloatingChatbotWidget.tsx:8
+renderWithHooks @ chunk-W6L2VRDA.js?v=ad93f1ec:11548
+mountIndeterminateComponent @ chunk-W6L2VRDA.js?v=ad93f1ec:14926
+beginWork @ chunk-W6L2VRDA.js?v=ad93f1ec:15914
+callCallback2 @ chunk-W6L2VRDA.js?v=ad93f1ec:3674
+invokeGuardedCallbackDev @ chunk-W6L2VRDA.js?v=ad93f1ec:3699
+invokeGuardedCallback @ chunk-W6L2VRDA.js?v=ad93f1ec:3733
+beginWork$1 @ chunk-W6L2VRDA.js?v=ad93f1ec:19765
+performUnitOfWork @ chunk-W6L2VRDA.js?v=ad93f1ec:19198
+workLoopSync @ chunk-W6L2VRDA.js?v=ad93f1ec:19137
+renderRootSync @ chunk-W6L2VRDA.js?v=ad93f1ec:19116
+performConcurrentWorkOnRoot @ chunk-W6L2VRDA.js?v=ad93f1ec:18678
+workLoop @ chunk-W6L2VRDA.js?v=ad93f1ec:197
+flushWork @ chunk-W6L2VRDA.js?v=ad93f1ec:176
+performWorkUntilDeadline @ chunk-W6L2VRDA.js?v=ad93f1ec:384Understand this error
+ChatbotContext.tsx:27 Uncaught Error: useChatbot must be used within a ChatbotProvider
+    at useChatbot (ChatbotContext.tsx:27:11)
+    at HeroSection (HeroSection.tsx:8:24)
+    at renderWithHooks (chunk-W6L2VRDA.js?v=ad93f1ec:11548:26)
+    at mountIndeterminateComponent (chunk-W6L2VRDA.js?v=ad93f1ec:14926:21)
+    at beginWork (chunk-W6L2VRDA.js?v=ad93f1ec:15914:22)
+    at HTMLUnknownElement.callCallback2 (chunk-W6L2VRDA.js?v=ad93f1ec:3674:22)
+    at Object.invokeGuardedCallbackDev (chunk-W6L2VRDA.js?v=ad93f1ec:3699:24)
+    at invokeGuardedCallback (chunk-W6L2VRDA.js?v=ad93f1ec:3733:39)
+    at beginWork$1 (chunk-W6L2VRDA.js?v=ad93f1ec:19765:15)
+    at performUnitOfWork (chunk-W6L2VRDA.js?v=ad93f1ec:19198:20)
+useChatbot @ ChatbotContext.tsx:27
+HeroSection @ HeroSection.tsx:8
+renderWithHooks @ chunk-W6L2VRDA.js?v=ad93f1ec:11548
+mountIndeterminateComponent @ chunk-W6L2VRDA.js?v=ad93f1ec:14926
+beginWork @ chunk-W6L2VRDA.js?v=ad93f1ec:15914
+callCallback2 @ chunk-W6L2VRDA.js?v=ad93f1ec:3674
+invokeGuardedCallbackDev @ chunk-W6L2VRDA.js?v=ad93f1ec:3699
+invokeGuardedCallback @ chunk-W6L2VRDA.js?v=ad93f1ec:3733
+beginWork$1 @ chunk-W6L2VRDA.js?v=ad93f1ec:19765
+performUnitOfWork @ chunk-W6L2VRDA.js?v=ad93f1ec:19198
+workLoopSync @ chunk-W6L2VRDA.js?v=ad93f1ec:19137
+renderRootSync @ chunk-W6L2VRDA.js?v=ad93f1ec:19116
+performConcurrentWorkOnRoot @ chunk-W6L2VRDA.js?v=ad93f1ec:18678
+workLoop @ chunk-W6L2VRDA.js?v=ad93f1ec:197
+flushWork @ chunk-W6L2VRDA.js?v=ad93f1ec:176
+performWorkUntilDeadline @ chunk-W6L2VRDA.js?v=ad93f1ec:384Understand this error
+ChatbotContext.tsx:27 Uncaught Error: useChatbot must be used within a ChatbotProvider
+    at useChatbot (ChatbotContext.tsx:27:11)
+    at FloatingChatbotWidget (FloatingChatbotWidget.tsx:8:47)
+    at renderWithHooks (chunk-W6L2VRDA.js?v=ad93f1ec:11548:26)
+    at mountIndeterminateComponent (chunk-W6L2VRDA.js?v=ad93f1ec:14926:21)
+    at beginWork (chunk-W6L2VRDA.js?v=ad93f1ec:15914:22)
+    at HTMLUnknownElement.callCallback2 (chunk-W6L2VRDA.js?v=ad93f1ec:3674:22)
+    at Object.invokeGuardedCallbackDev (chunk-W6L2VRDA.js?v=ad93f1ec:3699:24)
+    at invokeGuardedCallback (chunk-W6L2VRDA.js?v=ad93f1ec:3733:39)
+    at beginWork$1 (chunk-W6L2VRDA.js?v=ad93f1ec:19765:15)
+    at performUnitOfWork (chunk-W6L2VRDA.js?v=ad93f1ec:19198:20)
+useChatbot @ ChatbotContext.tsx:27
+FloatingChatbotWidget @ FloatingChatbotWidget.tsx:8
+renderWithHooks @ chunk-W6L2VRDA.js?v=ad93f1ec:11548
+mountIndeterminateComponent @ chunk-W6L2VRDA.js?v=ad93f1ec:14926
+beginWork @ chunk-W6L2VRDA.js?v=ad93f1ec:15914
+callCallback2 @ chunk-W6L2VRDA.js?v=ad93f1ec:3674
+invokeGuardedCallbackDev @ chunk-W6L2VRDA.js?v=ad93f1ec:3699
+invokeGuardedCallback @ chunk-W6L2VRDA.js?v=ad93f1ec:3733
+beginWork$1 @ chunk-W6L2VRDA.js?v=ad93f1ec:19765
+performUnitOfWork @ chunk-W6L2VRDA.js?v=ad93f1ec:19198
+workLoopSync @ chunk-W6L2VRDA.js?v=ad93f1ec:19137
+renderRootSync @ chunk-W6L2VRDA.js?v=ad93f1ec:19116
+recoverFromConcurrentError @ chunk-W6L2VRDA.js?v=ad93f1ec:18736
+performConcurrentWorkOnRoot @ chunk-W6L2VRDA.js?v=ad93f1ec:18684
+workLoop @ chunk-W6L2VRDA.js?v=ad93f1ec:197
+flushWork @ chunk-W6L2VRDA.js?v=ad93f1ec:176
+performWorkUntilDeadline @ chunk-W6L2VRDA.js?v=ad93f1ec:384Understand this error
+ChatbotContext.tsx:27 Uncaught Error: useChatbot must be used within a ChatbotProvider
+    at useChatbot (ChatbotContext.tsx:27:11)
+    at HeroSection (HeroSection.tsx:8:24)
+    at renderWithHooks (chunk-W6L2VRDA.js?v=ad93f1ec:11548:26)
+    at mountIndeterminateComponent (chunk-W6L2VRDA.js?v=ad93f1ec:14926:21)
+    at beginWork (chunk-W6L2VRDA.js?v=ad93f1ec:15914:22)
+    at HTMLUnknownElement.callCallback2 (chunk-W6L2VRDA.js?v=ad93f1ec:3674:22)
+    at Object.invokeGuardedCallbackDev (chunk-W6L2VRDA.js?v=ad93f1ec:3699:24)
+    at invokeGuardedCallback (chunk-W6L2VRDA.js?v=ad93f1ec:3733:39)
+    at beginWork$1 (chunk-W6L2VRDA.js?v=ad93f1ec:19765:15)
+    at performUnitOfWork (chunk-W6L2VRDA.js?v=ad93f1ec:19198:20)
+useChatbot @ ChatbotContext.tsx:27
+HeroSection @ HeroSection.tsx:8
+renderWithHooks @ chunk-W6L2VRDA.js?v=ad93f1ec:11548
+mountIndeterminateComponent @ chunk-W6L2VRDA.js?v=ad93f1ec:14926
+beginWork @ chunk-W6L2VRDA.js?v=ad93f1ec:15914
+callCallback2 @ chunk-W6L2VRDA.js?v=ad93f1ec:3674
+invokeGuardedCallbackDev @ chunk-W6L2VRDA.js?v=ad93f1ec:3699
+invokeGuardedCallback @ chunk-W6L2VRDA.js?v=ad93f1ec:3733
+beginWork$1 @ chunk-W6L2VRDA.js?v=ad93f1ec:19765
+performUnitOfWork @ chunk-W6L2VRDA.js?v=ad93f1ec:19198
+workLoopSync @ chunk-W6L2VRDA.js?v=ad93f1ec:19137
+renderRootSync @ chunk-W6L2VRDA.js?v=ad93f1ec:19116
+recoverFromConcurrentError @ chunk-W6L2VRDA.js?v=ad93f1ec:18736
+performConcurrentWorkOnRoot @ chunk-W6L2VRDA.js?v=ad93f1ec:18684
+workLoop @ chunk-W6L2VRDA.js?v=ad93f1ec:197
+flushWork @ chunk-W6L2VRDA.js?v=ad93f1ec:176
+performWorkUntilDeadline @ chunk-W6L2VRDA.js?v=ad93f1ec:384Understand this error
+chunk-W6L2VRDA.js?v=ad93f1ec:14032 The above error occurred in the <FloatingChatbotWidget> component:
 
+    at FloatingChatbotWidget (http://localhost:8080/src/components/chatbot/FloatingChatbotWidget.tsx?t=1748032471463:18:49)
+    at Provider (http://localhost:8080/node_modules/.vite/deps/chunk-NJOPR2ZS.js?v=ad93f1ec:38:15)
+    at TooltipProvider (http://localhost:8080/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=049a6f1d:61:5)
+    at QueryClientProvider (http://localhost:8080/node_modules/.vite/deps/@tanstack_react-query.js?v=f1171003:2794:3)
+    at App
 
-Caused by:
-    Syntax Error
-C:/Users/ottof/OneDrive/Documentos/GitHub/pharma.ai/src/components/chatbot/LeadCaptureChatbot.tsx:180:1
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+logCapturedError @ chunk-W6L2VRDA.js?v=ad93f1ec:14032
+update.callback @ chunk-W6L2VRDA.js?v=ad93f1ec:14052
+callCallback @ chunk-W6L2VRDA.js?v=ad93f1ec:11248
+commitUpdateQueue @ chunk-W6L2VRDA.js?v=ad93f1ec:11265
+commitLayoutEffectOnFiber @ chunk-W6L2VRDA.js?v=ad93f1ec:17093
+commitLayoutMountEffects_complete @ chunk-W6L2VRDA.js?v=ad93f1ec:17980
+commitLayoutEffects_begin @ chunk-W6L2VRDA.js?v=ad93f1ec:17969
+commitLayoutEffects @ chunk-W6L2VRDA.js?v=ad93f1ec:17920
+commitRootImpl @ chunk-W6L2VRDA.js?v=ad93f1ec:19353
+commitRoot @ chunk-W6L2VRDA.js?v=ad93f1ec:19277
+finishConcurrentRender @ chunk-W6L2VRDA.js?v=ad93f1ec:18760
+performConcurrentWorkOnRoot @ chunk-W6L2VRDA.js?v=ad93f1ec:18718
+workLoop @ chunk-W6L2VRDA.js?v=ad93f1ec:197
+flushWork @ chunk-W6L2VRDA.js?v=ad93f1ec:176
+performWorkUntilDeadline @ chunk-W6L2VRDA.js?v=ad93f1ec:384Understand this error
+chunk-W6L2VRDA.js?v=ad93f1ec:14032 The above error occurred in the <HeroSection> component:
+
+    at HeroSection (http://localhost:8080/src/components/HeroSection.tsx?t=1748032483274:18:26)
+    at main
+    at div
+    at Index (http://localhost:8080/src/pages/Index.tsx?t=1748032483274:26:5)
+    at RenderedRoute (http://localhost:8080/node_modules/.vite/deps/react-router-dom.js?v=b9f7c4ee:4069:5)
+    at Routes (http://localhost:8080/node_modules/.vite/deps/react-router-dom.js?v=b9f7c4ee:4508:5)
+    at Router (http://localhost:8080/node_modules/.vite/deps/react-router-dom.js?v=b9f7c4ee:4451:15)
+    at BrowserRouter (http://localhost:8080/node_modules/.vite/deps/react-router-dom.js?v=b9f7c4ee:5196:5)
+    at Provider (http://localhost:8080/node_modules/.vite/deps/chunk-NJOPR2ZS.js?v=ad93f1ec:38:15)
+    at TooltipProvider (http://localhost:8080/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=049a6f1d:61:5)
+    at QueryClientProvider (http://localhost:8080/node_modules/.vite/deps/@tanstack_react-query.js?v=f1171003:2794:3)
+    at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+logCapturedError @ chunk-W6L2VRDA.js?v=ad93f1ec:14032
+update.callback @ chunk-W6L2VRDA.js?v=ad93f1ec:14052
+callCallback @ chunk-W6L2VRDA.js?v=ad93f1ec:11248
+commitUpdateQueue @ chunk-W6L2VRDA.js?v=ad93f1ec:11265
+commitLayoutEffectOnFiber @ chunk-W6L2VRDA.js?v=ad93f1ec:17093
+commitLayoutMountEffects_complete @ chunk-W6L2VRDA.js?v=ad93f1ec:17980
+commitLayoutEffects_begin @ chunk-W6L2VRDA.js?v=ad93f1ec:17969
+commitLayoutEffects @ chunk-W6L2VRDA.js?v=ad93f1ec:17920
+commitRootImpl @ chunk-W6L2VRDA.js?v=ad93f1ec:19353
+commitRoot @ chunk-W6L2VRDA.js?v=ad93f1ec:19277
+finishConcurrentRender @ chunk-W6L2VRDA.js?v=ad93f1ec:18760
+performConcurrentWorkOnRoot @ chunk-W6L2VRDA.js?v=ad93f1ec:18718
+workLoop @ chunk-W6L2VRDA.js?v=ad93f1ec:197
+flushWork @ chunk-W6L2VRDA.js?v=ad93f1ec:176
+performWorkUntilDeadline @ chunk-W6L2VRDA.js?v=ad93f1ec:384Understand this error
+chunk-W6L2VRDA.js?v=ad93f1ec:19413 Uncaught Error: useChatbot must be used within a ChatbotProvider
+    at useChatbot (ChatbotContext.tsx:27:11)
+    at FloatingChatbotWidget (FloatingChatbotWidget.tsx:8:47)
+    at renderWithHooks (chunk-W6L2VRDA.js?v=ad93f1ec:11548:26)
+    at mountIndeterminateComponent (chunk-W6L2VRDA.js?v=ad93f1ec:14926:21)
+    at beginWork (chunk-W6L2VRDA.js?v=ad93f1ec:15914:22)
+    at beginWork$1 (chunk-W6L2VRDA.js?v=ad93f1ec:19753:22)
+    at performUnitOfWork (chunk-W6L2VRDA.js?v=ad93f1ec:19198:20)
+    at workLoopSync (chunk-W6L2VRDA.js?v=ad93f1ec:19137:13)
+    at renderRootSync (chunk-W6L2VRDA.js?v=ad93f1ec:19116:15)
+    at recoverFromConcurrentError (chunk-W6L2VRDA.js?v=ad93f1ec:18736:28)
+useChatbot @ ChatbotContext.tsx:27
+FloatingChatbotWidget @ FloatingChatbotWidget.tsx:8
+renderWithHooks @ chunk-W6L2VRDA.js?v=ad93f1ec:11548
+mountIndeterminateComponent @ chunk-W6L2VRDA.js?v=ad93f1ec:14926
+beginWork @ chunk-W6L2VRDA.js?v=ad93f1ec:15914
+beginWork$1 @ chunk-W6L2VRDA.js?v=ad93f1ec:19753
+performUnitOfWork @ chunk-W6L2VRDA.js?v=ad93f1ec:19198
+workLoopSync @ chunk-W6L2VRDA.js?v=ad93f1ec:19137
+renderRootSync @ chunk-W6L2VRDA.js?v=ad93f1ec:19116
+recoverFromConcurrentError @ chunk-W6L2VRDA.js?v=ad93f1ec:18736
+performConcurrentWorkOnRoot @ chunk-W6L2VRDA.js?v=ad93f1ec:18684
+workLoop @ chunk-W6L2VRDA.js?v=ad93f1ec:197
+flushWork @ chunk-W6L2VRDA.js?v=ad93f1ec:176
+performWorkUntilDeadline @ chunk-W6L2VRDA.js?v=ad93f1ec:384Understand this error

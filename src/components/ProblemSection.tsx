@@ -37,8 +37,8 @@ const challenges: ChallengeItem[] = [
 
 const ProblemSection: React.FC = () => {
   return (
-    <section id="problemas" className="bg-white">
-      <div className="container-section">
+    <section id="problemas" className="relative bg-white">
+      <div className="container-section pb-32">
         <div className="max-w-3xl mx-auto text-center mb-16">
           <h2 className="heading-lg gradient-text mb-6">
             Desafios das Farmácias de Manipulação Hoje
@@ -68,6 +68,8 @@ const ProblemSection: React.FC = () => {
           ))}
         </div>
       </div>
+      
+      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-b from-white via-white/50 to-homeo-green-light/50 pointer-events-none"></div>
     </section>
   );
 };

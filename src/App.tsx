@@ -31,6 +31,7 @@ import NovaContaPagarPage from "./pages/admin/financeiro/contas-a-pagar/novo";
 import EditarContaPagarPage from "./pages/admin/financeiro/contas-a-pagar/editar/[id]";
 import PrivateRoute from "./components/Auth/PrivateRoute";
 import FloatingChatbotWidget from "@/components/chatbot/FloatingChatbotWidget";
+import { ChatbotProvider } from "@/contexts/ChatbotContext";
 
 const queryClient = new QueryClient();
 
@@ -39,55 +40,57 @@ const App = (): JSX.Element => (
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <FloatingChatbotWidget />
-        <BrowserRouter>
-          <Routes>
-            {/* Public Routes */}
-            <Route path="/" element={<Index />} />
-            <Route path="/login" element={<Login />} />
-            
-            {/* Protected Routes */}
-            <Route element={<PrivateRoute />}>
-              <Route path="/admin" element={<AdminDashboard />} />
-              <Route path="/admin/pedidos" element={<PedidosPage />} />
-              <Route path="/admin/pedidos/nova-receita" element={<NovaReceitaPage />} />
-              <Route path="/admin/pedidos/:id" element={<PrescriptionDetailsPage />} />
+        <ChatbotProvider>
+          <Toaster />
+          <Sonner />
+          <FloatingChatbotWidget />
+          <BrowserRouter>
+            <Routes>
+              {/* Public Routes */}
+              <Route path="/" element={<Index />} />
+              <Route path="/login" element={<Login />} />
               
-              {/* Estoque Routes */}
-              <Route path="/admin/estoque/insumos" element={<InsumosPage />} />
-              <Route path="/admin/estoque/insumos/novo" element={<NovoInsumoPage />} />
-              <Route path="/admin/estoque/insumos/editar/:id" element={<EditarInsumoPage />} />
-              
-              {/* Embalagens Routes */}
-              <Route path="/admin/estoque/embalagens" element={<EmbalagensListPage />} />
-              <Route path="/admin/estoque/embalagens/novo" element={<NovaEmbalagemPage />} />
-              <Route path="/admin/estoque/embalagens/editar/:id" element={<EditarEmbalagemPage />} />
-              
-              {/* Lotes Routes */}
-              <Route path="/admin/estoque/lotes/novo" element={<NovoLoteInsumoPage />} />
-              <Route path="/admin/estoque/lotes/editar/:id" element={<EditarLoteInsumoPage />} />
-              
-              {/* Financeiro Routes */}
-              <Route path="/admin/financeiro/categorias" element={<CategoriasFinanceirasPage />} />
-              <Route path="/admin/financeiro/categorias/novo" element={<NovaCategoriaPage />} />
-              <Route path="/admin/financeiro/categorias/editar/:id" element={<EditarCategoriaPage />} />
-              <Route path="/admin/financeiro/caixa" element={<FluxoCaixaPage />} />
-              <Route path="/admin/financeiro/contas-a-pagar" element={<ContasAPagarPage />} />
-              <Route path="/admin/financeiro/contas-a-pagar/novo" element={<NovaContaPagarPage />} />
-              <Route path="/admin/financeiro/contas-a-pagar/editar/:id" element={<EditarContaPagarPage />} />
-              
-              {/* Usuários Routes */}
-              <Route path="/admin/usuarios" element={<UsuariosListPage />} />
-              <Route path="/admin/usuarios/novo" element={<NovoUsuarioPage />} />
-              <Route path="/admin/usuarios/editar/:id" element={<EditarUsuarioPage />} />
-            </Route>
+              {/* Protected Routes */}
+              <Route element={<PrivateRoute />}>
+                <Route path="/admin" element={<AdminDashboard />} />
+                <Route path="/admin/pedidos" element={<PedidosPage />} />
+                <Route path="/admin/pedidos/nova-receita" element={<NovaReceitaPage />} />
+                <Route path="/admin/pedidos/:id" element={<PrescriptionDetailsPage />} />
+                
+                {/* Estoque Routes */}
+                <Route path="/admin/estoque/insumos" element={<InsumosPage />} />
+                <Route path="/admin/estoque/insumos/novo" element={<NovoInsumoPage />} />
+                <Route path="/admin/estoque/insumos/editar/:id" element={<EditarInsumoPage />} />
+                
+                {/* Embalagens Routes */}
+                <Route path="/admin/estoque/embalagens" element={<EmbalagensListPage />} />
+                <Route path="/admin/estoque/embalagens/novo" element={<NovaEmbalagemPage />} />
+                <Route path="/admin/estoque/embalagens/editar/:id" element={<EditarEmbalagemPage />} />
+                
+                {/* Lotes Routes */}
+                <Route path="/admin/estoque/lotes/novo" element={<NovoLoteInsumoPage />} />
+                <Route path="/admin/estoque/lotes/editar/:id" element={<EditarLoteInsumoPage />} />
+                
+                {/* Financeiro Routes */}
+                <Route path="/admin/financeiro/categorias" element={<CategoriasFinanceirasPage />} />
+                <Route path="/admin/financeiro/categorias/novo" element={<NovaCategoriaPage />} />
+                <Route path="/admin/financeiro/categorias/editar/:id" element={<EditarCategoriaPage />} />
+                <Route path="/admin/financeiro/caixa" element={<FluxoCaixaPage />} />
+                <Route path="/admin/financeiro/contas-a-pagar" element={<ContasAPagarPage />} />
+                <Route path="/admin/financeiro/contas-a-pagar/novo" element={<NovaContaPagarPage />} />
+                <Route path="/admin/financeiro/contas-a-pagar/editar/:id" element={<EditarContaPagarPage />} />
+                
+                {/* Usuários Routes */}
+                <Route path="/admin/usuarios" element={<UsuariosListPage />} />
+                <Route path="/admin/usuarios/novo" element={<NovoUsuarioPage />} />
+                <Route path="/admin/usuarios/editar/:id" element={<EditarUsuarioPage />} />
+              </Route>
 
-            {/* Catch-all route - must be last */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
+              {/* Catch-all route - must be last */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </ChatbotProvider>
       </TooltipProvider>
     </QueryClientProvider>
   </React.StrictMode>

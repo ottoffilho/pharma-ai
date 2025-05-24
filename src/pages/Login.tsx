@@ -2,13 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';
 import type { AuthError } from '@supabase/supabase-js';
 import { checkLoginAttempts, recordLoginAttempt } from '@/lib/auth-utils';
+import PharmaHorizonLogo from '@/assets/logo/phama-horizon.png';
+import LoginBackground from '@/assets/images/loginback2.jpg';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState<string>('');
@@ -84,7 +86,9 @@ const Login: React.FC = () => {
         description: "Você está sendo redirecionado para a área administrativa.",
       });
       navigate('/admin/pedidos');
-    } catch (err) {
+    } catch (errUntyped: unknown) {
+      const err = errUntyped as AuthError;
+
       // Registrar tentativa falha
       recordLoginAttempt(email, false);
       
@@ -100,7 +104,7 @@ const Login: React.FC = () => {
       // Mensagem genérica para o usuário
       toast({
         title: "Erro ao realizar login",
-        description: loginBlocked || "Credenciais inválidas ou problema no servidor. Tente novamente.",
+        description: loginBlocked || err.message || "Credenciais inválidas ou problema no servidor. Tente novamente.",
         variant: "destructive",
       });
     } finally {
@@ -109,11 +113,13 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-homeo p-4">
-      <Card className="w-full max-w-md">
+    <div 
+      className="min-h-screen flex items-center justify-center p-4 bg-cover bg-center"
+      style={{ backgroundImage: `url(${LoginBackground})` }}
+    >
+      <Card className="w-full max-w-md bg-white/50 backdrop-blur-sm">
         <CardHeader className="space-y-1 text-center">
-          <img src="/assets/logo.svg" alt="Logo" className="w-24 h-24 mx-auto mb-4" />
-          <CardTitle className="text-2xl font-bold">Pharma.AI</CardTitle>
+          <img src={PharmaHorizonLogo} alt="Pharma.AI Horizon Logo" className="w-32 h-auto mx-auto mb-6" />
           <CardDescription>
             Bem-vindo! Faça login para acessar sua conta.
           </CardDescription>

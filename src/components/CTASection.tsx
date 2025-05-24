@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Phone, Mail, MapPin, Loader2 } from 'lucide-react';
+import { Phone, Mail, Loader2 } from 'lucide-react';
 import PharmaLogo from '@/assets/logo/pharma-image.png';
 
 // URL da Edge Function para salvar o lead do formulário
@@ -181,7 +181,7 @@ const CTASection = () => {
                       <Phone className="h-6 w-6 text-white/90 mt-1" />
                       <div>
                         <h4 className="font-medium text-white">Telefone</h4>
-                        <p className="text-white/80">(00) 0000-0000</p>
+                        <p className="text-white/80">61 97400-2886</p>
                       </div>
                     </div>
                     
@@ -189,29 +189,15 @@ const CTASection = () => {
                       <Mail className="h-6 w-6 text-white/90 mt-1" />
                       <div>
                         <h4 className="font-medium text-white">E-mail</h4>
-                        <p className="text-white/80">contato@pharma.ai</p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-start space-x-4">
-                      <MapPin className="h-6 w-6 text-white/90 mt-1" />
-                      <div>
-                        <h4 className="font-medium text-white">Endereço</h4>
-                        <p className="text-white/80">
-                          Av. Principal, 1000<br />
-                          CEP 00000-000<br />
-                          São Paulo, SP
-                        </p>
+                        <p className="text-white/80">contato@pharma.ai.com.br</p>
                       </div>
                     </div>
                   </div>
                 </div>
                 
-                <div className="mt-8">
-                  <p className="text-white/60 text-sm">
-                    Horário de Atendimento:<br />
-                    Segunda a Sexta: 9h às 18h
-                  </p>
+                <div className="mt-8 pt-8 border-t border-white/20">
+                  <h4 className="font-medium text-white mb-2">Horário de Atendimento:</h4>
+                  <p className="text-white/80">Segunda a Sexta: 9h às 18h</p>
                 </div>
               </div>
             </div>

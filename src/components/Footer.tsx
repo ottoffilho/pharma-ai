@@ -6,7 +6,8 @@ const Footer = () => {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
           <div>
-            <h3 className="text-xl font-montserrat font-semibold mb-4">Pharma.AI</h3>
+            {/* <h3 className="text-xl font-montserrat font-semibold mb-4">Pharma.AI</h3> */}
+            <img src="/src/assets/logo/pharma-texto2.png" alt="Pharma.AI Logo" className="h-10 mb-4" /> {/* Ajuste a classe h-8 (altura) conforme necessário */}
             <p className="text-white/70 leading-relaxed">
               Sistema de gestão inteligente para Farmácias de Manipulação, potencializado por IA.
             </p>
