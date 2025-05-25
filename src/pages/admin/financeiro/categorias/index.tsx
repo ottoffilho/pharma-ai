@@ -69,11 +69,11 @@ export default function CategoriasFinanceirasPage() {
       });
       queryClient.invalidateQueries({ queryKey: ['categorias-financeiras'] });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       console.error('Erro ao excluir categoria:', error);
       toast({
         title: 'Erro ao excluir',
-        description: error.message || 'Ocorreu um erro ao excluir a categoria.',
+        description: (error instanceof Error ? error.message : 'Erro desconhecido') || 'Ocorreu um erro ao excluir a categoria.',
         variant: 'destructive',
       });
     },
@@ -122,7 +122,7 @@ export default function CategoriasFinanceirasPage() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {categorias.map((categoria: any) => (
+          {categorias.map((categoria: Record<string, unknown>) => (
             <TableRow key={categoria.id}>
               <TableCell className="font-medium">{categoria.nome}</TableCell>
               <TableCell>

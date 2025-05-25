@@ -65,7 +65,7 @@ const loteInsumoSchema = z.object({
 type LoteFormValues = z.infer<typeof loteInsumoSchema>;
 
 interface LoteInsumoFormProps {
-  initialData?: any;
+  initialData?: Record<string, unknown>;
   isEditing?: boolean;
   loteId?: string;
   insumoId?: string;

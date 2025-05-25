@@ -18,7 +18,7 @@ export interface Medication {
 interface MedicationFormProps {
   medication: Medication;
   index: number;
-  onChange: (index: number, field: keyof Medication, value: any) => void;
+  onChange: (index: number, field: keyof Medication, value: string | number | undefined) => void;
   onRemove: (index: number) => void;
 }
 

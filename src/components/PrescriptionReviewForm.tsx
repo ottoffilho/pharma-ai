@@ -88,7 +88,7 @@ const PrescriptionReviewForm: React.FC<PrescriptionReviewFormProps> = ({
     });
   };
 
-  const handleMedicationChange = (index: number, field: keyof Medication, value: any) => {
+  const handleMedicationChange = (index: number, field: keyof Medication, value: string | number) => {
     const updatedMedications = [...formData.medications];
     updatedMedications[index] = {
       ...updatedMedications[index],

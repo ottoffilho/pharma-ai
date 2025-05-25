@@ -1,94 +1,73 @@
-Objetivo Principal:
-Modernizar a estrutura do painel administrativo, introduzindo um header dedicado na área de conteúdo para informações do usuário e ações rápidas (incluindo logoff e configurações), e implementar a funcionalidade de Dark Mode para melhorar a experiência visual e acessibilidade. Isso centraliza informações importantes do usuário e oferece personalização visual, tornando a navegação mais agradável e menos cansativa em longos períodos de uso.
+**PERSONA:** Você é um Gerente de Projetos de Tecnologia e Arquiteto de Software sênior.
 
-Contexto/Problema a ser Resolvido:
-Atualmente, informações do usuário e logoff estão no rodapé da sidebar. A ausência de um header fixo na área de conteúdo e a falta de um tema escuro podem tornar a experiência menos profissional e mais cansativa visualmente.
+**TAREFA:** Sua missão é realizar uma análise de progresso e "gap analysis" completa do projeto Pharma.AI. Você deve comparar o que está planejado no documento de requisitos do produto (PRD) com o que já foi implementado no código-fonte. O objetivo final é gerar um relatório claro que nos permita definir as prioridades para concluir o MVP (Produto Mínimo Viável).
 
-Arquivos Principais Envolvidos:
+**DOCUMENTO DE REFERÊNCIA:** Utilize o arquivo `Pharma_AI_PRD_v1.0.md` como a única fonte da verdade para o planejamento, especialmente a seção "7.1. FASE 1: MVP (Produto Mínimo Viável)".
 
-src/components/layouts/AdminLayout.tsx (para integrar o novo header e lógica de tema)
-Novo arquivo: src/components/layouts/AdminHeader.tsx (para o novo header)
-src/App.tsx (para envolver com ThemeProvider do next-themes)
-tailwind.config.ts (verificar se as classes dark: estão bem configuradas para todos os componentes)
-Passos Detalhados da Implementação:
+**PROCESSO DE ANÁLISE (PASSO A PASSO):**
 
-Criar o Componente AdminHeader.tsx:
+1.  **Análise do Planejamento (PRD):**
+    * Leia atentamente a seção "7.1. FASE 1: MVP" no arquivo `Pharma_AI_PRD_v1.0.md`.
+    * Crie uma lista detalhada de todos os módulos e sub-funcionalidades que foram definidos como escopo do MVP.
 
-Estrutura: Deve ser uma barra horizontal no topo da área de conteúdo.
-Conteúdo à Esquerda (Opcional): Pode incluir o título da página atual dinamicamente (Breadcrumbs, se desejado futuramente).
-Conteúdo à Direita:
-Seletor de Tema (Dark Mode):
-Utilizar um componente ThemeSwitcher.tsx (a ser criado ou adaptado).
-Este componente usará o hook useTheme da biblioteca next-themes.
-Botão com ícones de Sol (Sun) e Lua (Moon) da lucide-react para alternar os temas.
-Ícone de Notificações (Placeholder): Adicionar um <Button variant="ghost" size="icon"> com o ícone Bell da lucide-react. A funcionalidade de notificação pode ser implementada depois.
-Dropdown do Usuário:
-Usar <DropdownMenu> de shadcn/ui.
-O DropdownMenuTrigger será um <Button variant="ghost"> contendo:
-<Avatar> com as iniciais do usuário ou uma imagem.
-Nome do usuário (ou email, se o nome não estiver disponível). O email está em user?.email no AdminLayout.tsx.
-DropdownMenuContent com os seguintes DropdownMenuItem:
-"Meu Perfil" (leva a uma futura página de perfil do usuário /admin/perfil).
-"Configurações" (leva a uma futura página de configurações do sistema /admin/configuracoes).
-<DropdownMenuSeparator />
-"Sair" (executa a função handleLogout já existente no AdminLayout.tsx).
-Integrar AdminHeader.tsx no AdminLayout.tsx:
+2.  **Análise do Código-Fonte Implementado:**
+    * Analise TODOS os arquivos do projeto, incluindo componentes React (`.tsx`), serviços, hooks, páginas, rotas (`App.tsx`) e funções do Supabase (`supabase/functions`).
+    * Mapeie todas as funcionalidades que já existem no código. Por exemplo, "foi criado o formulário de cadastro de fornecedores em `FornecedorForm.tsx`", "a rota `/admin/estoque/insumos` está definida", "a função `buscar-dados-documento` está implementada".
 
-Importar e renderizar o <AdminHeader /> dentro da div que representa a área de conteúdo principal (a div que é flex-1 flex flex-col). Ele deve ficar acima do {children}.
-Ajustar o padding ou margem do {children} para acomodar a altura do novo header.
-Implementar Lógica do Dark Mode:
+3.  **Geração do Relatório de Status e Gap Analysis:**
+    * Compare os resultados dos passos 1 e 2.
+    * Para cada item do escopo do MVP, classifique seu status atual em uma das seguintes categorias:
+        * **✅ CONCLUÍDO:** A funcionalidade está implementada e alinhada com os critérios do PRD. (Ex: O CRUD de Fornecedores está completo).
+        * **🟡 PARCIAL:** A funcionalidade foi iniciada, mas não está completa. (Ex: O formulário de Insumos existe, mas a lógica de submissão para o banco de dados não foi implementada).
+        * **❌ NÃO INICIADO:** A funcionalidade é parte do MVP, mas não há código correspondente. (Ex: O módulo de Ordens de Produção ainda não foi criado).
+    * Identifique qualquer divergência ou implementação fora do escopo do MVP.
 
-Instalar next-themes: Já consta no package.json.
-Prover o Tema no App.tsx:
-Importar ThemeProvider de next-themes.
-Envolver o componente principal (ex: <BrowserRouter>) com <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>.
-Criar ThemeSwitcher.tsx:
-TypeScript
+4.  **Recomendações Estratégicas (Próximos Passos):**
+    * Com base na análise de Gaps (itens Parciais e Não Iniciados), crie uma lista priorizada de tarefas de desenvolvimento.
+    * Sugira os próximos 3 a 5 "sprints" ou blocos de trabalho para focar em completar as funcionalidades essenciais do MVP.
 
-// src/components/ThemeSwitcher.tsx (exemplo básico)
-import { useTheme } from "next-themes";
-import { Button } from "@/components/ui/button";
-import { Sun, Moon } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+**FORMATO DA RESPOSTA:**
+Apresente o resultado final em um documento Markdown bem estruturado, com os seguintes tópicos:
 
-export function ThemeSwitcher() {
-  const { setTheme } = useTheme();
+---
+### Relatório de Progresso e Próximos Passos - Pharma.AI (MVP)
 
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="icon">
-          <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-          <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-          <span className="sr-only">Toggle theme</span>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => setTheme("light")}>
-          Claro
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme("dark")}>
-          Escuro
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme("system")}>
-          Sistema
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
-Verificar Estilos: Assegurar que o tailwind.config.ts (com darkMode: "class") e os componentes shadcn/ui respondam corretamente à alternância de tema.
-Remover Informações do Usuário e Logoff do Rodapé da Sidebar:
+**1. Análise de Aderência ao MVP**
 
-Uma vez que o header contenha o dropdown de usuário com logoff, essas informações podem ser removidas do rodapé da sidebar no AdminLayout.tsx para evitar redundância e liberar espaço.
-Considerações Adicionais:
+**(Módulo por Módulo, conforme o PRD)**
 
-Passar a função handleLogout e os dados do user do AdminLayout.tsx para o AdminHeader.tsx via props.
-A altura do header deve ser fixa para que o conteúdo abaixo não salte ao rolar (se o header for fixo/sticky).
-Resultado Esperado:
-Um painel administrativo com um header superior limpo e funcional na área de conteúdo, exibindo o seletor de tema, notificações (placeholder) e um menu de usuário com avatar e opções de perfil/logoff.
+* **M01-CADASTROS_ESSENCIAIS:**
+    * Gestão de Insumos: [Status e observações]
+    * Controle de Lotes: [Status e observações]
+    * Gestão de Embalagens: [Status e observações]
+    * Gestão de Fornecedores: [Status e observações]
+
+* **M09-USUARIOS_PERMISSOES:**
+    * Autenticação e Perfis: [Status e observações]
+
+* **M02-ATENDIMENTO_BASICO:**
+    * Entrada Manual de Receitas: [Status e observações]
+
+* **M04-ESTOQUE_BASICO:**
+    * Controle de Entrada/Saída: [Status e observações]
+
+* **M03-ORCAMENTACAO_SIMPLES:**
+    * Cálculo de Preços: [Status e observações]
+
+* **M06-FINANCEIRO_BASICO:**
+    * Contas a Pagar/Receber: [Status e observações]
+
+* **M05-MANIPULACAO_BASICA:**
+    * Ordens de Produção: [Status e observações]
+
+**2. Divergências e Pontos de Atenção**
+* [Liste aqui qualquer funcionalidade implementada que não pertence ao MVP ou que diverge da arquitetura proposta.]
+
+**3. Recomendações e Plano de Ação Priorizado**
+* **Foco Imediato (Itens críticos para fechar o fluxo principal):**
+    1.  [Tarefa 1]
+    2.  [Tarefa 2]
+* **Próximas Prioridades:**
+    1.  [Tarefa 3]
+    2.  [Tarefa 4]
+---

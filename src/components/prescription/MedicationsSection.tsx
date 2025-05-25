@@ -6,7 +6,7 @@ import MedicationForm, { Medication } from './MedicationForm';
 
 interface MedicationsSectionProps {
   medications: Medication[];
-  onMedicationChange: (index: number, field: keyof Medication, value: any) => void;
+  onMedicationChange: (index: number, field: keyof Medication, value: string | number | undefined) => void;
   onAddMedication: () => void;
   onRemoveMedication: (index: number) => void;
 }

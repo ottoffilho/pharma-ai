@@ -135,11 +135,12 @@ const EmbalagemForm: React.FC<EmbalagemFormProps> = ({
       
       // Redirecionar para a lista de embalagens
       navigate('/admin/estoque/embalagens');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Erro ao salvar embalagem:', error);
+      const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
       toast({
         title: "Erro",
-        description: `Não foi possível salvar a embalagem: ${error.message}`,
+        description: `Não foi possível salvar a embalagem: ${errorMessage}`,
         variant: "destructive",
       });
     } finally {

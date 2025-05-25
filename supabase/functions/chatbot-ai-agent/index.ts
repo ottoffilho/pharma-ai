@@ -11,7 +11,7 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 interface ChatbotRequest {
   sessionId: string;
   userMessage: string;
-  leadData?: any;
+  leadData?: Record<string, unknown>;
   action?: string;
 }
 
@@ -19,18 +19,18 @@ interface ConversationContext {
   relevantChunks: Array<{
     content: string;
     similarity: number;
-    metadata: any;
+    metadata: Record<string, unknown>;
   }>;
   recentMemory: Array<{
     user_message: string;
     bot_response: string;
     created_at: string;
   }>;
-  leadContext: any;
+  leadContext: Record<string, unknown> | null;
 }
 
 // Função para buscar contexto relevante via RAG
-async function searchRelevantContext(query: string, limit: number = 5): Promise<any[]> {
+async function searchRelevantContext(query: string, limit: number = 5): Promise<Record<string, unknown>[]> {
   try {
     console.log(`🔍 Buscando contexto para: "${query}"`);
     
@@ -59,7 +59,7 @@ async function searchRelevantContext(query: string, limit: number = 5): Promise<
 }
 
 // Função para buscar memória recente da conversa
-async function getConversationMemory(sessionId: string, limit: number = 5): Promise<any[]> {
+async function getConversationMemory(sessionId: string, limit: number = 5): Promise<Record<string, unknown>[]> {
   try {
     const { data: memory, error } = await supabase
       .from('chatbot_memory')
@@ -167,8 +167,8 @@ async function saveConversationMemory(
   sessionId: string,
   userMessage: string,
   botResponse: string,
-  contextUsed: any,
-  leadData?: any
+  contextUsed: Record<string, unknown>,
+  leadData?: Record<string, unknown>
 ): Promise<void> {
   try {
     const { error } = await supabase

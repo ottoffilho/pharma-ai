@@ -23,6 +23,7 @@ import NovoUsuarioPage from "./pages/admin/usuarios/novo";
 import EditarUsuarioPage from "./pages/admin/usuarios/editar";
 import NovoLoteInsumoPage from "./pages/admin/estoque/lotes/novo";
 import EditarLoteInsumoPage from "./pages/admin/estoque/lotes/editar/[id]";
+import ImportacaoNFPage from "./pages/admin/estoque/importacao-nf";
 import FornecedoresPage from "./pages/admin/cadastros/fornecedores/index";
 import NovoFornecedorPage from "./pages/admin/cadastros/fornecedores/novo";
 import EditarFornecedorPage from "./pages/admin/cadastros/fornecedores/[id]";
@@ -40,6 +41,12 @@ import PrevisaoDemandaPage from "./pages/admin/ia/previsao-demanda";
 import OtimizacaoComprasPage from "./pages/admin/ia/otimizacao-compras";
 import AnaliseClientesPage from "./pages/admin/ia/analise-clientes";
 import MonitoramentoPage from "./pages/admin/ia/monitoramento";
+import OrdensProducaoPage from "./pages/admin/producao/index";
+import NovaOrdemProducaoPage from "./pages/admin/producao/nova";
+import DetalhesOrdemProducaoPage from "./pages/admin/producao/detalhes";
+import EditarOrdemProducaoPage from "./pages/admin/producao/editar";
+import ControleQualidadePage from "./pages/admin/producao/controle-qualidade";
+import RelatoriosProducaoPage from "./pages/admin/producao/relatorios";
 import PrivateRoute from "./components/Auth/PrivateRoute";
 import FloatingChatbotWidget from "@/components/chatbot/FloatingChatbotWidget";
 import { ChatbotProvider } from "@/contexts/ChatbotContext";
@@ -83,6 +90,9 @@ const App = (): JSX.Element => (
                 <Route path="/admin/estoque/lotes/novo" element={<NovoLoteInsumoPage />} />
                 <Route path="/admin/estoque/lotes/editar/:id" element={<EditarLoteInsumoPage />} />
                 
+                {/* Importação NF-e */}
+                <Route path="/admin/estoque/importacao-nf" element={<ImportacaoNFPage />} />
+                
                 {/* Financeiro Routes */}
                 <Route path="/admin/financeiro/categorias" element={<CategoriasFinanceirasPage />} />
                 <Route path="/admin/financeiro/categorias/novo" element={<NovaCategoriaPage />} />
@@ -101,6 +111,14 @@ const App = (): JSX.Element => (
                 <Route path="/admin/usuarios" element={<UsuariosListPage />} />
                 <Route path="/admin/usuarios/novo" element={<NovoUsuarioPage />} />
                 <Route path="/admin/usuarios/editar/:id" element={<EditarUsuarioPage />} />
+                
+                {/* Produção Routes */}
+                <Route path="/admin/producao" element={<OrdensProducaoPage />} />
+                <Route path="/admin/producao/nova" element={<NovaOrdemProducaoPage />} />
+                <Route path="/admin/producao/relatorios" element={<RelatoriosProducaoPage />} />
+                <Route path="/admin/producao/:id" element={<DetalhesOrdemProducaoPage />} />
+                <Route path="/admin/producao/:id/editar" element={<EditarOrdemProducaoPage />} />
+                <Route path="/admin/producao/:id/controle-qualidade" element={<ControleQualidadePage />} />
                 
                 {/* IA Routes */}
                 <Route path="/admin/ia/processamento-receitas" element={<ProcessamentoReceitasPage />} />

@@ -181,8 +181,8 @@ export class FornecedorService {
   /**
    * Sanitiza os dados de entrada removendo caracteres perigosos
    */
-  private static sanitizeData(data: any): any {
-    const sanitized: any = {};
+  private static sanitizeData(data: Record<string, unknown>): Record<string, unknown> {
+    const sanitized: Record<string, unknown> = {};
     
     for (const [key, value] of Object.entries(data)) {
       if (typeof value === 'string') {

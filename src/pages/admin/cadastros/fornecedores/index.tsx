@@ -126,7 +126,7 @@ const FornecedoresPage: React.FC = () => {
 
   // Render de estado de carregamento
   const renderLoading = () => (
-    <div className="space-y-3">
+    <>
       {Array(5).fill(null).map((_, index) => (
         <TableRow key={index}>
           {Array(6).fill(null).map((_, cellIndex) => (
@@ -136,7 +136,7 @@ const FornecedoresPage: React.FC = () => {
           ))}
         </TableRow>
       ))}
-    </div>
+    </>
   );
 
   // Render de estado de erro

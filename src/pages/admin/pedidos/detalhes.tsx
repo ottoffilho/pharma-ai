@@ -90,7 +90,7 @@ const PrescriptionDetailsPage: React.FC = () => {
 
       // Transform the data to ensure medications are properly typed
       const transformedMedications = Array.isArray(data.medications) 
-        ? data.medications.map((med: any) => ({
+        ? data.medications.map((med: Record<string, unknown>) => ({
             name: med.name || '',
             dinamization: med.dinamization,
             form: med.form,
@@ -122,12 +122,12 @@ const PrescriptionDetailsPage: React.FC = () => {
         setPrescription(data);
         setIsLoading(false);
       },
-      onError: (err: any) => {
+      onError: (err: unknown) => {
         console.error('Error fetching prescription:', err);
         setError('Não foi possível carregar os detalhes da receita.');
         toast({
           title: "Erro ao carregar receita",
-          description: err.message || "Ocorreu um erro ao carregar os detalhes da receita.",
+          description: (err instanceof Error ? err.message : 'Erro desconhecido') || "Ocorreu um erro ao carregar os detalhes da receita.",
           variant: "destructive",
         });
         setIsLoading(false);

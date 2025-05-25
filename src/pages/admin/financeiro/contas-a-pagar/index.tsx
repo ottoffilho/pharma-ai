@@ -67,11 +67,20 @@ export default function ContasAPagarPage() {
   const [searchTerm, setSearchTerm] = useState('');
   
   // State for account to delete
-  const [contaToDelete, setContaToDelete] = useState<any | null>(null);
+  const [contaToDelete, setContaToDelete] = useState<{
+    id: string;
+    descricao: string;
+  } | null>(null);
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
   
   // State for the payment registration dialog
-  const [selectedConta, setSelectedConta] = useState<any | null>(null);
+  const [selectedConta, setSelectedConta] = useState<{
+    id: string;
+    descricao: string;
+    valor_previsto?: number;
+    categoria_id?: string;
+    fornecedor_nome?: string;
+  } | null>(null);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   
   // Fetch data from Supabase
@@ -196,14 +205,23 @@ export default function ContasAPagarPage() {
   };
   
   // Open delete confirmation dialog
-  const handleDelete = (conta: any) => {
-    setContaToDelete(conta);
+  const handleDelete = (conta: Record<string, unknown>) => {
+    setContaToDelete({
+      id: conta.id as string,
+      descricao: conta.descricao as string,
+    });
     setIsDeleteAlertOpen(true);
   };
   
   // Open payment registration dialog
-  const handleRegisterPayment = (conta: any) => {
-    setSelectedConta(conta);
+  const handleRegisterPayment = (conta: Record<string, unknown>) => {
+    setSelectedConta({
+      id: conta.id as string,
+      descricao: conta.descricao as string,
+      valor_previsto: conta.valor_previsto as number,
+      categoria_id: conta.categoria_id as string,
+      fornecedor_nome: (conta.fornecedores as { nome: string })?.nome,
+    });
     setIsPaymentDialogOpen(true);
   };
   

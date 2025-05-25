@@ -53,7 +53,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
   
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<{ email?: string; id?: string } | null>(null);
 
   useEffect(() => {
     const checkUser = async () => {
@@ -133,6 +133,15 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         { title: 'Insumos', href: '/admin/estoque/insumos' },
         { title: 'Embalagens', href: '/admin/estoque/embalagens' },
         { title: 'Novo Lote', href: '/admin/estoque/lotes/novo' },
+        { title: 'Importar NF-e', href: '/admin/estoque/importacao-nf' },
+      ],
+    },
+    {
+      title: 'Produção',
+      icon: <Package className="h-5 w-5 text-blue-500" />,
+      submenu: [
+        { title: 'Ordens de Produção', href: '/admin/producao' },
+        { title: 'Nova Ordem', href: '/admin/producao/nova' },
       ],
     },
     {

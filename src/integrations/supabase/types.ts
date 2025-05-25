@@ -198,6 +198,79 @@ export type Database = {
         }
         Relationships: []
       }
+      fornecedor_contatos: {
+        Row: {
+          cargo: string | null
+          criado_em: string
+          email: string | null
+          fornecedor_id: string
+          id: string
+          nome: string
+          telefone: string | null
+        }
+        Insert: {
+          cargo?: string | null
+          criado_em?: string
+          email?: string | null
+          fornecedor_id: string
+          id?: string
+          nome: string
+          telefone?: string | null
+        }
+        Update: {
+          cargo?: string | null
+          criado_em?: string
+          email?: string | null
+          fornecedor_id?: string
+          id?: string
+          nome?: string
+          telefone?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fornecedor_contatos_fornecedor_id_fkey"
+            columns: ["fornecedor_id"]
+            isOneToOne: false
+            referencedRelation: "fornecedores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fornecedor_documentos: {
+        Row: {
+          criado_em: string
+          fornecedor_id: string
+          id: string
+          nome_arquivo: string
+          tipo: string | null
+          url: string
+        }
+        Insert: {
+          criado_em?: string
+          fornecedor_id: string
+          id?: string
+          nome_arquivo: string
+          tipo?: string | null
+          url: string
+        }
+        Update: {
+          criado_em?: string
+          fornecedor_id?: string
+          id?: string
+          nome_arquivo?: string
+          tipo?: string | null
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fornecedor_documentos_fornecedor_id_fkey"
+            columns: ["fornecedor_id"]
+            isOneToOne: false
+            referencedRelation: "fornecedores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       historico_status_pedidos: {
         Row: {
           created_at: string
@@ -235,6 +308,47 @@ export type Database = {
             columns: ["pedido_id"]
             isOneToOne: false
             referencedRelation: "pedidos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      historico_status_ordens: {
+        Row: {
+          created_at: string
+          data_alteracao: string
+          id: string
+          observacao: string | null
+          ordem_producao_id: string
+          status_anterior: string | null
+          status_novo: string
+          usuario_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          data_alteracao?: string
+          id?: string
+          observacao?: string | null
+          ordem_producao_id: string
+          status_anterior?: string | null
+          status_novo: string
+          usuario_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          data_alteracao?: string
+          id?: string
+          observacao?: string | null
+          ordem_producao_id?: string
+          status_anterior?: string | null
+          status_novo?: string
+          usuario_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "historico_status_ordens_ordem_producao_id_fkey"
+            columns: ["ordem_producao_id"]
+            isOneToOne: false
+            referencedRelation: "ordens_producao"
             referencedColumns: ["id"]
           },
         ]
@@ -414,6 +528,354 @@ export type Database = {
             columns: ["pedido_id"]
             isOneToOne: false
             referencedRelation: "pedidos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ordem_producao_embalagens: {
+        Row: {
+          created_at: string
+          custo_total: number | null
+          custo_unitario: number | null
+          embalagem_id: string
+          id: string
+          observacoes: string | null
+          ordem_producao_id: string
+          quantidade_necessaria: number
+          quantidade_utilizada: number | null
+        }
+        Insert: {
+          created_at?: string
+          custo_total?: number | null
+          custo_unitario?: number | null
+          embalagem_id: string
+          id?: string
+          observacoes?: string | null
+          ordem_producao_id: string
+          quantidade_necessaria: number
+          quantidade_utilizada?: number | null
+        }
+        Update: {
+          created_at?: string
+          custo_total?: number | null
+          custo_unitario?: number | null
+          embalagem_id?: string
+          id?: string
+          observacoes?: string | null
+          ordem_producao_id?: string
+          quantidade_necessaria?: number
+          quantidade_utilizada?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ordem_producao_embalagens_embalagem_id_fkey"
+            columns: ["embalagem_id"]
+            isOneToOne: false
+            referencedRelation: "embalagens"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ordem_producao_embalagens_ordem_producao_id_fkey"
+            columns: ["ordem_producao_id"]
+            isOneToOne: false
+            referencedRelation: "ordens_producao"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ordem_producao_etapas: {
+        Row: {
+          anexos_urls: string[] | null
+          created_at: string
+          data_fim: string | null
+          data_inicio: string | null
+          descricao_etapa: string
+          id: string
+          nome_etapa: string
+          numero_etapa: number
+          observacoes: string | null
+          ordem_producao_id: string
+          status: string
+          tempo_estimado_minutos: number | null
+          tempo_real_minutos: number | null
+          usuario_executor_id: string | null
+        }
+        Insert: {
+          anexos_urls?: string[] | null
+          created_at?: string
+          data_fim?: string | null
+          data_inicio?: string | null
+          descricao_etapa: string
+          id?: string
+          nome_etapa: string
+          numero_etapa: number
+          observacoes?: string | null
+          ordem_producao_id: string
+          status?: string
+          tempo_estimado_minutos?: number | null
+          tempo_real_minutos?: number | null
+          usuario_executor_id?: string | null
+        }
+        Update: {
+          anexos_urls?: string[] | null
+          created_at?: string
+          data_fim?: string | null
+          data_inicio?: string | null
+          descricao_etapa?: string
+          id?: string
+          nome_etapa?: string
+          numero_etapa?: number
+          observacoes?: string | null
+          ordem_producao_id?: string
+          status?: string
+          tempo_estimado_minutos?: number | null
+          tempo_real_minutos?: number | null
+          usuario_executor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ordem_producao_etapas_ordem_producao_id_fkey"
+            columns: ["ordem_producao_id"]
+            isOneToOne: false
+            referencedRelation: "ordens_producao"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ordem_producao_etapas_usuario_executor_id_fkey"
+            columns: ["usuario_executor_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios_internos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ordem_producao_insumos: {
+        Row: {
+          created_at: string
+          custo_total: number | null
+          custo_unitario: number | null
+          id: string
+          insumo_id: string
+          lote_insumo_id: string | null
+          observacoes: string | null
+          ordem_producao_id: string
+          quantidade_necessaria: number
+          quantidade_utilizada: number | null
+          unidade_medida: string
+        }
+        Insert: {
+          created_at?: string
+          custo_total?: number | null
+          custo_unitario?: number | null
+          id?: string
+          insumo_id: string
+          lote_insumo_id?: string | null
+          observacoes?: string | null
+          ordem_producao_id: string
+          quantidade_necessaria: number
+          quantidade_utilizada?: number | null
+          unidade_medida: string
+        }
+        Update: {
+          created_at?: string
+          custo_total?: number | null
+          custo_unitario?: number | null
+          id?: string
+          insumo_id?: string
+          lote_insumo_id?: string | null
+          observacoes?: string | null
+          ordem_producao_id?: string
+          quantidade_necessaria?: number
+          quantidade_utilizada?: number | null
+          unidade_medida?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ordem_producao_insumos_insumo_id_fkey"
+            columns: ["insumo_id"]
+            isOneToOne: false
+            referencedRelation: "insumos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ordem_producao_insumos_lote_insumo_id_fkey"
+            columns: ["lote_insumo_id"]
+            isOneToOne: false
+            referencedRelation: "lotes_insumos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ordem_producao_insumos_ordem_producao_id_fkey"
+            columns: ["ordem_producao_id"]
+            isOneToOne: false
+            referencedRelation: "ordens_producao"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ordem_producao_qualidade: {
+        Row: {
+          anexos_urls: string[] | null
+          created_at: string
+          data_teste: string
+          descricao_teste: string
+          farmaceutico_responsavel_id: string
+          id: string
+          observacoes: string | null
+          ordem_producao_id: string
+          resultado: string
+          tipo_teste: string
+          valor_esperado: string | null
+          valor_obtido: string | null
+        }
+        Insert: {
+          anexos_urls?: string[] | null
+          created_at?: string
+          data_teste?: string
+          descricao_teste: string
+          farmaceutico_responsavel_id: string
+          id?: string
+          observacoes?: string | null
+          ordem_producao_id: string
+          resultado: string
+          tipo_teste: string
+          valor_esperado?: string | null
+          valor_obtido?: string | null
+        }
+        Update: {
+          anexos_urls?: string[] | null
+          created_at?: string
+          data_teste?: string
+          descricao_teste?: string
+          farmaceutico_responsavel_id?: string
+          id?: string
+          observacoes?: string | null
+          ordem_producao_id?: string
+          resultado?: string
+          tipo_teste?: string
+          valor_esperado?: string | null
+          valor_obtido?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ordem_producao_qualidade_farmaceutico_responsavel_id_fkey"
+            columns: ["farmaceutico_responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios_internos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ordem_producao_qualidade_ordem_producao_id_fkey"
+            columns: ["ordem_producao_id"]
+            isOneToOne: false
+            referencedRelation: "ordens_producao"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ordens_producao: {
+        Row: {
+          created_at: string
+          custo_total_estimado: number | null
+          custo_total_real: number | null
+          data_criacao: string
+          data_fim_producao: string | null
+          data_inicio_producao: string | null
+          data_prevista_entrega: string | null
+          farmaceutico_responsavel_id: string | null
+          forma_farmaceutica: string | null
+          id: string
+          instrucoes_especiais: string | null
+          is_deleted: boolean
+          numero_ordem: string
+          observacoes_gerais: string | null
+          pedido_id: string | null
+          prioridade: string
+          quantidade_total: number
+          receita_processada_id: string | null
+          status: string
+          tempo_estimado_minutos: number | null
+          unidade_medida: string
+          updated_at: string
+          usuario_responsavel_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          custo_total_estimado?: number | null
+          custo_total_real?: number | null
+          data_criacao?: string
+          data_fim_producao?: string | null
+          data_inicio_producao?: string | null
+          data_prevista_entrega?: string | null
+          farmaceutico_responsavel_id?: string | null
+          forma_farmaceutica?: string | null
+          id?: string
+          instrucoes_especiais?: string | null
+          is_deleted?: boolean
+          numero_ordem: string
+          observacoes_gerais?: string | null
+          pedido_id?: string | null
+          prioridade?: string
+          quantidade_total: number
+          receita_processada_id?: string | null
+          status?: string
+          tempo_estimado_minutos?: number | null
+          unidade_medida: string
+          updated_at?: string
+          usuario_responsavel_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          custo_total_estimado?: number | null
+          custo_total_real?: number | null
+          data_criacao?: string
+          data_fim_producao?: string | null
+          data_inicio_producao?: string | null
+          data_prevista_entrega?: string | null
+          farmaceutico_responsavel_id?: string | null
+          forma_farmaceutica?: string | null
+          id?: string
+          instrucoes_especiais?: string | null
+          is_deleted?: boolean
+          numero_ordem?: string
+          observacoes_gerais?: string | null
+          pedido_id?: string | null
+          prioridade?: string
+          quantidade_total?: number
+          receita_processada_id?: string | null
+          status?: string
+          tempo_estimado_minutos?: number | null
+          unidade_medida?: string
+          updated_at?: string
+          usuario_responsavel_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ordens_producao_farmaceutico_responsavel_id_fkey"
+            columns: ["farmaceutico_responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios_internos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ordens_producao_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "pedidos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ordens_producao_receita_processada_id_fkey"
+            columns: ["receita_processada_id"]
+            isOneToOne: false
+            referencedRelation: "receitas_processadas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ordens_producao_usuario_responsavel_id_fkey"
+            columns: ["usuario_responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios_internos"
             referencedColumns: ["id"]
           },
         ]
@@ -736,3 +1198,15 @@ export const Constants = {
 export type Fornecedor = Tables<'fornecedores'>
 export type FornecedorInsert = TablesInsert<'fornecedores'>
 export type FornecedorUpdate = TablesUpdate<'fornecedores'>
+export type FornecedorContato = Tables<'fornecedor_contatos'>
+export type FornecedorDocumento = Tables<'fornecedor_documentos'>
+
+// Tipos para ordens de produção
+export type OrdemProducao = Tables<'ordens_producao'>
+export type OrdemProducaoInsert = TablesInsert<'ordens_producao'>
+export type OrdemProducaoUpdate = TablesUpdate<'ordens_producao'>
+export type OrdemProducaoInsumo = Tables<'ordem_producao_insumos'>
+export type OrdemProducaoEmbalagem = Tables<'ordem_producao_embalagens'>
+export type OrdemProducaoEtapa = Tables<'ordem_producao_etapas'>
+export type OrdemProducaoQualidade = Tables<'ordem_producao_qualidade'>
+export type HistoricoStatusOrdem = Tables<'historico_status_ordens'>

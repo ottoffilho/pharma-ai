@@ -49,7 +49,7 @@ const PedidosPage: React.FC = () => {
         const typedPrescriptions = data.map(item => {
           // Safely convert the medications JSON to our Medication[] type
           const medications = Array.isArray(item.medications) 
-            ? item.medications.map((med: any) => ({
+            ? item.medications.map((med: Record<string, unknown>) => ({
                 name: med.name || '',
                 dinamization: med.dinamization,
                 form: med.form,

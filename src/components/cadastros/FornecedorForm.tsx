@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, getSupabaseFunctionUrl } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Loader2, 
@@ -24,7 +24,7 @@ import {
   MapPin
 } from "lucide-react";
 import logger from "@/lib/logger";
-import type { Fornecedor } from "@/integrations/supabase/types";
+import type { Fornecedor, FornecedorContato, FornecedorDocumento } from "@/integrations/supabase/types";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -117,12 +117,13 @@ interface FornecedorItem {
   preco_compra: number;
 }
 
-interface FornecedorContato {
-  id: string;
-  nome: string;
-  cargo: string;
-  email: string;
-  telefone: string;
+
+
+// Função utilitária para buscar o JWT do usuário autenticado
+async function getAuthHeader() {
+  const session = await supabase.auth.getSession();
+  const token = session.data.session?.access_token;
+  return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
 export default function FornecedorForm({
@@ -140,6 +141,18 @@ export default function FornecedorForm({
   const [showAddItemDialog, setShowAddItemDialog] = useState(false);
   const [fornecedorItens, setFornecedorItens] = useState<FornecedorItem[]>([]);
   const [fornecedorContatos, setFornecedorContatos] = useState<FornecedorContato[]>([]);
+  const [fornecedorDocumentos, setFornecedorDocumentos] = useState<FornecedorDocumento[]>([]);
+  const [showContatoDialog, setShowContatoDialog] = useState(false);
+  const [editingContato, setEditingContato] = useState<FornecedorContato | null>(null);
+  const [contatoLoading, setContatoLoading] = useState(false);
+  const [contatoForm, setContatoForm] = useState({ nome: "", cargo: "", email: "", telefone: "" });
+  const [uploadingDocument, setUploadingDocument] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [showDeleteDocumentModal, setShowDeleteDocumentModal] = useState(false);
+  const [documentToDelete, setDocumentToDelete] = useState<FornecedorDocumento | null>(null);
+  const [deletingDocument, setDeletingDocument] = useState(false);
+  const [showOrphanDocumentModal, setShowOrphanDocumentModal] = useState(false);
+  const [orphanDocument, setOrphanDocument] = useState<FornecedorDocumento | null>(null);
 
   // Configurar o formulário
   const form = useForm<FornecedorFormValues>({
@@ -287,8 +300,9 @@ export default function FornecedorForm({
           variant: "destructive",
         });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Erro ao buscar dados do documento:", error);
+      const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
       toast({
         title: "Erro na busca",
         description: "Ocorreu um erro ao buscar os dados. Preencha manualmente.",
@@ -306,6 +320,8 @@ export default function FornecedorForm({
         throw new Error("Nome é obrigatório");
       }
 
+      console.log('💾 Salvando fornecedor...', { values, isEditing, fornecedorId });
+
       // Preparar dados expandidos para o fornecedor
       const fornecedorData = {
         nome: values.nome.trim(),
@@ -314,18 +330,17 @@ export default function FornecedorForm({
         telefone: values.telefone?.trim() || null,
         endereco: values.endereco?.trim() || null,
         contato: values.contato?.trim() || null,
-        // Campos adicionais (vamos expandir a tabela posteriormente)
         documento: values.documento?.trim() || null,
         tipo_pessoa: values.tipo_pessoa,
         cep: values.cep?.trim() || null,
         cidade: values.cidade?.trim() || null,
         estado: values.estado?.trim() || null,
-        inscricao_estadual: values.inscricao_estadual?.trim() || null,
-        afe_anvisa: values.afe_anvisa?.trim() || null,
-        tipo_fornecedor: values.tipo_fornecedor || null,
       };
 
+      let savedFornecedorId = fornecedorId;
+
       if (isEditing && fornecedorId) {
+        console.log('📝 Atualizando fornecedor existente...');
         const { error } = await supabase
           .from("fornecedores")
           .update(fornecedorData)
@@ -333,33 +348,58 @@ export default function FornecedorForm({
 
         if (error) throw new Error(error.message);
 
+        console.log('✅ Fornecedor atualizado com sucesso');
+
+        // Contar documentos anexados
+        const documentosCount = fornecedorDocumentos.length;
+        const contatosCount = fornecedorContatos.length;
+
         toast({
-          title: "Fornecedor atualizado",
-          description: "O fornecedor foi atualizado com sucesso.",
+          title: "✅ Fornecedor atualizado!",
+          description: `Dados salvos com sucesso.${documentosCount > 0 ? ` ${documentosCount} documento(s) anexado(s).` : ''}${contatosCount > 0 ? ` ${contatosCount} contato(s) cadastrado(s).` : ''}`,
+          duration: 4000
         });
       } else {
-        const { error } = await supabase
+        console.log('🆕 Criando novo fornecedor...');
+        const { data, error } = await supabase
           .from("fornecedores")
-          .insert([fornecedorData]);
+          .insert([fornecedorData])
+          .select()
+          .single();
 
         if (error) throw new Error(error.message);
+        
+        savedFornecedorId = data.id;
+        console.log('✅ Novo fornecedor criado com sucesso:', savedFornecedorId);
 
         toast({
-          title: "Fornecedor criado",
-          description: "O novo fornecedor foi adicionado com sucesso.",
+          title: "✅ Fornecedor criado!",
+          description: "O novo fornecedor foi adicionado com sucesso. Agora você pode anexar documentos e adicionar contatos.",
+          duration: 4000
         });
       }
 
-      navigate("/admin/cadastros/fornecedores");
-    } catch (error: any) {
-      logger.error("Erro ao salvar fornecedor", {
-        errorCode: error.code || "unknown",
-        errorType: error.constructor.name,
+      // Invalidar cache do React Query
+      queryClient.invalidateQueries({ queryKey: ["fornecedores"] });
+
+      // Aguardar um pouco para o usuário ver o toast antes de navegar
+      setTimeout(() => {
+        navigate("/admin/cadastros/fornecedores");
+      }, 1500);
+
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
+      console.error("💥 Erro ao salvar fornecedor:", {
+        errorCode: (error as Record<string, unknown>)?.code || "unknown",
+        errorType: error?.constructor?.name || "unknown",
+        message: errorMessage
       });
+      
       toast({
-        title: "Erro",
-        description: `Não foi possível salvar o fornecedor. Tente novamente.`,
+        title: "❌ Erro ao salvar",
+        description: `Não foi possível salvar o fornecedor: ${errorMessage}`,
         variant: "destructive",
+        duration: 6000
       });
     }
   };
@@ -479,6 +519,623 @@ export default function FornecedorForm({
         </DialogContent>
       </Dialog>
     );
+  };
+
+  // 1. Adicione o hook para buscar contatos ao abrir a aba:
+  useEffect(() => {
+    console.log('useEffect aba contatos:', { activeTab, fornecedorId, isEditing });
+    if (activeTab === "contatos" && fornecedorId) {
+      fetchContatos();
+      fetchDocumentos();
+    }
+    // eslint-disable-next-line
+  }, [activeTab, fornecedorId]);
+
+  // 2. Função para buscar contatos via Edge Function
+  const fetchContatos = async () => {
+    if (!fornecedorId) return;
+    console.log('fetchContatos chamada para fornecedorId:', fornecedorId);
+    try {
+      const headers = await getAuthHeader();
+      const res = await fetch(getSupabaseFunctionUrl("fornecedor-contato-crud") + `?fornecedor_id=${fornecedorId}`,
+        { headers });
+      const data = await res.json();
+      console.log('Contatos recebidos:', data);
+      setFornecedorContatos(Array.isArray(data) ? data : []);
+    } catch (e) {
+      console.error('Erro ao buscar contatos:', e);
+      toast({ title: "Erro ao buscar contatos", description: e.message, variant: "destructive" });
+    }
+  };
+
+  // 3. Modal de contato (adicionar/editar)
+  const openAddContato = () => {
+    setEditingContato(null);
+    setContatoForm({ nome: "", cargo: "", email: "", telefone: "" });
+    setShowContatoDialog(true);
+  };
+  const openEditContato = (contato: FornecedorContato) => {
+    setEditingContato(contato);
+    setContatoForm({ nome: contato.nome, cargo: contato.cargo || "", email: contato.email || "", telefone: contato.telefone || "" });
+    setShowContatoDialog(true);
+  };
+  const closeContatoDialog = () => {
+    setShowContatoDialog(false);
+    setEditingContato(null);
+  };
+
+  const handleContatoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setContatoForm({ ...contatoForm, [e.target.name]: e.target.value });
+  };
+
+  const saveContato = async () => {
+    if (!fornecedorId || !contatoForm.nome) {
+      toast({ title: "Nome obrigatório", description: "Preencha o nome do contato.", variant: "destructive" });
+      return;
+    }
+    setContatoLoading(true);
+    try {
+      const method = editingContato ? "PATCH" : "POST";
+      const body = editingContato
+        ? { id: editingContato.id, ...contatoForm }
+        : { fornecedor_id: fornecedorId, ...contatoForm };
+      const headers = { "Content-Type": "application/json", ...(await getAuthHeader()) };
+      const res = await fetch(getSupabaseFunctionUrl("fornecedor-contato-crud"), {
+        method,
+        headers,
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) throw new Error("Erro ao salvar contato");
+      closeContatoDialog();
+      fetchContatos();
+      toast({ title: "Contato salvo", description: "Contato salvo com sucesso." });
+    } catch (e) {
+      toast({ title: "Erro ao salvar contato", description: e.message, variant: "destructive" });
+    } finally {
+      setContatoLoading(false);
+    }
+  };
+
+  const deleteContato = async (id: string) => {
+    if (!window.confirm("Deseja remover este contato?")) return;
+    try {
+      const headers = await getAuthHeader();
+      const res = await fetch(getSupabaseFunctionUrl("fornecedor-contato-crud") + `?id=${id}`,
+        { method: "DELETE", headers });
+      if (!res.ok) throw new Error("Erro ao remover contato");
+      fetchContatos();
+      toast({ title: "Contato removido" });
+    } catch (e) {
+      toast({ title: "Erro ao remover contato", description: e.message, variant: "destructive" });
+    }
+  };
+
+  // Função para buscar documentos via Edge Function
+  const fetchDocumentos = async () => {
+    if (!fornecedorId) {
+      console.log('⚠️ fetchDocumentos: fornecedorId não encontrado');
+      return;
+    }
+    
+    console.log('📋 fetchDocumentos: Iniciando busca para fornecedorId:', fornecedorId);
+    
+    try {
+      const authHeaders = await getAuthHeader();
+      console.log('🔑 fetchDocumentos: Headers de auth preparados:', { hasAuth: !!authHeaders.Authorization });
+      
+      const functionUrl = getSupabaseFunctionUrl("fornecedor-documento-crud");
+      const fullUrl = `${functionUrl}?fornecedor_id=${fornecedorId}`;
+      console.log('🌐 fetchDocumentos: URL completa:', fullUrl);
+      
+      const res = await fetch(fullUrl, { headers: authHeaders });
+      
+      console.log('📡 fetchDocumentos: Resposta recebida:', {
+        status: res.status,
+        statusText: res.statusText,
+        ok: res.ok
+      });
+      
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error('❌ fetchDocumentos: Erro na resposta:', {
+          status: res.status,
+          statusText: res.statusText,
+          errorText
+        });
+        throw new Error(`Erro ${res.status}: ${errorText}`);
+      }
+      
+      const data = await res.json();
+      console.log('✅ fetchDocumentos: Documentos recebidos:', {
+        count: Array.isArray(data) ? data.length : 'não é array',
+        data: data
+      });
+      
+      setFornecedorDocumentos(Array.isArray(data) ? data : []);
+    } catch (e: unknown) {
+      const errorMessage = e instanceof Error ? e.message : "Erro desconhecido";
+      console.error('💥 fetchDocumentos: Erro completo:', {
+        message: errorMessage,
+        stack: e instanceof Error ? e.stack : undefined,
+        error: e
+      });
+      toast({ 
+        title: "Erro ao buscar documentos", 
+        description: errorMessage || "Erro desconhecido ao buscar documentos", 
+        variant: "destructive" 
+      });
+    }
+  };
+
+  // Função para fazer upload de arquivo
+  const uploadFile = async (file: File) => {
+    console.log('=== INÍCIO DO UPLOAD ===');
+    console.log('uploadFile chamada com:', { 
+      fileName: file.name, 
+      fileSize: file.size, 
+      fileType: file.type,
+      fornecedorId, 
+      isEditing 
+    });
+    
+    if (!fornecedorId) {
+      console.error('❌ Erro: fornecedorId não encontrado');
+      toast({ 
+        title: "Fornecedor necessário", 
+        description: "É necessário ter um fornecedor salvo para anexar documentos. Salve o fornecedor primeiro.", 
+        variant: "destructive" 
+      });
+      return;
+    }
+
+    // Verificar se o usuário está autenticado
+    try {
+      const session = await supabase.auth.getSession();
+      console.log('🔐 Status da sessão:', {
+        hasSession: !!session.data.session,
+        hasUser: !!session.data.session?.user,
+        userId: session.data.session?.user?.id
+      });
+      
+      if (!session.data.session) {
+        console.error('❌ Usuário não autenticado');
+        toast({ 
+          title: "Erro de autenticação", 
+          description: "Você precisa estar logado para fazer upload de documentos.", 
+          variant: "destructive" 
+        });
+        return;
+      }
+    } catch (authError) {
+      console.error('❌ Erro ao verificar autenticação:', authError);
+      toast({ 
+        title: "Erro de autenticação", 
+        description: "Erro ao verificar login. Tente fazer login novamente.", 
+        variant: "destructive" 
+      });
+      return;
+    }
+
+    // Verificar se já existe um arquivo com o mesmo nome
+    const arquivoExistente = fornecedorDocumentos.find(doc => doc.nome_arquivo === file.name);
+    if (arquivoExistente) {
+      const confirmar = window.confirm(
+        `Já existe um arquivo com o nome "${file.name}". Deseja substituí-lo?`
+      );
+      if (!confirmar) {
+        console.log('⚠️ Upload cancelado pelo usuário - arquivo duplicado');
+        return;
+      } else {
+        // Remover o arquivo existente primeiro
+        console.log('🗑️ Removendo arquivo existente antes de substituir...');
+        try {
+          await deleteDocumento(arquivoExistente.id, arquivoExistente.url);
+        } catch (error) {
+          console.error('❌ Erro ao remover arquivo existente:', error);
+          toast({
+            title: "Erro ao substituir arquivo",
+            description: "Não foi possível remover o arquivo existente.",
+            variant: "destructive"
+          });
+          return;
+        }
+      }
+    }
+
+    // Validar tipo de arquivo
+    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
+    if (!allowedTypes.includes(file.type)) {
+      console.log('❌ Tipo de arquivo rejeitado:', file.type);
+      toast({ 
+        title: "Tipo de arquivo não permitido", 
+        description: "Apenas PDF, JPG e PNG são aceitos.", 
+        variant: "destructive" 
+      });
+      return;
+    }
+
+    // Validar tamanho (10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      console.log('❌ Arquivo muito grande:', file.size);
+      toast({ 
+        title: "Arquivo muito grande", 
+        description: "O arquivo deve ter no máximo 10MB.", 
+        variant: "destructive" 
+      });
+      return;
+    }
+
+    console.log('✅ Validações passaram, iniciando upload do arquivo:', file.name);
+    setUploadingDocument(true);
+    
+    try {
+      // ETAPA 1: Upload para o Supabase Storage
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${fornecedorId}/${Date.now()}.${fileExt}`;
+      
+      console.log('📁 ETAPA 1: Fazendo upload para storage:', fileName);
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('fornecedor-documentos')
+        .upload(fileName, file);
+
+      if (uploadError) {
+        console.error('❌ ETAPA 1 FALHOU - Erro no upload para storage:', uploadError);
+        throw new Error(`Erro no storage: ${uploadError.message}`);
+      }
+
+      console.log('✅ ETAPA 1 SUCESSO - Upload para storage bem-sucedido:', uploadData);
+
+      // ETAPA 2: Obter URL pública
+      console.log('🔗 ETAPA 2: Gerando URL pública...');
+      const { data: { publicUrl } } = supabase.storage
+        .from('fornecedor-documentos')
+        .getPublicUrl(fileName);
+
+      console.log('✅ ETAPA 2 SUCESSO - URL pública gerada:', publicUrl);
+
+      // ETAPA 3: Preparar headers de autenticação
+      console.log('🔑 ETAPA 3: Preparando headers de autenticação...');
+      const authHeaders = await getAuthHeader();
+      console.log('Headers de auth preparados:', { hasAuth: !!authHeaders.Authorization });
+
+      // ETAPA 4: Salvar metadados no banco via Edge Function
+      const headers = { "Content-Type": "application/json", ...authHeaders };
+      const payload = {
+        fornecedor_id: fornecedorId,
+        nome_arquivo: file.name,
+        url: publicUrl,
+        tipo: file.type
+      };
+      
+      console.log('💾 ETAPA 4: Salvando metadados via Edge Function...');
+      console.log('Payload:', payload);
+      console.log('Headers:', headers);
+      
+      const functionUrl = getSupabaseFunctionUrl("fornecedor-documento-crud");
+      console.log('URL da função:', functionUrl);
+      
+      const res = await fetch(functionUrl, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(payload),
+      });
+
+      console.log('📡 Resposta da Edge Function:', {
+        status: res.status,
+        statusText: res.statusText,
+        ok: res.ok
+      });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error('❌ ETAPA 4 FALHOU - Erro na Edge Function:', {
+          status: res.status,
+          statusText: res.statusText,
+          errorText
+        });
+        
+        // Se falhou ao salvar metadados, remover arquivo do storage
+        try {
+          await supabase.storage
+            .from('fornecedor-documentos')
+            .remove([fileName]);
+          console.log('🧹 Arquivo removido do storage devido ao erro nos metadados');
+        } catch (cleanupError) {
+          console.error('❌ Erro ao limpar arquivo do storage:', cleanupError);
+        }
+        
+        throw new Error(`Erro ao salvar documento (${res.status}): ${errorText}`);
+      }
+
+      const responseData = await res.json();
+      console.log('✅ ETAPA 4 SUCESSO - Dados da resposta:', responseData);
+
+      // ETAPA 5: Atualizar lista de documentos
+      console.log('🔄 ETAPA 5: Atualizando lista de documentos...');
+      await fetchDocumentos();
+      
+      console.log('🎉 UPLOAD COMPLETO COM SUCESSO!');
+      toast({ 
+        title: "✅ Documento salvo!", 
+        description: `O arquivo "${file.name}" foi enviado e salvo com sucesso.${isEditing ? ' Lembre-se de salvar o formulário para confirmar todas as alterações.' : ''}`,
+        duration: isEditing ? 5000 : 3000
+      });
+      
+    } catch (e: unknown) {
+      const errorMessage = e instanceof Error ? e.message : "Erro desconhecido";
+      console.error('💥 ERRO COMPLETO NO UPLOAD:', {
+        message: errorMessage,
+        stack: e instanceof Error ? e.stack : undefined,
+        error: e
+      });
+      toast({ 
+        title: "❌ Erro ao enviar documento", 
+        description: errorMessage || "Erro desconhecido. Verifique o console para mais detalhes.", 
+        variant: "destructive",
+        duration: 5000
+      });
+    } finally {
+      setUploadingDocument(false);
+      console.log('=== FIM DO UPLOAD ===');
+    }
+  };
+
+  // Função para remover documento
+  const deleteDocumento = async (id: string, url: string) => {
+    console.log('🗑️ Iniciando remoção de documento:', { id, url });
+    
+    try {
+      console.log('🔄 Removendo documento...');
+      
+      // ETAPA 1: Remover metadados via Edge Function
+      console.log('📡 ETAPA 1: Removendo metadados via Edge Function...');
+      const headers = await getAuthHeader();
+      const res = await fetch(getSupabaseFunctionUrl("fornecedor-documento-crud") + `?id=${id}`, {
+        method: "DELETE", 
+        headers
+      });
+      
+      console.log('Resposta da Edge Function:', {
+        status: res.status,
+        statusText: res.statusText,
+        ok: res.ok
+      });
+      
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error('❌ ETAPA 1 FALHOU - Erro ao remover metadados:', errorText);
+        throw new Error(`Erro ao remover documento do banco (${res.status}): ${errorText}`);
+      }
+      
+      console.log('✅ ETAPA 1 SUCESSO - Metadados removidos');
+
+      // ETAPA 2: Remover arquivo do storage
+      console.log('🗂️ ETAPA 2: Removendo arquivo do storage...');
+      try {
+        // Extrair o caminho do arquivo da URL
+        const urlParts = url.split('/');
+        const fileName = urlParts[urlParts.length - 1];
+        const filePath = `${fornecedorId}/${fileName}`;
+        
+        console.log('Removendo arquivo do storage:', filePath);
+        
+        const { error: storageError } = await supabase.storage
+          .from('fornecedor-documentos')
+          .remove([filePath]);
+
+        if (storageError) {
+          console.error('⚠️ ETAPA 2 FALHOU - Erro ao remover do storage:', storageError);
+          // Não vamos falhar a operação por causa do storage, pois os metadados já foram removidos
+          console.log('⚠️ Continuando mesmo com erro no storage...');
+        } else {
+          console.log('✅ ETAPA 2 SUCESSO - Arquivo removido do storage');
+        }
+      } catch (storageError) {
+        console.error('⚠️ Erro no storage (não crítico):', storageError);
+      }
+
+      // ETAPA 3: Atualizar lista de documentos
+      console.log('🔄 ETAPA 3: Atualizando lista de documentos...');
+      await fetchDocumentos();
+      
+      console.log('🎉 REMOÇÃO COMPLETA COM SUCESSO!');
+      toast({ 
+        title: "✅ Documento removido!", 
+        description: "O documento foi removido com sucesso.",
+        duration: 3000
+      });
+      
+    } catch (e: unknown) {
+      const errorMessage = e instanceof Error ? e.message : "Erro desconhecido";
+      console.error('💥 ERRO COMPLETO NA REMOÇÃO:', {
+        message: errorMessage,
+        stack: e instanceof Error ? e.stack : undefined,
+        error: e
+      });
+      toast({ 
+        title: "❌ Erro ao remover documento", 
+        description: errorMessage || "Erro desconhecido ao remover documento.", 
+        variant: "destructive",
+        duration: 5000
+      });
+    }
+  };
+
+  // Handlers para drag & drop
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    
+    const files = Array.from(e.dataTransfer.files);
+    console.log('Arquivos arrastados:', files.map(f => f.name));
+    files.forEach(uploadFile);
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    console.log('Arquivos selecionados:', files.map(f => f.name));
+    files.forEach(uploadFile);
+    
+    // Limpar o input para permitir selecionar o mesmo arquivo novamente
+    e.target.value = '';
+  };
+
+  // Função para formatar tamanho do arquivo
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  // Função para obter ícone do tipo de arquivo
+  const getFileIcon = (tipo: string) => {
+    if (tipo.includes('pdf')) return '📄';
+    if (tipo.includes('image')) return '🖼️';
+    return '📎';
+  };
+
+  // Função para verificar e limpar metadados órfãos
+  const verificarELimparMetadados = async () => {
+    if (!fornecedorId) return;
+    
+    console.log('🔍 Verificando consistência entre metadados e storage...');
+    
+    try {
+      const documentosParaRemover = [];
+      
+      for (const doc of fornecedorDocumentos) {
+        try {
+          // Verificar se o arquivo existe no storage
+          const response = await fetch(doc.url, { method: 'HEAD' });
+          
+          if (!response.ok) {
+            console.log(`❌ Arquivo não encontrado no storage: ${doc.nome_arquivo}`);
+            documentosParaRemover.push(doc);
+          }
+        } catch (error) {
+          console.log(`❌ Erro ao verificar arquivo: ${doc.nome_arquivo}`, error);
+          documentosParaRemover.push(doc);
+        }
+      }
+      
+      if (documentosParaRemover.length > 0) {
+        console.log(`🧹 Removendo ${documentosParaRemover.length} metadados órfãos...`);
+        
+        for (const doc of documentosParaRemover) {
+          try {
+            // Remover apenas os metadados (não tentar remover do storage)
+            const headers = await getAuthHeader();
+            const res = await fetch(getSupabaseFunctionUrl("fornecedor-documento-crud") + `?id=${doc.id}`, {
+              method: "DELETE", 
+              headers
+            });
+            
+            if (res.ok) {
+              console.log(`✅ Metadados removidos: ${doc.nome_arquivo}`);
+            }
+          } catch (error) {
+            console.error(`❌ Erro ao remover metadados: ${doc.nome_arquivo}`, error);
+          }
+        }
+        
+        // Atualizar lista após limpeza
+        await fetchDocumentos();
+        
+        toast({
+          title: "🧹 Limpeza realizada",
+          description: `${documentosParaRemover.length} arquivo(s) órfão(s) removido(s) da lista.`,
+          duration: 3000
+        });
+      } else {
+        toast({
+          title: "Verificação concluída",
+          description: "Todos os documentos estão consistentes no banco e no storage.",
+          duration: 3000
+        });
+      }
+    } catch (error) {
+      console.error('❌ Erro na verificação de consistência:', error);
+    }
+  };
+
+  // Função para visualizar documento
+  const visualizarDocumento = async (doc: FornecedorDocumento) => {
+    console.log('👁️ Visualizando documento:', doc);
+    
+    try {
+      // Verificar se a URL está acessível
+      console.log('🔍 Verificando se o documento está acessível...');
+      const response = await fetch(doc.url, { method: 'HEAD' });
+      
+      if (!response.ok) {
+        console.error('❌ Documento não encontrado no storage:', response.status);
+        
+        if (response.status === 400 || response.status === 404) {
+          // Arquivo não existe - oferecer opção de remover metadados
+          setOrphanDocument(doc);
+          setShowOrphanDocumentModal(true);
+          return;
+        } else {
+          toast({
+            title: "❌ Documento inacessível",
+            description: `Erro ${response.status}: O documento não pode ser acessado no momento.`,
+            variant: "destructive",
+            duration: 5000
+          });
+        }
+        return;
+      }
+      
+      console.log('✅ Documento acessível, abrindo...');
+      
+      // Abrir em nova aba
+      const newWindow = window.open(doc.url, '_blank');
+      
+      if (!newWindow) {
+        // Se o popup foi bloqueado, tentar download
+        console.log('⚠️ Popup bloqueado, tentando download...');
+        const link = document.createElement('a');
+        link.href = doc.url;
+        link.download = doc.nome_arquivo;
+        link.target = '_blank';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        toast({
+          title: "📥 Download iniciado",
+          description: "O documento está sendo baixado para seu computador.",
+          duration: 3000
+        });
+      } else {
+        toast({
+          title: "👁️ Documento aberto",
+          description: "O documento foi aberto em uma nova aba.",
+          duration: 2000
+        });
+      }
+      
+    } catch (error) {
+      console.error('💥 Erro ao visualizar documento:', error);
+      toast({
+        title: "❌ Erro ao abrir documento",
+        description: "Não foi possível abrir o documento. Verifique sua conexão.",
+        variant: "destructive",
+        duration: 5000
+      });
+    }
   };
 
   return (
@@ -917,7 +1574,7 @@ export default function FornecedorForm({
                         <Phone className="h-5 w-5" />
                         Contatos
                       </h3>
-                      <Button variant="outline" size="sm">
+                      <Button variant="outline" size="sm" onClick={openAddContato}>
                         <Plus className="mr-2 h-4 w-4" />
                         Adicionar Contato
                       </Button>
@@ -936,9 +1593,14 @@ export default function FornecedorForm({
                                 <p className="font-medium">{contato.nome}</p>
                                 <p className="text-sm text-muted-foreground">{contato.cargo}</p>
                               </div>
-                              <Button variant="ghost" size="sm">
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
+                              <div className="flex gap-2">
+                                <Button variant="ghost" size="sm" onClick={() => openEditContato(contato)}>
+                                  Editar
+                                </Button>
+                                <Button variant="ghost" size="sm" onClick={() => deleteContato(contato.id)}>
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
                             </div>
                             <div className="flex items-center gap-4 text-sm">
                               <div className="flex items-center gap-1">
@@ -962,34 +1624,211 @@ export default function FornecedorForm({
                       <h3 className="text-lg font-semibold flex items-center gap-2">
                         <FileText className="h-5 w-5" />
                         Documentos
+                        {fornecedorDocumentos.length > 0 && (
+                          <Badge variant="secondary" className="ml-2">
+                            {fornecedorDocumentos.length}
+                          </Badge>
+                        )}
                       </h3>
-                      <Button variant="outline" size="sm">
-                        <Upload className="mr-2 h-4 w-4" />
-                        Upload Documento
-                      </Button>
+                      <div className="flex gap-2">
+                        {fornecedorDocumentos.length > 0 && (
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={verificarELimparMetadados}
+                            title="Verificar e limpar arquivos órfãos"
+                          >
+                            🧹 Verificar
+                          </Button>
+                        )}
+                        <input
+                          type="file"
+                          id="file-upload"
+                          multiple
+                          accept=".pdf,.jpg,.jpeg,.png"
+                          onChange={handleFileSelect}
+                          className="hidden"
+                        />
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => document.getElementById('file-upload')?.click()}
+                          disabled={uploadingDocument || !fornecedorId}
+                        >
+                          <Upload className="mr-2 h-4 w-4" />
+                          {uploadingDocument ? 'Enviando...' : 'Upload Documento'}
+                        </Button>
+                      </div>
                     </div>
 
-                    <div className="space-y-3">
-                      <div className="text-center py-6 text-muted-foreground border border-dashed rounded-lg">
-                        <Upload className="mx-auto h-8 w-8 mb-2" />
-                        <p>Arraste documentos aqui ou clique para fazer upload</p>
-                        <p className="text-xs">PDF, JPG, PNG até 10MB</p>
+                    {!fornecedorId && (
+                      <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                        <p className="text-sm text-yellow-800">
+                          ⚠️ Salve o fornecedor primeiro para poder anexar documentos.
+                        </p>
                       </div>
+                    )}
+
+                    <div className="space-y-3">
+                      {/* Área de drag & drop */}
+                      <div 
+                        className={`border-2 border-dashed rounded-lg p-6 text-center transition-all duration-200 ${
+                          isDragOver 
+                            ? 'border-blue-500 bg-blue-50 scale-105' 
+                            : 'border-gray-300 hover:border-gray-400'
+                        } ${
+                          uploadingDocument 
+                            ? 'opacity-50 cursor-not-allowed' 
+                            : fornecedorId 
+                              ? 'cursor-pointer hover:bg-gray-50' 
+                              : 'opacity-50 cursor-not-allowed'
+                        }`}
+                        onDragOver={fornecedorId ? handleDragOver : undefined}
+                        onDragLeave={fornecedorId ? handleDragLeave : undefined}
+                        onDrop={fornecedorId ? handleDrop : undefined}
+                        onClick={fornecedorId && !uploadingDocument ? () => document.getElementById('file-upload')?.click() : undefined}
+                      >
+                        {uploadingDocument ? (
+                          <div className="flex flex-col items-center justify-center">
+                            <Loader2 className="h-8 w-8 animate-spin mb-2 text-blue-500" />
+                            <p className="text-blue-600 font-medium">Enviando documento...</p>
+                            <p className="text-xs text-gray-500 mt-1">Aguarde, não feche esta página</p>
+                          </div>
+                        ) : (
+                          <>
+                            <Upload className={`mx-auto h-8 w-8 mb-2 ${fornecedorId ? 'text-gray-400' : 'text-gray-300'}`} />
+                            <p className={`${fornecedorId ? 'text-gray-600' : 'text-gray-400'}`}>
+                              {fornecedorId 
+                                ? 'Arraste documentos aqui ou clique para fazer upload' 
+                                : 'Salve o fornecedor primeiro para anexar documentos'
+                              }
+                            </p>
+                            <p className="text-xs text-gray-500 mt-1">PDF, JPG, PNG até 10MB</p>
+                          </>
+                        )}
+                      </div>
+
+                      {/* Lista de documentos */}
+                      {fornecedorDocumentos.length > 0 ? (
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <h4 className="font-medium text-sm text-gray-700">Documentos anexados:</h4>
+                            <p className="text-xs text-gray-500">
+                              {fornecedorDocumentos.length} documento{fornecedorDocumentos.length !== 1 ? 's' : ''}
+                            </p>
+                          </div>
+                          <div className="space-y-2 max-h-60 overflow-y-auto">
+                            {fornecedorDocumentos.map((doc) => (
+                              <div key={doc.id} className="flex items-center justify-between p-3 border rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+                                <div className="flex items-center gap-3 flex-1 min-w-0">
+                                  <span className="text-2xl flex-shrink-0">{getFileIcon(doc.tipo)}</span>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="font-medium text-sm truncate" title={doc.nome_arquivo}>
+                                      {doc.nome_arquivo}
+                                    </p>
+                                    <p className="text-xs text-gray-500">
+                                      Enviado em {new Date(doc.criado_em).toLocaleDateString('pt-BR', {
+                                        day: '2-digit',
+                                        month: '2-digit',
+                                        year: 'numeric',
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                      })}
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-1 flex-shrink-0">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => visualizarDocumento(doc)}
+                                    className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                    title="Visualizar documento"
+                                  >
+                                    👁️ Ver
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      setDocumentToDelete(doc);
+                                      setShowDeleteDocumentModal(true);
+                                    }}
+                                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                    title="Remover documento"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-center py-4 text-gray-500 border border-dashed rounded-lg bg-gray-50">
+                          <FileText className="mx-auto h-8 w-8 mb-2 text-gray-400" />
+                          <p className="text-sm">Nenhum documento anexado</p>
+                          {fornecedorId && (
+                            <p className="text-xs mt-1">Faça upload do primeiro documento acima</p>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
+                {/* Modal de contato */}
+                <Dialog open={showContatoDialog} onOpenChange={setShowContatoDialog}>
+                  <DialogContent className="max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>{editingContato ? "Editar Contato" : "Adicionar Contato"}</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div>
+                        <Label>Nome *</Label>
+                        <Input name="nome" value={contatoForm.nome} onChange={handleContatoChange} required maxLength={255} />
+                      </div>
+                      <div>
+                        <Label>Cargo</Label>
+                        <Input name="cargo" value={contatoForm.cargo} onChange={handleContatoChange} maxLength={100} />
+                      </div>
+                      <div>
+                        <Label>Email</Label>
+                        <Input name="email" value={contatoForm.email} onChange={handleContatoChange} type="email" maxLength={255} />
+                      </div>
+                      <div>
+                        <Label>Telefone</Label>
+                        <Input name="telefone" value={contatoForm.telefone} onChange={handleContatoChange} maxLength={20} />
+                      </div>
+                    </div>
+                    <div className="flex justify-end gap-2 mt-4">
+                      <Button variant="outline" onClick={closeContatoDialog} disabled={contatoLoading}>Cancelar</Button>
+                      <Button onClick={saveContato} loading={contatoLoading} disabled={contatoLoading}>
+                        {editingContato ? "Salvar Alterações" : "Adicionar"}
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
               </TabsContent>
 
               {/* Botões de ação */}
-              <div className="flex justify-end gap-4 p-6 border-t">
+              <div className="flex justify-end gap-4 p-6 border-t bg-gray-50">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => navigate("/admin/cadastros/fornecedores")}
+                  disabled={isSubmitting}
                 >
                   Cancelar
                 </Button>
-                <Button type="submit" disabled={isSubmitting}>
+                <Button 
+                  type="submit" 
+                  disabled={isSubmitting} 
+                  className={`min-w-[120px] ${
+                    (fornecedorDocumentos.length > 0 || fornecedorContatos.length > 0) 
+                      ? 'bg-green-600 hover:bg-green-700' 
+                      : ''
+                  }`}
+                >
                   {isSubmitting ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -998,10 +1837,33 @@ export default function FornecedorForm({
                   ) : (
                     <>
                       <Save className="mr-2 h-4 w-4" />
-                      Salvar
+                      {isEditing ? 'Salvar Alterações' : 'Criar Fornecedor'}
+                      {(fornecedorDocumentos.length > 0 || fornecedorContatos.length > 0) && (
+                        <span className="ml-2 bg-white bg-opacity-20 px-2 py-1 rounded text-xs">
+                          {fornecedorDocumentos.length + fornecedorContatos.length}
+                        </span>
+                      )}
                     </>
                   )}
                 </Button>
+                
+                {/* Informações sobre anexos */}
+                {(fornecedorDocumentos.length > 0 || fornecedorContatos.length > 0) && (
+                  <div className="flex items-center text-sm text-gray-600 ml-4">
+                    {fornecedorDocumentos.length > 0 && (
+                      <span className="flex items-center gap-1">
+                        <FileText className="h-4 w-4" />
+                        {fornecedorDocumentos.length} doc{fornecedorDocumentos.length !== 1 ? 's' : ''}
+                      </span>
+                    )}
+                    {fornecedorContatos.length > 0 && (
+                      <span className="flex items-center gap-1 ml-3">
+                        <Users className="h-4 w-4" />
+                        {fornecedorContatos.length} contato{fornecedorContatos.length !== 1 ? 's' : ''}
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
             </form>
           </Form>
@@ -1009,6 +1871,189 @@ export default function FornecedorForm({
       </div>
 
       <AddItemDialog />
+
+      {/* Modal de confirmação de exclusão de documento */}
+      <Dialog open={showDeleteDocumentModal} onOpenChange={setShowDeleteDocumentModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <Trash2 className="h-5 w-5" />
+              Confirmar Exclusão
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-800 font-medium mb-2">
+                ⚠️ Esta ação não pode ser desfeita!
+              </p>
+              <p className="text-red-700 text-sm">
+                O documento será removido permanentemente do sistema.
+              </p>
+            </div>
+            
+            {documentToDelete && (
+              <div className="p-3 bg-gray-50 border rounded-lg">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">{getFileIcon(documentToDelete.tipo)}</span>
+                  <div>
+                    <p className="font-medium text-sm">{documentToDelete.nome_arquivo}</p>
+                    <p className="text-xs text-gray-500">
+                      Enviado em {new Date(documentToDelete.criado_em).toLocaleDateString('pt-BR', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            <p className="text-gray-700">
+              Tem certeza de que deseja remover este documento?
+            </p>
+          </div>
+          <div className="flex justify-end gap-2 mt-6">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setShowDeleteDocumentModal(false);
+                setDocumentToDelete(null);
+              }}
+              disabled={deletingDocument}
+            >
+              Cancelar
+            </Button>
+            <Button 
+              variant="destructive"
+              onClick={async () => {
+                if (documentToDelete) {
+                  setDeletingDocument(true);
+                  try {
+                    await deleteDocumento(documentToDelete.id, documentToDelete.url);
+                  } finally {
+                    setDeletingDocument(false);
+                    setShowDeleteDocumentModal(false);
+                    setDocumentToDelete(null);
+                  }
+                }
+              }}
+              disabled={deletingDocument}
+            >
+              {deletingDocument ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Removendo...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Remover Documento
+                </>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal para documento órfão */}
+      <Dialog open={showOrphanDocumentModal} onOpenChange={setShowOrphanDocumentModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-orange-600">
+              <FileText className="h-5 w-5" />
+              Documento Não Encontrado
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
+              <p className="text-orange-800 font-medium mb-2">
+                📄 Arquivo não encontrado no storage
+              </p>
+              <p className="text-orange-700 text-sm">
+                O arquivo pode ter sido removido manualmente ou corrompido.
+              </p>
+            </div>
+            
+            {orphanDocument && (
+              <div className="p-3 bg-gray-50 border rounded-lg">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">{getFileIcon(orphanDocument.tipo)}</span>
+                  <div>
+                    <p className="font-medium text-sm">{orphanDocument.nome_arquivo}</p>
+                    <p className="text-xs text-gray-500">
+                      Enviado em {new Date(orphanDocument.criado_em).toLocaleDateString('pt-BR', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            <p className="text-gray-700">
+              Deseja remover este item da lista de documentos? Isso irá limpar apenas os metadados, já que o arquivo não existe mais.
+            </p>
+          </div>
+          <div className="flex justify-end gap-2 mt-6">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setShowOrphanDocumentModal(false);
+                setOrphanDocument(null);
+              }}
+            >
+              Manter na Lista
+            </Button>
+            <Button 
+              variant="destructive"
+              onClick={async () => {
+                if (orphanDocument) {
+                  console.log('🗑️ Removendo metadados órfãos...');
+                  try {
+                    const headers = await getAuthHeader();
+                    const res = await fetch(getSupabaseFunctionUrl("fornecedor-documento-crud") + `?id=${orphanDocument.id}`, {
+                      method: "DELETE", 
+                      headers
+                    });
+                    
+                    if (res.ok) {
+                      await fetchDocumentos();
+                      toast({
+                        title: "✅ Item removido",
+                        description: "O item foi removido da lista de documentos.",
+                        duration: 3000
+                      });
+                    } else {
+                      throw new Error('Erro ao remover metadados');
+                    }
+                  } catch (error) {
+                    console.error('❌ Erro ao remover metadados:', error);
+                    toast({
+                      title: "❌ Erro ao remover",
+                      description: "Não foi possível remover o item da lista.",
+                      variant: "destructive",
+                      duration: 5000
+                    });
+                  } finally {
+                    setShowOrphanDocumentModal(false);
+                    setOrphanDocument(null);
+                  }
+                }
+              }}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Remover da Lista
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 } 

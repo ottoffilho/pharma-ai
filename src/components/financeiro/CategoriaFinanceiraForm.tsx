@@ -116,11 +116,11 @@ export const CategoriaFinanceiraForm: React.FC<CategoriaFinanceiraFormProps> = (
         navigate('/admin/financeiro/categorias');
       }
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       console.error('Erro ao salvar categoria:', error);
       toast({
         title: 'Erro ao salvar',
-        description: error.message || 'Ocorreu um erro ao salvar a categoria.',
+        description: (error instanceof Error ? error.message : 'Erro desconhecido') || 'Ocorreu um erro ao salvar a categoria.',
         variant: 'destructive',
       });
     },

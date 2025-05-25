@@ -23,7 +23,10 @@ import { useBreadcrumbs } from '@/hooks/useBreadcrumbs';
 import { Badge } from '@/components/ui/badge';
 
 interface AdminHeaderProps {
-  user: any;
+  user: {
+    email?: string;
+    id?: string;
+  } | null;
   onLogout: () => void;
 }
 
@@ -46,7 +49,7 @@ export function AdminHeader({ user, onLogout }: AdminHeaderProps) {
             <Breadcrumb>
               <BreadcrumbList>
                 {breadcrumbs.map((breadcrumb, index) => (
-                  <React.Fragment key={index}>
+                  <div key={index} data-lov-id={breadcrumb.id} style={{ display: 'contents' }}>
                     <BreadcrumbItem>
                       {breadcrumb.isCurrentPage ? (
                         <BreadcrumbPage>{breadcrumb.label}</BreadcrumbPage>
@@ -57,7 +60,7 @@ export function AdminHeader({ user, onLogout }: AdminHeaderProps) {
                       )}
                     </BreadcrumbItem>
                     {index < breadcrumbs.length - 1 && <BreadcrumbSeparator />}
-                  </React.Fragment>
+                  </div>
                 ))}
               </BreadcrumbList>
             </Breadcrumb>

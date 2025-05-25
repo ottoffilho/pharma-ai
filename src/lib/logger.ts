@@ -9,7 +9,7 @@ const SENSITIVE_KEYS = [
 ];
 
 // Função para sanitizar objetos recursivamente
-const sanitizeObject = (obj: any): any => {
+const sanitizeObject = (obj: unknown): unknown => {
   if (!obj || typeof obj !== 'object') {
     return obj;
   }
@@ -18,7 +18,7 @@ const sanitizeObject = (obj: any): any => {
     return obj.map(item => sanitizeObject(item));
   }
 
-  return Object.entries(obj).reduce((acc, [key, value]) => {
+  return Object.entries(obj as Record<string, unknown>).reduce((acc, [key, value]) => {
     // Verifique se a chave contém palavras sensíveis
     const isSensitive = SENSITIVE_KEYS.some(sensitiveKey => 
       key.toLowerCase().includes(sensitiveKey.toLowerCase())
@@ -37,41 +37,41 @@ const sanitizeObject = (obj: any): any => {
     }
 
     return acc;
-  }, {} as Record<string, any>);
+  }, {} as Record<string, unknown>);
 };
 
 // Interface para o logger
 interface Logger {
-  error: (message: string, ...args: any[]) => void;
-  warn: (message: string, ...args: any[]) => void;
-  info: (message: string, ...args: any[]) => void;
-  debug: (message: string, ...args: any[]) => void;
+  error: (message: string, ...args: unknown[]) => void;
+  warn: (message: string, ...args: unknown[]) => void;
+  info: (message: string, ...args: unknown[]) => void;
+  debug: (message: string, ...args: unknown[]) => void;
 }
 
 // Implementação do logger
 const logger: Logger = {
-  error: (message: string, ...args: any[]): void => {
+  error: (message: string, ...args: unknown[]): void => {
     console.error(
       `[ERROR] ${message}`, 
       ...args.map(arg => sanitizeObject(arg))
     );
   },
   
-  warn: (message: string, ...args: any[]): void => {
+  warn: (message: string, ...args: unknown[]): void => {
     console.warn(
       `[WARN] ${message}`, 
       ...args.map(arg => sanitizeObject(arg))
     );
   },
   
-  info: (message: string, ...args: any[]): void => {
+  info: (message: string, ...args: unknown[]): void => {
     console.info(
       `[INFO] ${message}`, 
       ...args.map(arg => sanitizeObject(arg))
     );
   },
   
-  debug: (message: string, ...args: any[]): void => {
+  debug: (message: string, ...args: unknown[]): void => {
     if (import.meta.env.DEV) {
       console.log(
         `[DEBUG] ${message}`, 

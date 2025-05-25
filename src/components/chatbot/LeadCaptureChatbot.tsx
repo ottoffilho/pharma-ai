@@ -277,7 +277,7 @@ Posso explicar:
         setTimeout(() => {
             let botResponse = "Desculpe, não entendi. Pode repetir?";
             let nextStep = conversationStep;
-            let extracted: Partial<LeadData> = {};
+            const extracted: Partial<LeadData> = {};
 
             if (conversationStep === 'initial_greeting') {
                 const positiveResponses = [

@@ -67,7 +67,15 @@ export default function FluxoCaixaPage() {
   
   const [isNovaMovimentacaoOpen, setIsNovaMovimentacaoOpen] = useState(false);
   const [isEditMovimentacaoOpen, setIsEditMovimentacaoOpen] = useState(false);
-  const [selectedMovimentacao, setSelectedMovimentacao] = useState<any>(null);
+  const [selectedMovimentacao, setSelectedMovimentacao] = useState<{
+    id: string;
+    data_movimentacao: Date;
+    tipo_movimentacao: string;
+    descricao: string;
+    valor: number;
+    categoria_id?: string;
+    observacoes?: string;
+  } | null>(null);
   const [tipoFiltro, setTipoFiltro] = useState<string>('todos');
   const [dataInicio, setDataInicio] = useState<Date>(startOfMonth(new Date()));
   const [dataFim, setDataFim] = useState<Date>(new Date());
@@ -113,11 +121,11 @@ export default function FluxoCaixaPage() {
       });
       queryClient.invalidateQueries({ queryKey: ['movimentacoes-caixa'] });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       console.error('Erro ao excluir movimentação:', error);
       toast({
         title: "Erro ao excluir",
-        description: error.message || "Ocorreu um erro ao excluir a movimentação.",
+        description: (error instanceof Error ? error.message : 'Erro desconhecido') || "Ocorreu um erro ao excluir a movimentação.",
         variant: "destructive",
       });
     },
@@ -130,12 +138,12 @@ export default function FluxoCaixaPage() {
     }
     
     const totalEntradas = movimentacoes
-      .filter((mov: any) => mov.tipo_movimentacao === 'entrada')
-      .reduce((total: number, mov: any) => total + parseFloat(mov.valor), 0);
+      .filter((mov: { tipo_movimentacao: string }) => mov.tipo_movimentacao === 'entrada')
+      .reduce((total: number, mov: { valor: string | number }) => total + parseFloat(String(mov.valor)), 0);
       
     const totalSaidas = movimentacoes
-      .filter((mov: any) => mov.tipo_movimentacao === 'saida')
-      .reduce((total: number, mov: any) => total + parseFloat(mov.valor), 0);
+      .filter((mov: { tipo_movimentacao: string }) => mov.tipo_movimentacao === 'saida')
+      .reduce((total: number, mov: { valor: string | number }) => total + parseFloat(String(mov.valor)), 0);
       
     return {
       totalEntradas,
@@ -158,7 +166,7 @@ export default function FluxoCaixaPage() {
     deleteMutation.mutate(id);
   };
 
-  const handleEditar = (movimentacao: any) => {
+  const handleEditar = (movimentacao: Record<string, unknown>) => {
     // Converter a string de data para um objeto Date para o formulário
     const dataMovimentacao = new Date(movimentacao.data_movimentacao);
     
@@ -223,7 +231,7 @@ export default function FluxoCaixaPage() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {movimentacoes.map((mov: any) => (
+          {movimentacoes.map((mov: Record<string, unknown>) => (
             <TableRow key={mov.id}>
               <TableCell>
                 {format(new Date(mov.data_movimentacao), 'dd/MM/yyyy')}

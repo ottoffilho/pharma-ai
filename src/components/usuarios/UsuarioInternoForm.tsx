@@ -193,11 +193,11 @@ const UsuarioInternoForm: React.FC<UsuarioInternoFormProps> = ({
 
       // Return to the listing page after success
       navigate("/admin/usuarios");
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Erro ao salvar usuário:", error);
       toast({
         title: "Erro ao salvar",
-        description: error.message || "Ocorreu um erro ao salvar o usuário.",
+        description: (error instanceof Error ? error.message : 'Erro desconhecido') || "Ocorreu um erro ao salvar o usuário.",
         variant: "destructive",
       });
     } finally {

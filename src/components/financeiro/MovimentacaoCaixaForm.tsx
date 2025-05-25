@@ -175,11 +175,11 @@ export const MovimentacaoCaixaForm: React.FC<MovimentacaoCaixaFormProps> = ({
         onSuccess();
       }
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       console.error('Erro ao salvar movimentação:', error);
       toast({
         title: 'Erro ao salvar',
-        description: error.message || 'Ocorreu um erro ao salvar a movimentação.',
+        description: (error instanceof Error ? error.message : 'Erro desconhecido') || 'Ocorreu um erro ao salvar a movimentação.',
         variant: 'destructive',
       });
     },

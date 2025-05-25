@@ -36,7 +36,13 @@ type PagamentoFormValues = z.infer<typeof pagamentoSchema>;
 interface RegistrarPagamentoContaDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  conta: any;
+  conta: {
+    id: string;
+    descricao: string;
+    valor_previsto?: number;
+    categoria_id?: string;
+    fornecedor_nome?: string;
+  };
   onSuccess?: () => void;
 }
 

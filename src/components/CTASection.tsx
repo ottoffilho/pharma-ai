@@ -58,11 +58,11 @@ const CTASection = () => {
         variant: "success",
       });
       formElement.reset(); // Usando formElement em vez de e.currentTarget
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Falha ao enviar formulário:", error);
       toast({
         title: "Erro ao enviar formulário!",
-        description: error.message || "Não foi possível enviar seus dados. Tente novamente mais tarde.",
+        description: (error instanceof Error ? error.message : "Erro desconhecido") || "Não foi possível enviar seus dados. Tente novamente mais tarde.",
         variant: "destructive",
       });
     } finally {

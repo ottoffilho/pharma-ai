@@ -69,7 +69,7 @@ const insumoSchema = z.object({
 type InsumoFormValues = z.infer<typeof insumoSchema>;
 
 interface InsumoFormProps {
-  initialData?: any; // Dados iniciais para edição
+  initialData?: Record<string, unknown>; // Dados iniciais para edição
   isEditing?: boolean; // Modo edição
   insumoId?: string; // ID do insumo para edição
 }
@@ -142,7 +142,7 @@ export default function InsumoForm({
           // Sanitizar string inputs
           acc[key] = typeof value === 'string' ? value.trim().replace(/['";<>]/g, '') : value;
           return acc;
-        }, {} as Record<string, any>);
+        }, {} as Record<string, unknown>);
         
         const { error } = await supabase
           .from("insumos")
@@ -162,7 +162,7 @@ export default function InsumoForm({
           // Sanitizar string inputs
           acc[key] = typeof value === 'string' ? value.trim().replace(/['";<>]/g, '') : value;
           return acc;
-        }, {} as Record<string, any>);
+        }, {} as Record<string, unknown>);
         
         const { error } = await supabase.from("insumos").insert([sanitizedData]);
 
@@ -176,9 +176,11 @@ export default function InsumoForm({
 
       // Navegar de volta para a listagem
       navigate("/admin/estoque/insumos");
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Usar o logger para sanitizar informações sensíveis
-      logger.error("Erro ao salvar insumo", { errorCode: error.code || 'unknown', errorType: error.constructor.name });
+      const errorCode = (error as Record<string, unknown>)?.code || 'unknown';
+      const errorType = error?.constructor?.name || 'unknown';
+      logger.error("Erro ao salvar insumo", { errorCode, errorType });
       toast({
         title: "Erro",
         description: `Não foi possível salvar o insumo. Tente novamente.`,

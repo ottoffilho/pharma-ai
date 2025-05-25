@@ -139,7 +139,7 @@ const NovaReceitaPage: React.FC = () => {
     
     try {
       // Modo de desenvolvimento - pular autenticação
-      let lastUploadedRecipeId = 'mock-recipe-id-' + Date.now();
+      const lastUploadedRecipeId = 'mock-recipe-id-' + Date.now();
       setUploadedRecipeId(lastUploadedRecipeId);
       
       // Simulate AI processing with progress updates
@@ -165,11 +165,11 @@ const NovaReceitaPage: React.FC = () => {
         });
       }, 2500);
       
-    } catch (error: any) {
+    } catch (error: unknown) {
       setProcessStatus('error');
       toast({
         title: "Erro ao processar a receita",
-        description: error.message || "Ocorreu um erro ao enviar os arquivos. Tente novamente.",
+        description: (error instanceof Error ? error.message : "Erro desconhecido") || "Ocorreu um erro ao enviar os arquivos. Tente novamente.",
         variant: "destructive",
       });
       console.error("Upload error:", error);
@@ -179,7 +179,7 @@ const NovaReceitaPage: React.FC = () => {
   };
 
   // Handle medication changes
-  const handleMedicationChange = (index: number, field: keyof Medication, value: any) => {
+  const handleMedicationChange = (index: number, field: keyof Medication, value: string | number) => {
     if (extractedData) {
       const updatedData = { ...extractedData };
       updatedData.medications[index] = {
@@ -223,7 +223,7 @@ const NovaReceitaPage: React.FC = () => {
     if (extractedData) {
       const updatedData = { ...extractedData } as IAExtractedData;
       if (field === 'patient_name' || field === 'patient_dob') {
-        (updatedData as any)[field] = value;
+        (updatedData as Record<string, unknown>)[field] = value;
       }
       setExtractedData(updatedData);
     }
@@ -234,7 +234,7 @@ const NovaReceitaPage: React.FC = () => {
     if (extractedData) {
       const updatedData = { ...extractedData } as IAExtractedData;
       if (field === 'prescriber_name' || field === 'prescriber_identifier') {
-        (updatedData as any)[field] = value;
+        (updatedData as Record<string, unknown>)[field] = value;
       }
       setExtractedData(updatedData);
     }
@@ -352,11 +352,11 @@ const NovaReceitaPage: React.FC = () => {
         navigate('/admin/pedidos');
       }, 1500);
       
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error saving validated prescription:', error);
       toast({
         title: "Erro ao salvar dados validados",
-        description: error.message || "Ocorreu um erro ao salvar os dados validados.",
+        description: (error instanceof Error ? error.message : "Erro desconhecido") || "Ocorreu um erro ao salvar os dados validados.",
         variant: "destructive",
       });
     } finally {
