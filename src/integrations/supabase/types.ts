@@ -731,3 +731,8 @@ export const Constants = {
     Enums: {},
   },
 } as const
+
+// Tipos personalizados para facilitar o uso
+export type Fornecedor = Tables<'fornecedores'>
+export type FornecedorInsert = TablesInsert<'fornecedores'>
+export type FornecedorUpdate = TablesUpdate<'fornecedores'>

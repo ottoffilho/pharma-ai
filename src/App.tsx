@@ -23,6 +23,9 @@ import NovoUsuarioPage from "./pages/admin/usuarios/novo";
 import EditarUsuarioPage from "./pages/admin/usuarios/editar";
 import NovoLoteInsumoPage from "./pages/admin/estoque/lotes/novo";
 import EditarLoteInsumoPage from "./pages/admin/estoque/lotes/editar/[id]";
+import FornecedoresPage from "./pages/admin/cadastros/fornecedores/index";
+import NovoFornecedorPage from "./pages/admin/cadastros/fornecedores/novo";
+import EditarFornecedorPage from "./pages/admin/cadastros/fornecedores/[id]";
 import CategoriasFinanceirasPage from "./pages/admin/financeiro/categorias/index";
 import NovaCategoriaPage from "./pages/admin/financeiro/categorias/novo";
 import EditarCategoriaPage from "./pages/admin/financeiro/categorias/editar";
@@ -88,6 +91,11 @@ const App = (): JSX.Element => (
                 <Route path="/admin/financeiro/contas-a-pagar" element={<ContasAPagarPage />} />
                 <Route path="/admin/financeiro/contas-a-pagar/novo" element={<NovaContaPagarPage />} />
                 <Route path="/admin/financeiro/contas-a-pagar/editar/:id" element={<EditarContaPagarPage />} />
+                
+                {/* Cadastros Routes */}
+                <Route path="/admin/cadastros/fornecedores" element={<FornecedoresPage />} />
+                <Route path="/admin/cadastros/fornecedores/novo" element={<NovoFornecedorPage />} />
+                <Route path="/admin/cadastros/fornecedores/editar/:id" element={<EditarFornecedorPage />} />
                 
                 {/* Usuários Routes */}
                 <Route path="/admin/usuarios" element={<UsuariosListPage />} />

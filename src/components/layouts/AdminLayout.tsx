@@ -13,6 +13,7 @@ import {
   Users, 
   FileText, 
   DatabaseBackup, 
+  Database,
   Box,
   BadgePercent,
   DollarSign,
@@ -141,6 +142,13 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         { title: 'Categorias', href: '/admin/financeiro/categorias' },
         { title: 'Fluxo de Caixa', href: '/admin/financeiro/caixa' },
         { title: 'Contas a Pagar', href: '/admin/financeiro/contas-a-pagar' },
+      ],
+    },
+    {
+      title: 'Cadastros',
+      icon: <Database className="h-5 w-5 text-indigo-500" />,
+      submenu: [
+        { title: 'Fornecedores', href: '/admin/cadastros/fornecedores' },
       ],
     },
     {
