@@ -1,174 +1,228 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
+import React, { useState } from 'react';
+import { useNavigate, Navigate } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { useAuth } from '@/modules/usuarios-permissoes/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import { Loader2 } from 'lucide-react';
-import type { AuthError } from '@supabase/supabase-js';
-import { checkLoginAttempts, recordLoginAttempt } from '@/lib/auth-utils';
-import PharmaHorizonLogo from '@/assets/logo/phama-horizon.png';
-import LoginBackground from '@/assets/images/loginback2.jpg';
+
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Loader2, LogIn, Eye, EyeOff } from 'lucide-react';
+
+// Schema de validação para o formulário de login
+const loginSchema = z.object({
+  email: z.string().email('Email inválido'),
+  senha: z.string().min(1, 'Senha é obrigatória'),
+});
+
+type LoginFormData = z.infer<typeof loginSchema>;
 
 const Login: React.FC = () => {
-  const [email, setEmail] = useState<string>('');
-  const [password, setPassword] = useState<string>('');
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [loginBlocked, setLoginBlocked] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { login, autenticado, carregando } = useAuth();
+  const [mostrarSenha, setMostrarSenha] = useState(false);
+  const [fazendoLogin, setFazendoLogin] = useState(false);
 
-  useEffect(() => {
-    const checkSession = async (): Promise<void> => {
-      const { data: { session }, error } = await supabase.auth.getSession();
-      if (error) {
-        console.error("Erro ao buscar sessão:", error.message);
-      }
-      if (session) {
-        navigate('/admin/pedidos');
-      }
-    };
-    checkSession();
-  }, [navigate]);
+  // Se já está autenticado, redireciona para o dashboard
+  if (autenticado) {
+    return <Navigate to="/admin" replace />;
+  }
 
-  // Verificar status de bloqueio quando o email mudar
-  useEffect(() => {
-    if (email) {
-      const { canLogin, message } = checkLoginAttempts(email);
-      setLoginBlocked(canLogin ? null : message || "Conta temporariamente bloqueada devido a muitas tentativas.");
-    } else {
-      setLoginBlocked(null);
-    }
-  }, [email]);
+  const form = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: '',
+      senha: '',
+    },
+  });
 
-  const handleLogin = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
-    e.preventDefault();
-    if (!email || !password) {
-      toast({
-        title: "Campos obrigatórios",
-        description: "Por favor, preencha todos os campos para continuar.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Verificar se o login está bloqueado
-    const { canLogin, message } = checkLoginAttempts(email);
-    if (!canLogin) {
-      toast({
-        title: "Acesso bloqueado",
-        description: message || "Muitas tentativas falhas. Tente novamente mais tarde.",
-        variant: "destructive",
-      });
-      setLoginBlocked(message || null);
-      return;
-    }
-
-    setIsLoading(true);
-
+  const onSubmit = async (data: LoginFormData) => {
+    setFazendoLogin(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) {
-        throw error;
+      const resultado = await login(data.email, data.senha);
+      
+      if (resultado.sucesso) {
+        toast({
+          title: 'Login realizado com sucesso!',
+          description: 'Redirecionando para seu dashboard...',
+        });
+        
+        // O DashboardRouter irá automaticamente direcionar para o dashboard correto
+        navigate('/admin');
+      } else {
+        toast({
+          title: 'Erro no login',
+          description: resultado.erro || 'Credenciais inválidas',
+          variant: 'destructive',
+        });
       }
-
-      // Registrar login bem-sucedido
-      recordLoginAttempt(email, true);
-
+    } catch (error) {
+      console.error('Erro no login:', error);
       toast({
-        title: "Login realizado com sucesso!",
-        description: "Você está sendo redirecionado para a área administrativa.",
-      });
-      navigate('/admin/pedidos');
-    } catch (errUntyped: unknown) {
-      const err = errUntyped as AuthError;
-
-      // Registrar tentativa falha
-      recordLoginAttempt(email, false);
-      
-      // Registrar o erro detalhado apenas para depuração
-      console.error("Erro detalhado de login:", err);
-      
-      // Verificar novamente após a tentativa falha
-      const { canLogin, message } = checkLoginAttempts(email);
-      if (!canLogin) {
-        setLoginBlocked(message || null);
-      }
-      
-      // Mensagem genérica para o usuário
-      toast({
-        title: "Erro ao realizar login",
-        description: loginBlocked || err.message || "Credenciais inválidas ou problema no servidor. Tente novamente.",
-        variant: "destructive",
+        title: 'Erro no login',
+        description: 'Ocorreu um erro inesperado. Tente novamente.',
+        variant: 'destructive',
       });
     } finally {
-      setIsLoading(false);
+      setFazendoLogin(false);
     }
   };
 
+  const toggleMostrarSenha = () => {
+    setMostrarSenha(!mostrarSenha);
+  };
+
+  if (carregando) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p className="text-gray-600">Verificando autenticação...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div 
-      className="min-h-screen flex items-center justify-center p-4 bg-cover bg-center"
-      style={{ backgroundImage: `url(${LoginBackground})` }}
-    >
-      <Card className="w-full max-w-md bg-white/50 backdrop-blur-sm">
-        <CardHeader className="space-y-1 text-center">
-          <img src={PharmaHorizonLogo} alt="Pharma.AI Horizon Logo" className="w-32 h-auto mx-auto mb-6" />
-          <CardDescription>
-            Bem-vindo! Faça login para acessar sua conta.
-          </CardDescription>
-        </CardHeader>
-        <form onSubmit={handleLogin}>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="seu@email.com"
-                value={email}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
-                disabled={isLoading}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Senha</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
-                disabled={isLoading}
-                required
-              />
-            </div>
-            {loginBlocked && (
-              <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive">
-                {loginBlocked}
-              </div>
-            )}
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Pharma.AI</h1>
+          <p className="text-gray-600">Sistema de Gestão para Farmácias de Manipulação</p>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Fazer Login</CardTitle>
+            <CardDescription>
+              Entre com suas credenciais para acessar o sistema
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                {/* Campo Email */}
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="email"
+                          placeholder="seu@email.com"
+                          autoComplete="email"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Campo Senha */}
+                <FormField
+                  control={form.control}
+                  name="senha"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Senha</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Input
+                            type={mostrarSenha ? 'text' : 'password'}
+                            placeholder="Sua senha"
+                            autoComplete="current-password"
+                            {...field}
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                            onClick={toggleMostrarSenha}
+                          >
+                            {mostrarSenha ? (
+                              <EyeOff className="h-4 w-4" />
+                            ) : (
+                              <Eye className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Botão de Login */}
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={fazendoLogin}
+                >
+                  {fazendoLogin ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Entrando...
+                    </>
+                  ) : (
+                    <>
+                      <LogIn className="mr-2 h-4 w-4" />
+                      Entrar
+                    </>
+                  )}
+                </Button>
+
+                {/* Link para recuperar senha */}
+                <div className="text-center">
+                  <Button
+                    type="button"
+                    variant="link"
+                    className="text-sm"
+                    onClick={() => navigate('/esqueci-senha')}
+                  >
+                    Esqueci minha senha
+                  </Button>
+                </div>
+              </form>
+            </Form>
           </CardContent>
-          <CardFooter>
-            <Button type="submit" className="w-full" disabled={isLoading || !!loginBlocked}>
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Entrando...
-                </>
-              ) : (
-                "Entrar"
-              )}
-            </Button>
-          </CardFooter>
-        </form>
-      </Card>
+        </Card>
+
+        {/* Informações de demonstração */}
+        <Card className="bg-blue-50 border-blue-200">
+          <CardContent className="pt-6">
+            <h3 className="font-semibold text-blue-900 mb-2">Contas de Demonstração</h3>
+            <div className="space-y-2 text-sm text-blue-800">
+              <div>
+                <strong>Proprietário:</strong> proprietario@farmacia.com / 123456
+              </div>
+              <div>
+                <strong>Farmacêutico:</strong> farmaceutico@farmacia.com / 123456
+              </div>
+              <div>
+                <strong>Atendente:</strong> atendente@farmacia.com / 123456
+              </div>
+              <div>
+                <strong>Manipulador:</strong> manipulador@farmacia.com / 123456
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };

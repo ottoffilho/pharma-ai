@@ -5,6 +5,8 @@ import { z } from "zod";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { AuthService } from "@/modules/usuarios-permissoes/services/authService";
+import { PerfilUsuario } from "@/modules/usuarios-permissoes/types";
 
 import {
   Form,
@@ -25,6 +27,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+
+// Mapeamento de cargos para perfis do sistema de permissões
+const CARGO_TO_PERFIL: Record<string, PerfilUsuario> = {
+  "Proprietário": PerfilUsuario.PROPRIETARIO,
+  "Farmacêutico": PerfilUsuario.FARMACEUTICO,
+  "Atendente": PerfilUsuario.ATENDENTE,
+  "Manipulador": PerfilUsuario.MANIPULADOR,
+};
 
 // Esquema de validação condicional com Zod
 const usuarioInternoSchema = z.object({
@@ -67,6 +77,27 @@ const UsuarioInternoForm: React.FC<UsuarioInternoFormProps> = ({
   const navigate = useNavigate();
   const [isSaving, setIsSaving] = React.useState(false);
   const [showPasswordFields, setShowPasswordFields] = React.useState(!isEditing);
+  const [perfisDisponiveis, setPerfisDisponiveis] = React.useState<any[]>([]);
+
+  // Carregar perfis disponíveis
+  React.useEffect(() => {
+    const carregarPerfis = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('perfis_usuario')
+          .select('*')
+          .eq('ativo', true)
+          .order('nome');
+        
+        if (error) throw error;
+        setPerfisDisponiveis(data || []);
+      } catch (error) {
+        console.error('Erro ao carregar perfis:', error);
+      }
+    };
+
+    carregarPerfis();
+  }, []);
 
   // Inicializar o formulário com react-hook-form e validação zod
   const form = useForm<UsuarioInternoFormData>({
@@ -88,49 +119,16 @@ const UsuarioInternoForm: React.FC<UsuarioInternoFormProps> = ({
     setIsSaving(true);
     try {
       if (isEditing && usuarioId) {
-        // Update existing user
-        const { error } = await supabase
-          .from("usuarios_internos")
-          .update({
-            nome_completo: data.nome_completo,
-            email_contato: data.email_contato,
-            cargo_perfil: data.cargo_perfil,
-            telefone_contato: data.telefone_contato || null,
-            ativo: data.ativo,
-          })
-          .eq("id", usuarioId);
+        // Atualizar usuário existente usando o AuthService
+        const resultado = await AuthService.atualizarUsuario(usuarioId, {
+          nome: data.nome_completo,
+          email: data.email_contato,
+          telefone: data.telefone_contato,
+          ativo: data.ativo,
+        });
 
-        if (error) throw error;
-
-        // If the email was changed, we need to update the email in Supabase Auth
-        const originalEmail = usuarioData?.email_contato;
-        if (data.email_contato !== originalEmail && usuarioData?.supabase_auth_id) {
-          toast({
-            title: "Atualização de email Auth necessária",
-            description: "A atualização do email no sistema de autenticação requer uma função Edge. Por favor, implemente esta funcionalidade.",
-            variant: "default",
-          });
-          
-          // Here would be the place to call an Edge Function to update the email
-          // const { error: authError } = await supabase.functions.invoke("update-user-email", {
-          //   body: { user_id: usuarioData.supabase_auth_id, email: data.email_contato }
-          // });
-          // if (authError) throw new Error(`Erro ao atualizar email: ${authError.message}`);
-        }
-
-        // If a password was provided, we would need to update the password in Supabase Auth
-        if (data.senha && usuarioData?.supabase_auth_id) {
-          toast({
-            title: "Atualização de senha Auth necessária",
-            description: "A atualização da senha no sistema de autenticação requer uma função Edge. Por favor, implemente esta funcionalidade.",
-            variant: "default",
-          });
-          
-          // Here would be the place to call an Edge Function to update the password
-          // const { error: authError } = await supabase.functions.invoke("update-user-password", {
-          //   body: { user_id: usuarioData.supabase_auth_id, password: data.senha }
-          // });
-          // if (authError) throw new Error(`Erro ao atualizar senha: ${authError.message}`);
+        if (!resultado.sucesso) {
+          throw new Error(resultado.erro || 'Erro ao atualizar usuário');
         }
 
         toast({
@@ -138,60 +136,37 @@ const UsuarioInternoForm: React.FC<UsuarioInternoFormProps> = ({
           description: "As informações foram atualizadas com sucesso.",
         });
       } else {
-        // Create new user - first create in Auth
+        // Criar novo usuário usando o AuthService
         if (!data.senha) {
           throw new Error("Senha é obrigatória para criar um novo usuário");
         }
 
-        const { data: authData, error: authError } = await supabase.auth.signUp({
+        // Buscar o perfil_id baseado no cargo selecionado
+        const perfilSelecionado = perfisDisponiveis.find(p => p.nome === data.cargo_perfil);
+        if (!perfilSelecionado) {
+          throw new Error("Perfil selecionado não encontrado");
+        }
+
+        const resultado = await AuthService.criarUsuario({
+          nome: data.nome_completo,
           email: data.email_contato,
-          password: data.senha,
+          telefone: data.telefone_contato,
+          perfil_id: perfilSelecionado.id,
+          senha: data.senha,
+          ativo: data.ativo,
         });
 
-        if (authError) {
-          // Handle specific signUp errors
-          if (authError.message.includes("already registered")) {
-            throw new Error("Este email já está registrado no sistema");
-          }
-          throw new Error(`Erro na criação da conta: ${authError.message}`);
-        }
-
-        if (!authData.user?.id) {
-          throw new Error("Não foi possível obter o ID do usuário criado");
-        }
-
-        // Then create in our table, with reference to auth.users
-        const novoUsuario = {
-          nome_completo: data.nome_completo,
-          email_contato: data.email_contato,
-          cargo_perfil: data.cargo_perfil,
-          telefone_contato: data.telefone_contato || null,
-          ativo: data.ativo,
-          supabase_auth_id: authData.user.id,
-        };
-        
-        const { error } = await supabase
-          .from("usuarios_internos")
-          .insert(novoUsuario);
-
-        if (error) {
-          // If we fail to insert into usuarios_internos, we should try to remove the user from auth
-          // This requires an admin function, so we just notify about the issue
-          toast({
-            title: "Atenção",
-            description: "Usuário foi criado no sistema de autenticação, mas falhou ao criar o perfil. Informações do Auth podem precisar de limpeza manual.",
-            variant: "destructive",
-          });
-          throw error;
+        if (!resultado.sucesso) {
+          throw new Error(resultado.erro || 'Erro ao criar usuário');
         }
 
         toast({
           title: "Usuário criado",
-          description: "O novo usuário foi criado com sucesso.",
+          description: "O novo usuário foi criado com sucesso e pode fazer login no sistema.",
         });
       }
 
-      // Return to the listing page after success
+      // Retornar para a página de listagem após sucesso
       navigate("/admin/usuarios");
     } catch (error: unknown) {
       console.error("Erro ao salvar usuário:", error);
@@ -254,7 +229,7 @@ const UsuarioInternoForm: React.FC<UsuarioInternoFormProps> = ({
             )}
           />
 
-          {/* Campo Cargo/Perfil */}
+          {/* Campo Cargo/Perfil - Agora usando perfis do sistema */}
           <FormField
             control={form.control}
             name="cargo_perfil"
@@ -271,10 +246,16 @@ const UsuarioInternoForm: React.FC<UsuarioInternoFormProps> = ({
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="Administrador">Administrador</SelectItem>
-                    <SelectItem value="Farmacêutico">Farmacêutico</SelectItem>
-                    <SelectItem value="Atendente">Atendente</SelectItem>
-                    <SelectItem value="Outro">Outro</SelectItem>
+                    {perfisDisponiveis.map((perfil) => (
+                      <SelectItem key={perfil.id} value={perfil.nome}>
+                        {perfil.nome}
+                        {perfil.descricao && (
+                          <span className="text-xs text-gray-500 ml-2">
+                            - {perfil.descricao}
+                          </span>
+                        )}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 <FormMessage />
