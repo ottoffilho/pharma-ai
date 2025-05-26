@@ -15,7 +15,7 @@ import pharmaLogo from '@/assets/logo/phama-horizon.png';
 // import { supabase } from '@/integrations/supabase/client'; // Temporariamente removido
 
 // URL do Webhook do n8n (deve vir de uma variável de ambiente)
-const N8N_WEBHOOK_URL = import.meta.env.VITE_N8N_LEAD_WEBHOOK_URL || "https://ottoffilho.app.n8n.cloud/webhook-test/pharma-ai";
+const N8N_WEBHOOK_URL = import.meta.env.VITE_N8N_LEAD_WEBHOOK_URL || "https://ottoffilho.app.n8n.cloud/webhook/pharma-ai";
 // URL do Handler do LLM (deve vir de uma variável de ambiente)
 const CHATBOT_LLM_HANDLER_URL = import.meta.env.VITE_CHATBOT_LLM_HANDLER_URL;
 // URL da Edge Function AI Agent

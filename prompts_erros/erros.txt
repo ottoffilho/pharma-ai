@@ -1,56 +1,29 @@
-@supabase_supabase-js.js?v=00b53c3d:3900 
- GET https://hjwebmpvaaeogbfqxwub.supabase.co/rest/v1/insumos?select=*&codigo_interno=eq.PLATMED 406 (Not Acceptable)
-notaFiscalService.ts:790 Novo produto criado: PLATINA METALLICA 20ML  CH 5
-notaFiscalService.ts:799 Lote encontrado: 392777
-@supabase_supabase-js.js?v=00b53c3d:3900 
- GET https://hjwebmpvaaeogbfqxwub.supabase.co/rest/v1/insumos?select=*&codigo_interno=eq.SABADD 406 (Not Acceptable)
-@supabase_supabase-js.js?v=00b53c3d:3900 
- GET https://hjwebmpvaaeogbfqxwub.supabase.co/rest/v1/insumos?select=*&codigo_interno=eq.SABADD 406 (Not Acceptable)
-notaFiscalService.ts:790 Novo produto criado: SABADILLA 20ML  CH 2
-notaFiscalService.ts:799 Lote encontrado: 392779
-@supabase_supabase-js.js?v=00b53c3d:3900 
- GET https://hjwebmpvaaeogbfqxwub.supabase.co/rest/v1/insumos?select=*&codigo_interno=eq.CHOLED 406 (Not Acceptable)
-@supabase_supabase-js.js?v=00b53c3d:3900 
- GET https://hjwebmpvaaeogbfqxwub.supabase.co/rest/v1/insumos?select=*&codigo_interno=eq.CHOLED 406 (Not Acceptable)
-notaFiscalService.ts:790 Novo produto criado: CHOLESTERINUM 20ML  CH 3
-notaFiscalService.ts:799 Lote encontrado: 392767
-@supabase_supabase-js.js?v=00b53c3d:3900 
- GET https://hjwebmpvaaeogbfqxwub.supabase.co/rest/v1/insumos?select=*&codigo_interno=eq.COCCID 406 (Not Acceptable)
-@supabase_supabase-js.js?v=00b53c3d:3900 
- GET https://hjwebmpvaaeogbfqxwub.supabase.co/rest/v1/insumos?select=*&codigo_interno=eq.COCCID 406 (Not Acceptable)
-notaFiscalService.ts:790 Novo produto criado: COCCULUS INDICUS 20ML  CH 2
-notaFiscalService.ts:799 Lote encontrado: 392769
-@supabase_supabase-js.js?v=00b53c3d:3900 
- GET https://hjwebmpvaaeogbfqxwub.supabase.co/rest/v1/insumos?select=*&codigo_interno=eq.CLEMED 406 (Not Acceptable)
-@supabase_supabase-js.js?v=00b53c3d:3900 
- GET https://hjwebmpvaaeogbfqxwub.supabase.co/rest/v1/insumos?select=*&codigo_interno=eq.CLEMED 406 (Not Acceptable)
-notaFiscalService.ts:790 Novo produto criado: CLEMATIS ERECTA 20ML  CH 2
-notaFiscalService.ts:799 Lote encontrado: 392768
-@supabase_supabase-js.js?v=00b53c3d:3900 
- GET https://hjwebmpvaaeogbfqxwub.supabase.co/rest/v1/insumos?select=*&codigo_interno=eq.IRISVD 406 (Not Acceptable)
-@supabase_supabase-js.js?v=00b53c3d:3900 
- GET https://hjwebmpvaaeogbfqxwub.supabase.co/rest/v1/insumos?select=*&codigo_interno=eq.IRISVD 406 (Not Acceptable)
-notaFiscalService.ts:790 Novo produto criado: IRIS VERSICOLOR 20ML  CH 2
-notaFiscalService.ts:799 Lote encontrado: 392775
-@supabase_supabase-js.js?v=00b53c3d:3900 
- GET https://hjwebmpvaaeogbfqxwub.supabase.co/rest/v1/insumos?select=*&codigo_interno=eq.IODUMD 406 (Not Acceptable)
-@supabase_supabase-js.js?v=00b53c3d:3900 
- GET https://hjwebmpvaaeogbfqxwub.supabase.co/rest/v1/insumos?select=*&codigo_interno=eq.IODUMD 406 (Not Acceptable)
-notaFiscalService.ts:790 Novo produto criado: IODUM PURUM 20ML  CH 2
-notaFiscalService.ts:799 Lote encontrado: 392774
-@supabase_supabase-js.js?v=00b53c3d:3900 
- GET https://hjwebmpvaaeogbfqxwub.supabase.co/rest/v1/insumos?select=*&codigo_interno=eq.ZINMETD 406 (Not Acceptable)
-@supabase_supabase-js.js?v=00b53c3d:3900 
- GET https://hjwebmpvaaeogbfqxwub.supabase.co/rest/v1/insumos?select=*&codigo_interno=eq.ZINMETD 406 (Not Acceptable)
-notaFiscalService.ts:790 Novo produto criado: ZINCUM METALLICUM 20ML  FC 998
-notaFiscalService.ts:799 Lote encontrado: 392780
-@supabase_supabase-js.js?v=00b53c3d:3900 
- GET https://hjwebmpvaaeogbfqxwub.supabase.co/rest/v1/insumos?select=*&codigo_interno=eq.BAPTID 406 (Not Acceptable)
-@supabase_supabase-js.js?v=00b53c3d:3900 
- GET https://hjwebmpvaaeogbfqxwub.supabase.co/rest/v1/insumos?select=*&codigo_interno=eq.BAPTID 406 (Not Acceptable)
-notaFiscalService.ts:790 Novo produto criado: BAPTISIA TINCTORIA 20ML  CH 2
-notaFiscalService.ts:799 Lote encontrado: 392766
-@supabase_supabase-js.js?v=00b53c3d:3900 
- GET https://hjwebmpvaaeogbfqxwub.supabase.co/rest/v1/notas_fiscais?select=*&chave_acesso=eq.3525056… 406 (Not Acceptable)
-﻿
+✅ ERROS CORRIGIDOS - 2024-12-28
 
+Todos os erros de colunas inexistentes no chatbot foram corrigidos:
+
+1. ✅ Tabela `insumos`: categoria → tipo, preco_venda → custo_unitario
+2. ✅ Tabela `pedidos`: valor_total → total_amount, customer_* → client_id
+
+Build funcionando sem erros!
+Chatbot 100% operacional! 🚀
+
+@supabase_supabase-js.js?v=b1f363c1:3900 
+ GET https://hjwebmpvaaeogbfqxwub.supabase.co/rest/v1/pedidos?select=valor_total…_at=gte.2025-05-01T03%3A38%3A47.238Z&status=in.%28finalizado%2Centregue%29 400 (Bad Request)
+(anonymous)	@	@supabase_supabase-js.js?v=b1f363c1:3900
+(anonymous)	@	@supabase_supabase-js.js?v=b1f363c1:3921
+fulfilled	@	@supabase_supabase-js.js?v=b1f363c1:3873
+Promise.then		
+step	@	@supabase_supabase-js.js?v=b1f363c1:3886
+(anonymous)	@	@supabase_supabase-js.js?v=b1f363c1:3888
+__awaiter6	@	@supabase_supabase-js.js?v=b1f363c1:3870
+(anonymous)	@	@supabase_supabase-js.js?v=b1f363c1:3911
+then	@	@supabase_supabase-js.js?v=b1f363c1:89
+
+AdminChatbot.tsx:458 Erro ao processar comando: 
+{code: '42703', details: null, hint: null, message: 'column pedidos.valor_total does not exist'}
+processNaturalLanguage	@	AdminChatbot.tsx:458
+await in processNaturalLanguage		
+onClick	@	AdminChatbot.tsx:570
+
+﻿

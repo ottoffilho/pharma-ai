@@ -1,0 +1,65 @@
+DETALHAMENTO DE IMPLEMENTAÇÃO - CLIENTE PHARMACIE
+===============================================
+
+Este documento apresenta uma análise detalhada dos módulos e telas mais utilizados pela cliente, cruzando com o status de implementação no Pharma.AI, além de observações, sugestões e próximos passos para garantir máxima aderência ao sistema legado.
+
+---
+
+# 1. Tabela de Cobertura dos Módulos Críticos
+
+| Módulo/Tela                                         | Status no Pharma.AI         | Observações/Sugestões                                                                                   |
+|-----------------------------------------------------|-----------------------------|--------------------------------------------------------------------------------------------------------|
+| Cadastro > Atendimento > Rastreabilidade            | Planejado (Fase 2)          | M21-RASTREABILIDADE_PROCESSOS. Priorizar implementação, pois é crítico para a cliente.                 |
+| Cadastro > Atendimento > Forma Farmacêutica         | Implementado                | Incluído em M01-CADASTROS_ESSENCIAIS. Verificar se cobre todos os campos e fluxos do legado.           |
+| Entrega em Domicílio (Regiões e Bairros)            | Parcialmente Implementado   | Cadastro de regiões/bairros existe, mas fluxo de entrega precisa ser detalhado e validado.             |
+| Fornecedores                                        | Implementado                | Componente e serviço dedicados. Validar campos e integrações.                                          |
+| Funcionários                                        | Parcialmente Implementado   | Cadastro existe, mas folha de ponto, comissões e processos internos precisam ser detalhados.            |
+| Prescritores                                        | Implementado                | Incluído nos cadastros essenciais. Validar campos específicos do legado.                               |
+| Informações Fiscais                                 | Planejado (Fase 2)          | M10-FISCAL_BASICO. Antecipar funcionalidades fiscais básicas se possível.                              |
+| Produtos (Alopatia, Revenda, Homeopatia, Embalagens)| Implementado                | M01-CADASTROS_ESSENCIAIS cobre todos. Validar se há diferenciação de tipos conforme uso da cliente.    |
+| Atendimento > Receitas                              | Implementado                | M02-ATENDIMENTO_BASICO/AVANCADO. Inclui OCR/IA. Validar fluxo completo.                                |
+| Caixa > Frente de Caixa > Movimentação              | Implementado                | M06-FINANCEIRO_BASICO/AVANCADO. Conferência e movimentação de caixa presentes.                         |
+| Funcionários > Comissões, Folha de Ponto, Processos | Gap/Planejado               | Não detalhado no Pharma.AI. Necessário especificar e implementar rotinas de RH/DP.                     |
+| Curva ABC                                           | Gap                         | Não explícito. Pode ser implementado como relatório/BI.                                                |
+| Relatórios do Sistema                               | Parcialmente Implementado   | Relatórios básicos presentes. BI avançado (M16) está planejado para Fase 3.                            |
+| Rótulos                                             | Implementado                | Geração de rótulos prevista. Validar layout e campos necessários.                                      |
+| Permissões                                          | Implementado                | M09-USUARIOS_PERMISSOES. Sistema de permissões granular. Validar se cobre todos os cenários do legado. |
+| Omni Channel                                        | Planejado (Fase 2)          | M02-ATENDIMENTO_AVANCADO. Validar canais necessários (WhatsApp, e-mail, etc).                          |
+| Peso Médio                                          | Gap                         | Não explícito. Pode ser implementado como rotina/relatório.                                            |
+| Baixa de Fórmulas                                   | Gap/Planejado               | Relacionado ao módulo de manipulação/produção interna. Detalhar fluxo com a cliente.                   |
+| Notas Fiscais                                       | Implementado                | Importação e integração de XML já presentes. Validar fluxo completo.                                   |
+
+---
+
+# 2. Resumo Visual
+
+- **Implementado:**
+  - Forma Farmacêutica, Fornecedores, Prescritores, Produtos, Receitas, Caixa, Rótulos, Permissões, Notas Fiscais.
+- **Parcialmente Implementado:**
+  - Entrega em Domicílio, Funcionários (cadastro), Relatórios.
+- **Planejado:**
+  - Rastreabilidade, Informações Fiscais, Omni Channel, Baixa de Fórmulas.
+- **Gap (não explícito):**
+  - Funcionários > Comissões/Folha de Ponto/Processos, Curva ABC, Peso Médio.
+
+---
+
+# 3. Sugestões de Ação
+
+1. **Priorizar** a implementação dos módulos/telas marcados como "Planejado" e "Gap", pois são críticos para o dia a dia da cliente.
+2. **Validar** com a cliente os fluxos completos dos módulos "Parcialmente Implementado" e "Implementado", garantindo que todos os campos e rotinas do sistema legado estejam cobertos.
+3. **Solicitar exemplos** de relatórios, telas e fluxos específicos para os módulos de RH/DP, Curva ABC, Peso Médio e Baixa de Fórmulas.
+4. **Antecipar** funcionalidades fiscais e de rastreabilidade, mesmo que estejam previstas para fases futuras, se forem essenciais para a operação.
+5. **Documentar** todas as customizações e necessidades específicas da cliente para garantir aderência total.
+
+---
+
+# 4. Observações Finais
+
+- O sistema Pharma.AI já cobre grande parte das necessidades da cliente, mas há pontos críticos que precisam de atenção especial para garantir aderência total ao legado.
+- Recomenda-se um acompanhamento próximo com a cliente durante a implementação dos módulos "Gap" e "Planejado".
+- A documentação e detalhamento dos fluxos reais de uso são fundamentais para evitar retrabalho e garantir satisfação total.
+
+---
+
+*Documento gerado automaticamente a partir da análise dos arquivos do projeto e das informações fornecidas pela cliente em 2024-05-.* 

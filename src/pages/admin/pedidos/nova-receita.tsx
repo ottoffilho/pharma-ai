@@ -32,6 +32,12 @@ import PatientPrescriberInfo from '@/components/prescription/PatientPrescriberIn
 import MedicationsSection from '@/components/prescription/MedicationsSection';
 import ValidationSection from '@/components/prescription/ValidationSection';
 import OriginalPrescriptionPreview from '@/components/prescription/OriginalPrescriptionPreview';
+import { 
+  processRecipe, 
+  saveProcessedRecipe, 
+  validatePrescriptionData as validateRecipeData,
+  type ProcessingResult
+} from '@/services/receitaService';
 
 interface Medication {
   name: string;
@@ -94,7 +100,7 @@ const NovaReceitaPage: React.FC = () => {
   const navigate = useNavigate();
 
   // Modo de desenvolvimento para mostrar a interface diretamente
-  const [devMode, setDevMode] = useState(true);
+  const [devMode, setDevMode] = useState(false);
 
   // Toggle validation view function
   const toggleValidationView = () => {
@@ -136,45 +142,54 @@ const NovaReceitaPage: React.FC = () => {
 
     setIsUploading(true);
     setProcessStatus('processing');
+    setValidationProgress(0);
     
     try {
-      // Modo de desenvolvimento - pular autenticação
-      const lastUploadedRecipeId = 'mock-recipe-id-' + Date.now();
-      setUploadedRecipeId(lastUploadedRecipeId);
+      // Usar o primeiro arquivo selecionado
+      const file = files[0];
       
-      // Simulate AI processing with progress updates
+      // Simular progresso durante o processamento
       const progressInterval = setInterval(() => {
         setValidationProgress(prev => {
-          const newProgress = prev + (5 + Math.random() * 10);
-          return newProgress >= 100 ? 100 : newProgress;
+          const newProgress = prev + (2 + Math.random() * 5);
+          return newProgress >= 90 ? 90 : newProgress;
         });
-      }, 200);
+      }, 500);
       
-      // Simulate AI processing completion after a delay
-      setTimeout(() => {
-        clearInterval(progressInterval);
-        setValidationProgress(100);
-        setIsProcessing(false);
+      // Processar receita com IA real
+      const result: ProcessingResult = await processRecipe(file);
+      
+      // Parar simulação de progresso
+      clearInterval(progressInterval);
+      setValidationProgress(100);
+      
+      if (result.success && result.extracted_data && result.raw_recipe_id) {
         setProcessStatus('success');
-        setExtractedData(mockIAResponse);
+        setExtractedData(result.extracted_data);
+        setRawRecipeId(result.raw_recipe_id);
         setShowValidationArea(true);
         
         toast({
           title: "Processamento concluído",
-          description: "A IA extraiu os dados da receita com sucesso.",
+          description: `A IA extraiu ${result.extracted_data.medications.length} medicamento(s) da receita em ${Math.round((result.processing_time || 0) / 1000)}s.`,
         });
-      }, 2500);
+      } else {
+        throw new Error(result.error || 'Erro desconhecido no processamento');
+      }
       
     } catch (error: unknown) {
       setProcessStatus('error');
+      const errorMessage = error instanceof Error ? error.message : "Erro desconhecido no processamento";
+      
       toast({
         title: "Erro ao processar a receita",
-        description: (error instanceof Error ? error.message : "Erro desconhecido") || "Ocorreu um erro ao enviar os arquivos. Tente novamente.",
+        description: errorMessage,
         variant: "destructive",
       });
-      console.error("Upload error:", error);
+      console.error("Processing error:", error);
     } finally {
       setIsUploading(false);
+      setIsProcessing(false);
     }
   };
 
@@ -246,78 +261,23 @@ const NovaReceitaPage: React.FC = () => {
     setIsSaving(true);
     
     try {
-      // Basic validation
-      if (!validatePrescriptionData(extractedData)) {
-        return;
-      }
+      // Validar dados usando o serviço
+      validateRecipeData(extractedData);
       
-      // Get current user
+      // Salvar receita processada
+      const processedRecipeId = await saveProcessedRecipe(
+        rawRecipeId,
+        extractedData,
+        validationNotes
+      );
+
+      // Criar rascunho de pedido vinculado à receita processada
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       
-      if (userError) {
-        console.error('Error getting current user:', userError);
-        throw new Error('Não foi possível obter informações do usuário logado');
-      }
-      
-      if (!user) {
-        throw new Error('Usuário não está autenticado');
-      }
-      
-      // Prepare data for receitas_processadas
-      const processedRecipeData = {
-        raw_recipe_id: rawRecipeId,
-        processed_by_user_id: user.id,
-        medications: extractedData.medications as unknown as Json,
-        patient_name: extractedData.patient_name || null,
-        patient_dob: extractedData.patient_dob || null,
-        prescriber_name: extractedData.prescriber_name || null,
-        prescriber_identifier: extractedData.prescriber_identifier || null,
-        validation_status: 'validated',
-        validation_notes: validationNotes || null
-      };
-
-      // Check if a processed recipe already exists for this raw recipe ID
-      const { data: existingProcessedRecipe, error: fetchError } = await supabase
-        .from('receitas_processadas')
-        .select('id')
-        .eq('raw_recipe_id', rawRecipeId)
-        .maybeSingle();
-
-      if (fetchError) {
-        throw new Error(`Erro ao verificar receita processada existente: ${fetchError.message}`);
+      if (userError || !user) {
+        throw new Error('Usuário não autenticado');
       }
 
-      let processedRecipeId;
-      
-      // Update or insert the processed recipe
-      if (existingProcessedRecipe?.id) {
-        // Update existing record
-        const { error: updateError } = await supabase
-          .from('receitas_processadas')
-          .update(processedRecipeData)
-          .eq('id', existingProcessedRecipe.id);
-
-        if (updateError) {
-          throw new Error(`Erro ao atualizar receita processada: ${updateError.message}`);
-        }
-        
-        processedRecipeId = existingProcessedRecipe.id;
-      } else {
-        // Insert new record
-        const { data: newProcessedRecipe, error: insertError } = await supabase
-          .from('receitas_processadas')
-          .insert(processedRecipeData)
-          .select('id')
-          .single();
-
-        if (insertError) {
-          throw new Error(`Erro ao criar receita processada: ${insertError.message}`);
-        }
-        
-        processedRecipeId = newProcessedRecipe.id;
-      }
-
-      // Create a draft order linked to the processed recipe
       const orderData = {
         processed_recipe_id: processedRecipeId,
         created_by_user_id: user.id,

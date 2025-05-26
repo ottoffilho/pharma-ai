@@ -39,9 +39,12 @@ export default function ProcessamentoReceitasPage() {
             </CardHeader>
             <CardContent>
               <div className="text-center py-8">
-                <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-sm text-muted-foreground">
-                  Módulo em desenvolvimento para próximas versões
+                <FileText className="h-12 w-12 mx-auto text-green-600 mb-4" />
+                <p className="text-sm text-green-700 font-medium">
+                  ✅ OCR implementado com Tesseract.js
+                </p>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Suporte para imagens (JPG, PNG) e PDFs com pré-processamento inteligente
                 </p>
               </div>
             </CardContent>
@@ -59,9 +62,12 @@ export default function ProcessamentoReceitasPage() {
             </CardHeader>
             <CardContent>
               <div className="text-center py-8">
-                <Brain className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-sm text-muted-foreground">
-                  Funcionalidade será implementada em breve
+                <Brain className="h-12 w-12 mx-auto text-blue-600 mb-4" />
+                <p className="text-sm text-blue-700 font-medium">
+                  ✅ IA integrada com DeepSeek
+                </p>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Extração automática de medicamentos, dosagens e dados do paciente
                 </p>
               </div>
             </CardContent>
@@ -79,9 +85,12 @@ export default function ProcessamentoReceitasPage() {
             </CardHeader>
             <CardContent>
               <div className="text-center py-8">
-                <Sparkles className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-sm text-muted-foreground">
-                  Em desenvolvimento - versão beta em breve
+                <Sparkles className="h-12 w-12 mx-auto text-yellow-600 mb-4" />
+                <p className="text-sm text-yellow-700 font-medium">
+                  ✅ Validação automática implementada
+                </p>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Verificação de medicamentos, dosagens e criação automática de pedidos
                 </p>
               </div>
             </CardContent>
@@ -99,15 +108,15 @@ export default function ProcessamentoReceitasPage() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">OCR Inteligente</span>
-                <Badge variant="secondary">Planejado</Badge>
+                <Badge variant="default" className="bg-green-100 text-green-800">Implementado</Badge>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">Análise Semântica</span>
-                <Badge variant="secondary">Em Análise</Badge>
+                <Badge variant="default" className="bg-green-100 text-green-800">Implementado</Badge>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">Validação Automática</span>
-                <Badge variant="secondary">Planejado</Badge>
+                <Badge variant="default" className="bg-green-100 text-green-800">Implementado</Badge>
               </div>
             </div>
           </CardContent>

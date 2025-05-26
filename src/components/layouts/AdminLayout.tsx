@@ -30,6 +30,7 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { AdminHeader } from '@/components/layouts/AdminHeader';
+import AdminChatbotWidget from '@/components/chatbot/AdminChatbotWidget';
 
 import {
   Sheet,
@@ -393,6 +394,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           {children}
         </main>
       </div>
+      
+      {/* Chatbot Administrativo */}
+      <AdminChatbotWidget />
     </div>
   );
 }

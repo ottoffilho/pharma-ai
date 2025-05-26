@@ -103,6 +103,7 @@ export const STORAGE_BUCKETS = {
   NF_XML: 'nf-xml', // Para armazenar XMLs de notas fiscais
   DOCUMENTOS: 'documentos', // Para documentos gerais
   IMAGENS: 'imagens', // Para imagens de produtos
+  RECEITAS: 'receitas', // Para armazenar receitas médicas
 } as const;
 
 /**

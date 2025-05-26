@@ -50,8 +50,22 @@ import RelatoriosProducaoPage from "./pages/admin/producao/relatorios";
 import PrivateRoute from "./components/Auth/PrivateRoute";
 import FloatingChatbotWidget from "@/components/chatbot/FloatingChatbotWidget";
 import { ChatbotProvider } from "@/contexts/ChatbotContext";
+import { useLocation } from "react-router-dom";
 
 const queryClient = new QueryClient();
+
+// Componente para controlar qual chatbot mostrar
+const ChatbotController = () => {
+  const location = useLocation();
+  const isAdminRoute = location.pathname.startsWith('/admin');
+  
+  // Só mostra o chatbot de vendas na landing page (não nas rotas admin)
+  if (!isAdminRoute) {
+    return <FloatingChatbotWidget />;
+  }
+  
+  return null;
+};
 
 // Wrap the entire app with React.StrictMode
 const App = (): JSX.Element => (
@@ -62,8 +76,8 @@ const App = (): JSX.Element => (
           <ChatbotProvider>
             <Toaster />
             <Sonner />
-            <FloatingChatbotWidget />
             <BrowserRouter>
+              <ChatbotController />
             <Routes>
               {/* Public Routes */}
               <Route path="/" element={<Index />} />
@@ -135,9 +149,9 @@ const App = (): JSX.Element => (
               {/* Catch-all route - must be last */}
               <Route path="*" element={<NotFound />} />
             </Routes>
-          </BrowserRouter>
-        </ChatbotProvider>
-      </TooltipProvider>
+            </BrowserRouter>
+          </ChatbotProvider>
+        </TooltipProvider>
       </ThemeProvider>
     </QueryClientProvider>
   </React.StrictMode>
