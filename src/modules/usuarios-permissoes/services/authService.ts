@@ -1,7 +1,7 @@
 // Serviço de Autenticação e Permissões - Pharma.AI
 // Módulo: M09-USUARIOS_PERMISSOES
 
-import { supabase } from '../../../services/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import type {
   Usuario,
   SessaoUsuario,
