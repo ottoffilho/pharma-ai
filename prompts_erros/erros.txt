@@ -1,304 +1,56 @@
-Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
-supabase.ts:21 Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key.
-_GoTrueClient @ @supabase_supabase-js.js?v=00b53c3d:5040
-SupabaseAuthClient @ @supabase_supabase-js.js?v=00b53c3d:6906
-_initSupabaseAuthClient @ @supabase_supabase-js.js?v=00b53c3d:7102
-SupabaseClient @ @supabase_supabase-js.js?v=00b53c3d:6975
-createClient @ @supabase_supabase-js.js?v=00b53c3d:7142
-(anonymous) @ supabase.ts:21Understand this warning
-2AdminHeader.tsx:49 Warning: Invalid prop `data-lov-id` supplied to `React.Fragment`. React.Fragment can only have `key` and `children` props.
-    at AdminHeader (http://localhost:8080/src/components/layouts/AdminHeader.tsx:21:31)
-    at div
-    at div
-    at AdminLayout (http://localhost:8080/src/components/layouts/AdminLayout.tsx?t=1748195402499:21:39)
-    at ImportacaoNFPage
-    at RenderedRoute (http://localhost:8080/node_modules/.vite/deps/react-router-dom.js?v=00b53c3d:4069:5)
-    at Outlet (http://localhost:8080/node_modules/.vite/deps/react-router-dom.js?v=00b53c3d:4444:26)
-    at PrivateRoute (http://localhost:8080/src/components/Auth/PrivateRoute.tsx:17:51)
-    at RenderedRoute (http://localhost:8080/node_modules/.vite/deps/react-router-dom.js?v=00b53c3d:4069:5)
-    at Routes (http://localhost:8080/node_modules/.vite/deps/react-router-dom.js?v=00b53c3d:4508:5)
-    at Router (http://localhost:8080/node_modules/.vite/deps/react-router-dom.js?v=00b53c3d:4451:15)
-    at BrowserRouter (http://localhost:8080/node_modules/.vite/deps/react-router-dom.js?v=00b53c3d:5196:5)
-    at ChatbotProvider (http://localhost:8080/src/contexts/ChatbotContext.tsx:13:35)
-    at Provider (http://localhost:8080/node_modules/.vite/deps/chunk-VNBMSBXO.js?v=00b53c3d:38:15)
-    at TooltipProvider (http://localhost:8080/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=00b53c3d:63:5)
-    at O (http://localhost:8080/node_modules/.vite/deps/next-themes.js?v=00b53c3d:23:25)
-    at z (http://localhost:8080/node_modules/.vite/deps/next-themes.js?v=00b53c3d:21:18)
-    at QueryClientProvider (http://localhost:8080/node_modules/.vite/deps/@tanstack_react-query.js?v=00b53c3d:2794:3)
-    at App
-printWarning @ react_jsx-dev-runtime.js?v=00b53c3d:64
-error @ react_jsx-dev-runtime.js?v=00b53c3d:48
-validateFragmentProps @ react_jsx-dev-runtime.js?v=00b53c3d:796
-jsxWithValidation @ react_jsx-dev-runtime.js?v=00b53c3d:874
-(anonymous) @ AdminHeader.tsx:49
-AdminHeader @ AdminHeader.tsx:48
-renderWithHooks @ chunk-I3COAS7K.js?v=00b53c3d:11548
-mountIndeterminateComponent @ chunk-I3COAS7K.js?v=00b53c3d:14926
-beginWork @ chunk-I3COAS7K.js?v=00b53c3d:15914
-beginWork$1 @ chunk-I3COAS7K.js?v=00b53c3d:19753
-performUnitOfWork @ chunk-I3COAS7K.js?v=00b53c3d:19198
-workLoopSync @ chunk-I3COAS7K.js?v=00b53c3d:19137
-renderRootSync @ chunk-I3COAS7K.js?v=00b53c3d:19116
-performConcurrentWorkOnRoot @ chunk-I3COAS7K.js?v=00b53c3d:18678
-workLoop @ chunk-I3COAS7K.js?v=00b53c3d:197
-flushWork @ chunk-I3COAS7K.js?v=00b53c3d:176
-performWorkUntilDeadline @ chunk-I3COAS7K.js?v=00b53c3d:384Understand this error
-2AdminHeader.tsx:49 Warning: Invalid prop `data-lov-id` supplied to `React.Fragment`. React.Fragment can only have `key` and `children` props.
-    at AdminHeader (http://localhost:8080/src/components/layouts/AdminHeader.tsx:21:31)
-    at div
-    at div
-    at AdminLayout (http://localhost:8080/src/components/layouts/AdminLayout.tsx?t=1748195402499:21:39)
-    at ImportacaoNFPage
-    at RenderedRoute (http://localhost:8080/node_modules/.vite/deps/react-router-dom.js?v=00b53c3d:4069:5)
-    at Outlet (http://localhost:8080/node_modules/.vite/deps/react-router-dom.js?v=00b53c3d:4444:26)
-    at PrivateRoute (http://localhost:8080/src/components/Auth/PrivateRoute.tsx:17:51)
-    at RenderedRoute (http://localhost:8080/node_modules/.vite/deps/react-router-dom.js?v=00b53c3d:4069:5)
-    at Routes (http://localhost:8080/node_modules/.vite/deps/react-router-dom.js?v=00b53c3d:4508:5)
-    at Router (http://localhost:8080/node_modules/.vite/deps/react-router-dom.js?v=00b53c3d:4451:15)
-    at BrowserRouter (http://localhost:8080/node_modules/.vite/deps/react-router-dom.js?v=00b53c3d:5196:5)
-    at ChatbotProvider (http://localhost:8080/src/contexts/ChatbotContext.tsx:13:35)
-    at Provider (http://localhost:8080/node_modules/.vite/deps/chunk-VNBMSBXO.js?v=00b53c3d:38:15)
-    at TooltipProvider (http://localhost:8080/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=00b53c3d:63:5)
-    at O (http://localhost:8080/node_modules/.vite/deps/next-themes.js?v=00b53c3d:23:25)
-    at z (http://localhost:8080/node_modules/.vite/deps/next-themes.js?v=00b53c3d:21:18)
-    at QueryClientProvider (http://localhost:8080/node_modules/.vite/deps/@tanstack_react-query.js?v=00b53c3d:2794:3)
-    at App
-printWarning @ react_jsx-dev-runtime.js?v=00b53c3d:64
-error @ react_jsx-dev-runtime.js?v=00b53c3d:48
-validateFragmentProps @ react_jsx-dev-runtime.js?v=00b53c3d:796
-jsxWithValidation @ react_jsx-dev-runtime.js?v=00b53c3d:874
-(anonymous) @ AdminHeader.tsx:49
-AdminHeader @ AdminHeader.tsx:48
-renderWithHooks @ chunk-I3COAS7K.js?v=00b53c3d:11548
-mountIndeterminateComponent @ chunk-I3COAS7K.js?v=00b53c3d:14976
-beginWork @ chunk-I3COAS7K.js?v=00b53c3d:15914
-beginWork$1 @ chunk-I3COAS7K.js?v=00b53c3d:19753
-performUnitOfWork @ chunk-I3COAS7K.js?v=00b53c3d:19198
-workLoopSync @ chunk-I3COAS7K.js?v=00b53c3d:19137
-renderRootSync @ chunk-I3COAS7K.js?v=00b53c3d:19116
-performConcurrentWorkOnRoot @ chunk-I3COAS7K.js?v=00b53c3d:18678
-workLoop @ chunk-I3COAS7K.js?v=00b53c3d:197
-flushWork @ chunk-I3COAS7K.js?v=00b53c3d:176
-performWorkUntilDeadline @ chunk-I3COAS7K.js?v=00b53c3d:384Understand this error
-2AdminHeader.tsx:49 Warning: Invalid prop `data-lov-id` supplied to `React.Fragment`. React.Fragment can only have `key` and `children` props.
-    at AdminHeader (http://localhost:8080/src/components/layouts/AdminHeader.tsx:21:31)
-    at div
-    at div
-    at AdminLayout (http://localhost:8080/src/components/layouts/AdminLayout.tsx?t=1748195402499:21:39)
-    at ImportacaoNFPage
-    at RenderedRoute (http://localhost:8080/node_modules/.vite/deps/react-router-dom.js?v=00b53c3d:4069:5)
-    at Outlet (http://localhost:8080/node_modules/.vite/deps/react-router-dom.js?v=00b53c3d:4444:26)
-    at PrivateRoute (http://localhost:8080/src/components/Auth/PrivateRoute.tsx:17:51)
-    at RenderedRoute (http://localhost:8080/node_modules/.vite/deps/react-router-dom.js?v=00b53c3d:4069:5)
-    at Routes (http://localhost:8080/node_modules/.vite/deps/react-router-dom.js?v=00b53c3d:4508:5)
-    at Router (http://localhost:8080/node_modules/.vite/deps/react-router-dom.js?v=00b53c3d:4451:15)
-    at BrowserRouter (http://localhost:8080/node_modules/.vite/deps/react-router-dom.js?v=00b53c3d:5196:5)
-    at ChatbotProvider (http://localhost:8080/src/contexts/ChatbotContext.tsx:13:35)
-    at Provider (http://localhost:8080/node_modules/.vite/deps/chunk-VNBMSBXO.js?v=00b53c3d:38:15)
-    at TooltipProvider (http://localhost:8080/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=00b53c3d:63:5)
-    at O (http://localhost:8080/node_modules/.vite/deps/next-themes.js?v=00b53c3d:23:25)
-    at z (http://localhost:8080/node_modules/.vite/deps/next-themes.js?v=00b53c3d:21:18)
-    at QueryClientProvider (http://localhost:8080/node_modules/.vite/deps/@tanstack_react-query.js?v=00b53c3d:2794:3)
-    at App
-printWarning @ react_jsx-dev-runtime.js?v=00b53c3d:64
-error @ react_jsx-dev-runtime.js?v=00b53c3d:48
-validateFragmentProps @ react_jsx-dev-runtime.js?v=00b53c3d:796
-jsxWithValidation @ react_jsx-dev-runtime.js?v=00b53c3d:874
-(anonymous) @ AdminHeader.tsx:49
-AdminHeader @ AdminHeader.tsx:48
-renderWithHooks @ chunk-I3COAS7K.js?v=00b53c3d:11548
-updateFunctionComponent @ chunk-I3COAS7K.js?v=00b53c3d:14582
-beginWork @ chunk-I3COAS7K.js?v=00b53c3d:15924
-beginWork$1 @ chunk-I3COAS7K.js?v=00b53c3d:19753
-performUnitOfWork @ chunk-I3COAS7K.js?v=00b53c3d:19198
-workLoopSync @ chunk-I3COAS7K.js?v=00b53c3d:19137
-renderRootSync @ chunk-I3COAS7K.js?v=00b53c3d:19116
-performConcurrentWorkOnRoot @ chunk-I3COAS7K.js?v=00b53c3d:18678
-workLoop @ chunk-I3COAS7K.js?v=00b53c3d:197
-flushWork @ chunk-I3COAS7K.js?v=00b53c3d:176
-performWorkUntilDeadline @ chunk-I3COAS7K.js?v=00b53c3d:384Understand this error
-2AdminHeader.tsx:49 Warning: Invalid prop `data-lov-id` supplied to `React.Fragment`. React.Fragment can only have `key` and `children` props.
-    at AdminHeader (http://localhost:8080/src/components/layouts/AdminHeader.tsx:21:31)
-    at div
-    at div
-    at AdminLayout (http://localhost:8080/src/components/layouts/AdminLayout.tsx?t=1748195402499:21:39)
-    at ImportacaoNFPage
-    at RenderedRoute (http://localhost:8080/node_modules/.vite/deps/react-router-dom.js?v=00b53c3d:4069:5)
-    at Outlet (http://localhost:8080/node_modules/.vite/deps/react-router-dom.js?v=00b53c3d:4444:26)
-    at PrivateRoute (http://localhost:8080/src/components/Auth/PrivateRoute.tsx:17:51)
-    at RenderedRoute (http://localhost:8080/node_modules/.vite/deps/react-router-dom.js?v=00b53c3d:4069:5)
-    at Routes (http://localhost:8080/node_modules/.vite/deps/react-router-dom.js?v=00b53c3d:4508:5)
-    at Router (http://localhost:8080/node_modules/.vite/deps/react-router-dom.js?v=00b53c3d:4451:15)
-    at BrowserRouter (http://localhost:8080/node_modules/.vite/deps/react-router-dom.js?v=00b53c3d:5196:5)
-    at ChatbotProvider (http://localhost:8080/src/contexts/ChatbotContext.tsx:13:35)
-    at Provider (http://localhost:8080/node_modules/.vite/deps/chunk-VNBMSBXO.js?v=00b53c3d:38:15)
-    at TooltipProvider (http://localhost:8080/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=00b53c3d:63:5)
-    at O (http://localhost:8080/node_modules/.vite/deps/next-themes.js?v=00b53c3d:23:25)
-    at z (http://localhost:8080/node_modules/.vite/deps/next-themes.js?v=00b53c3d:21:18)
-    at QueryClientProvider (http://localhost:8080/node_modules/.vite/deps/@tanstack_react-query.js?v=00b53c3d:2794:3)
-    at App
-printWarning @ react_jsx-dev-runtime.js?v=00b53c3d:64
-error @ react_jsx-dev-runtime.js?v=00b53c3d:48
-validateFragmentProps @ react_jsx-dev-runtime.js?v=00b53c3d:796
-jsxWithValidation @ react_jsx-dev-runtime.js?v=00b53c3d:874
-(anonymous) @ AdminHeader.tsx:49
-AdminHeader @ AdminHeader.tsx:48
-renderWithHooks @ chunk-I3COAS7K.js?v=00b53c3d:11548
-updateFunctionComponent @ chunk-I3COAS7K.js?v=00b53c3d:14587
-beginWork @ chunk-I3COAS7K.js?v=00b53c3d:15924
-beginWork$1 @ chunk-I3COAS7K.js?v=00b53c3d:19753
-performUnitOfWork @ chunk-I3COAS7K.js?v=00b53c3d:19198
-workLoopSync @ chunk-I3COAS7K.js?v=00b53c3d:19137
-renderRootSync @ chunk-I3COAS7K.js?v=00b53c3d:19116
-performConcurrentWorkOnRoot @ chunk-I3COAS7K.js?v=00b53c3d:18678
-workLoop @ chunk-I3COAS7K.js?v=00b53c3d:197
-flushWork @ chunk-I3COAS7K.js?v=00b53c3d:176
-performWorkUntilDeadline @ chunk-I3COAS7K.js?v=00b53c3d:384Understand this error
-2AdminHeader.tsx:49 Warning: Invalid prop `data-lov-id` supplied to `React.Fragment`. React.Fragment can only have `key` and `children` props.
-    at AdminHeader (http://localhost:8080/src/components/layouts/AdminHeader.tsx:21:31)
-    at div
-    at div
-    at AdminLayout (http://localhost:8080/src/components/layouts/AdminLayout.tsx?t=1748195402499:21:39)
-    at ImportacaoNFPage
-    at RenderedRoute (http://localhost:8080/node_modules/.vite/deps/react-router-dom.js?v=00b53c3d:4069:5)
-    at Outlet (http://localhost:8080/node_modules/.vite/deps/react-router-dom.js?v=00b53c3d:4444:26)
-    at PrivateRoute (http://localhost:8080/src/components/Auth/PrivateRoute.tsx:17:51)
-    at RenderedRoute (http://localhost:8080/node_modules/.vite/deps/react-router-dom.js?v=00b53c3d:4069:5)
-    at Routes (http://localhost:8080/node_modules/.vite/deps/react-router-dom.js?v=00b53c3d:4508:5)
-    at Router (http://localhost:8080/node_modules/.vite/deps/react-router-dom.js?v=00b53c3d:4451:15)
-    at BrowserRouter (http://localhost:8080/node_modules/.vite/deps/react-router-dom.js?v=00b53c3d:5196:5)
-    at ChatbotProvider (http://localhost:8080/src/contexts/ChatbotContext.tsx:13:35)
-    at Provider (http://localhost:8080/node_modules/.vite/deps/chunk-VNBMSBXO.js?v=00b53c3d:38:15)
-    at TooltipProvider (http://localhost:8080/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=00b53c3d:63:5)
-    at O (http://localhost:8080/node_modules/.vite/deps/next-themes.js?v=00b53c3d:23:25)
-    at z (http://localhost:8080/node_modules/.vite/deps/next-themes.js?v=00b53c3d:21:18)
-    at QueryClientProvider (http://localhost:8080/node_modules/.vite/deps/@tanstack_react-query.js?v=00b53c3d:2794:3)
-    at App
-printWarning @ react_jsx-dev-runtime.js?v=00b53c3d:64
-error @ react_jsx-dev-runtime.js?v=00b53c3d:48
-validateFragmentProps @ react_jsx-dev-runtime.js?v=00b53c3d:796
-jsxWithValidation @ react_jsx-dev-runtime.js?v=00b53c3d:874
-(anonymous) @ AdminHeader.tsx:49
-AdminHeader @ AdminHeader.tsx:48
-renderWithHooks @ chunk-I3COAS7K.js?v=00b53c3d:11548
-updateFunctionComponent @ chunk-I3COAS7K.js?v=00b53c3d:14582
-beginWork @ chunk-I3COAS7K.js?v=00b53c3d:15924
-beginWork$1 @ chunk-I3COAS7K.js?v=00b53c3d:19753
-performUnitOfWork @ chunk-I3COAS7K.js?v=00b53c3d:19198
-workLoopSync @ chunk-I3COAS7K.js?v=00b53c3d:19137
-renderRootSync @ chunk-I3COAS7K.js?v=00b53c3d:19116
-performConcurrentWorkOnRoot @ chunk-I3COAS7K.js?v=00b53c3d:18678
-workLoop @ chunk-I3COAS7K.js?v=00b53c3d:197
-flushWork @ chunk-I3COAS7K.js?v=00b53c3d:176
-performWorkUntilDeadline @ chunk-I3COAS7K.js?v=00b53c3d:384Understand this error
-2AdminHeader.tsx:49 Warning: Invalid prop `data-lov-id` supplied to `React.Fragment`. React.Fragment can only have `key` and `children` props.
-    at AdminHeader (http://localhost:8080/src/components/layouts/AdminHeader.tsx:21:31)
-    at div
-    at div
-    at AdminLayout (http://localhost:8080/src/components/layouts/AdminLayout.tsx?t=1748195402499:21:39)
-    at ImportacaoNFPage
-    at RenderedRoute (http://localhost:8080/node_modules/.vite/deps/react-router-dom.js?v=00b53c3d:4069:5)
-    at Outlet (http://localhost:8080/node_modules/.vite/deps/react-router-dom.js?v=00b53c3d:4444:26)
-    at PrivateRoute (http://localhost:8080/src/components/Auth/PrivateRoute.tsx:17:51)
-    at RenderedRoute (http://localhost:8080/node_modules/.vite/deps/react-router-dom.js?v=00b53c3d:4069:5)
-    at Routes (http://localhost:8080/node_modules/.vite/deps/react-router-dom.js?v=00b53c3d:4508:5)
-    at Router (http://localhost:8080/node_modules/.vite/deps/react-router-dom.js?v=00b53c3d:4451:15)
-    at BrowserRouter (http://localhost:8080/node_modules/.vite/deps/react-router-dom.js?v=00b53c3d:5196:5)
-    at ChatbotProvider (http://localhost:8080/src/contexts/ChatbotContext.tsx:13:35)
-    at Provider (http://localhost:8080/node_modules/.vite/deps/chunk-VNBMSBXO.js?v=00b53c3d:38:15)
-    at TooltipProvider (http://localhost:8080/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=00b53c3d:63:5)
-    at O (http://localhost:8080/node_modules/.vite/deps/next-themes.js?v=00b53c3d:23:25)
-    at z (http://localhost:8080/node_modules/.vite/deps/next-themes.js?v=00b53c3d:21:18)
-    at QueryClientProvider (http://localhost:8080/node_modules/.vite/deps/@tanstack_react-query.js?v=00b53c3d:2794:3)
-    at App
-printWarning @ react_jsx-dev-runtime.js?v=00b53c3d:64
-error @ react_jsx-dev-runtime.js?v=00b53c3d:48
-validateFragmentProps @ react_jsx-dev-runtime.js?v=00b53c3d:796
-jsxWithValidation @ react_jsx-dev-runtime.js?v=00b53c3d:874
-(anonymous) @ AdminHeader.tsx:49
-AdminHeader @ AdminHeader.tsx:48
-renderWithHooks @ chunk-I3COAS7K.js?v=00b53c3d:11548
-updateFunctionComponent @ chunk-I3COAS7K.js?v=00b53c3d:14587
-beginWork @ chunk-I3COAS7K.js?v=00b53c3d:15924
-beginWork$1 @ chunk-I3COAS7K.js?v=00b53c3d:19753
-performUnitOfWork @ chunk-I3COAS7K.js?v=00b53c3d:19198
-workLoopSync @ chunk-I3COAS7K.js?v=00b53c3d:19137
-renderRootSync @ chunk-I3COAS7K.js?v=00b53c3d:19116
-performConcurrentWorkOnRoot @ chunk-I3COAS7K.js?v=00b53c3d:18678
-workLoop @ chunk-I3COAS7K.js?v=00b53c3d:197
-flushWork @ chunk-I3COAS7K.js?v=00b53c3d:176
-performWorkUntilDeadline @ chunk-I3COAS7K.js?v=00b53c3d:384Understand this error
-2AdminHeader.tsx:49 Warning: Invalid prop `data-lov-id` supplied to `React.Fragment`. React.Fragment can only have `key` and `children` props.
-    at AdminHeader (http://localhost:8080/src/components/layouts/AdminHeader.tsx:21:31)
-    at div
-    at div
-    at AdminLayout (http://localhost:8080/src/components/layouts/AdminLayout.tsx?t=1748195402499:21:39)
-    at ImportacaoNFPage
-    at RenderedRoute (http://localhost:8080/node_modules/.vite/deps/react-router-dom.js?v=00b53c3d:4069:5)
-    at Outlet (http://localhost:8080/node_modules/.vite/deps/react-router-dom.js?v=00b53c3d:4444:26)
-    at PrivateRoute (http://localhost:8080/src/components/Auth/PrivateRoute.tsx:17:51)
-    at RenderedRoute (http://localhost:8080/node_modules/.vite/deps/react-router-dom.js?v=00b53c3d:4069:5)
-    at Routes (http://localhost:8080/node_modules/.vite/deps/react-router-dom.js?v=00b53c3d:4508:5)
-    at Router (http://localhost:8080/node_modules/.vite/deps/react-router-dom.js?v=00b53c3d:4451:15)
-    at BrowserRouter (http://localhost:8080/node_modules/.vite/deps/react-router-dom.js?v=00b53c3d:5196:5)
-    at ChatbotProvider (http://localhost:8080/src/contexts/ChatbotContext.tsx:13:35)
-    at Provider (http://localhost:8080/node_modules/.vite/deps/chunk-VNBMSBXO.js?v=00b53c3d:38:15)
-    at TooltipProvider (http://localhost:8080/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=00b53c3d:63:5)
-    at O (http://localhost:8080/node_modules/.vite/deps/next-themes.js?v=00b53c3d:23:25)
-    at z (http://localhost:8080/node_modules/.vite/deps/next-themes.js?v=00b53c3d:21:18)
-    at QueryClientProvider (http://localhost:8080/node_modules/.vite/deps/@tanstack_react-query.js?v=00b53c3d:2794:3)
-    at App
-printWarning @ react_jsx-dev-runtime.js?v=00b53c3d:64
-error @ react_jsx-dev-runtime.js?v=00b53c3d:48
-validateFragmentProps @ react_jsx-dev-runtime.js?v=00b53c3d:796
-jsxWithValidation @ react_jsx-dev-runtime.js?v=00b53c3d:874
-(anonymous) @ AdminHeader.tsx:49
-AdminHeader @ AdminHeader.tsx:48
-renderWithHooks @ chunk-I3COAS7K.js?v=00b53c3d:11548
-updateFunctionComponent @ chunk-I3COAS7K.js?v=00b53c3d:14582
-beginWork @ chunk-I3COAS7K.js?v=00b53c3d:15924
-beginWork$1 @ chunk-I3COAS7K.js?v=00b53c3d:19753
-performUnitOfWork @ chunk-I3COAS7K.js?v=00b53c3d:19198
-workLoopSync @ chunk-I3COAS7K.js?v=00b53c3d:19137
-renderRootSync @ chunk-I3COAS7K.js?v=00b53c3d:19116
-performConcurrentWorkOnRoot @ chunk-I3COAS7K.js?v=00b53c3d:18678
-workLoop @ chunk-I3COAS7K.js?v=00b53c3d:197
-flushWork @ chunk-I3COAS7K.js?v=00b53c3d:176
-performWorkUntilDeadline @ chunk-I3COAS7K.js?v=00b53c3d:384Understand this error
-2AdminHeader.tsx:49 Warning: Invalid prop `data-lov-id` supplied to `React.Fragment`. React.Fragment can only have `key` and `children` props.
-    at AdminHeader (http://localhost:8080/src/components/layouts/AdminHeader.tsx:21:31)
-    at div
-    at div
-    at AdminLayout (http://localhost:8080/src/components/layouts/AdminLayout.tsx?t=1748195402499:21:39)
-    at ImportacaoNFPage
-    at RenderedRoute (http://localhost:8080/node_modules/.vite/deps/react-router-dom.js?v=00b53c3d:4069:5)
-    at Outlet (http://localhost:8080/node_modules/.vite/deps/react-router-dom.js?v=00b53c3d:4444:26)
-    at PrivateRoute (http://localhost:8080/src/components/Auth/PrivateRoute.tsx:17:51)
-    at RenderedRoute (http://localhost:8080/node_modules/.vite/deps/react-router-dom.js?v=00b53c3d:4069:5)
-    at Routes (http://localhost:8080/node_modules/.vite/deps/react-router-dom.js?v=00b53c3d:4508:5)
-    at Router (http://localhost:8080/node_modules/.vite/deps/react-router-dom.js?v=00b53c3d:4451:15)
-    at BrowserRouter (http://localhost:8080/node_modules/.vite/deps/react-router-dom.js?v=00b53c3d:5196:5)
-    at ChatbotProvider (http://localhost:8080/src/contexts/ChatbotContext.tsx:13:35)
-    at Provider (http://localhost:8080/node_modules/.vite/deps/chunk-VNBMSBXO.js?v=00b53c3d:38:15)
-    at TooltipProvider (http://localhost:8080/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=00b53c3d:63:5)
-    at O (http://localhost:8080/node_modules/.vite/deps/next-themes.js?v=00b53c3d:23:25)
-    at z (http://localhost:8080/node_modules/.vite/deps/next-themes.js?v=00b53c3d:21:18)
-    at QueryClientProvider (http://localhost:8080/node_modules/.vite/deps/@tanstack_react-query.js?v=00b53c3d:2794:3)
-    at App
-printWarning @ react_jsx-dev-runtime.js?v=00b53c3d:64
-error @ react_jsx-dev-runtime.js?v=00b53c3d:48
-validateFragmentProps @ react_jsx-dev-runtime.js?v=00b53c3d:796
-jsxWithValidation @ react_jsx-dev-runtime.js?v=00b53c3d:874
-(anonymous) @ AdminHeader.tsx:49
-AdminHeader @ AdminHeader.tsx:48
-renderWithHooks @ chunk-I3COAS7K.js?v=00b53c3d:11548
-updateFunctionComponent @ chunk-I3COAS7K.js?v=00b53c3d:14587
-beginWork @ chunk-I3COAS7K.js?v=00b53c3d:15924
-beginWork$1 @ chunk-I3COAS7K.js?v=00b53c3d:19753
-performUnitOfWork @ chunk-I3COAS7K.js?v=00b53c3d:19198
-workLoopSync @ chunk-I3COAS7K.js?v=00b53c3d:19137
-renderRootSync @ chunk-I3COAS7K.js?v=00b53c3d:19116
-performConcurrentWorkOnRoot @ chunk-I3COAS7K.js?v=00b53c3d:18678
-workLoop @ chunk-I3COAS7K.js?v=00b53c3d:197
-flushWork @ chunk-I3COAS7K.js?v=00b53c3d:176
-performWorkUntilDeadline @ chunk-I3COAS7K.js?v=00b53c3d:384Understand this error
+@supabase_supabase-js.js?v=00b53c3d:3900 
+ GET https://hjwebmpvaaeogbfqxwub.supabase.co/rest/v1/insumos?select=*&codigo_interno=eq.PLATMED 406 (Not Acceptable)
+notaFiscalService.ts:790 Novo produto criado: PLATINA METALLICA 20ML  CH 5
+notaFiscalService.ts:799 Lote encontrado: 392777
+@supabase_supabase-js.js?v=00b53c3d:3900 
+ GET https://hjwebmpvaaeogbfqxwub.supabase.co/rest/v1/insumos?select=*&codigo_interno=eq.SABADD 406 (Not Acceptable)
+@supabase_supabase-js.js?v=00b53c3d:3900 
+ GET https://hjwebmpvaaeogbfqxwub.supabase.co/rest/v1/insumos?select=*&codigo_interno=eq.SABADD 406 (Not Acceptable)
+notaFiscalService.ts:790 Novo produto criado: SABADILLA 20ML  CH 2
+notaFiscalService.ts:799 Lote encontrado: 392779
+@supabase_supabase-js.js?v=00b53c3d:3900 
+ GET https://hjwebmpvaaeogbfqxwub.supabase.co/rest/v1/insumos?select=*&codigo_interno=eq.CHOLED 406 (Not Acceptable)
+@supabase_supabase-js.js?v=00b53c3d:3900 
+ GET https://hjwebmpvaaeogbfqxwub.supabase.co/rest/v1/insumos?select=*&codigo_interno=eq.CHOLED 406 (Not Acceptable)
+notaFiscalService.ts:790 Novo produto criado: CHOLESTERINUM 20ML  CH 3
+notaFiscalService.ts:799 Lote encontrado: 392767
+@supabase_supabase-js.js?v=00b53c3d:3900 
+ GET https://hjwebmpvaaeogbfqxwub.supabase.co/rest/v1/insumos?select=*&codigo_interno=eq.COCCID 406 (Not Acceptable)
+@supabase_supabase-js.js?v=00b53c3d:3900 
+ GET https://hjwebmpvaaeogbfqxwub.supabase.co/rest/v1/insumos?select=*&codigo_interno=eq.COCCID 406 (Not Acceptable)
+notaFiscalService.ts:790 Novo produto criado: COCCULUS INDICUS 20ML  CH 2
+notaFiscalService.ts:799 Lote encontrado: 392769
+@supabase_supabase-js.js?v=00b53c3d:3900 
+ GET https://hjwebmpvaaeogbfqxwub.supabase.co/rest/v1/insumos?select=*&codigo_interno=eq.CLEMED 406 (Not Acceptable)
+@supabase_supabase-js.js?v=00b53c3d:3900 
+ GET https://hjwebmpvaaeogbfqxwub.supabase.co/rest/v1/insumos?select=*&codigo_interno=eq.CLEMED 406 (Not Acceptable)
+notaFiscalService.ts:790 Novo produto criado: CLEMATIS ERECTA 20ML  CH 2
+notaFiscalService.ts:799 Lote encontrado: 392768
+@supabase_supabase-js.js?v=00b53c3d:3900 
+ GET https://hjwebmpvaaeogbfqxwub.supabase.co/rest/v1/insumos?select=*&codigo_interno=eq.IRISVD 406 (Not Acceptable)
+@supabase_supabase-js.js?v=00b53c3d:3900 
+ GET https://hjwebmpvaaeogbfqxwub.supabase.co/rest/v1/insumos?select=*&codigo_interno=eq.IRISVD 406 (Not Acceptable)
+notaFiscalService.ts:790 Novo produto criado: IRIS VERSICOLOR 20ML  CH 2
+notaFiscalService.ts:799 Lote encontrado: 392775
+@supabase_supabase-js.js?v=00b53c3d:3900 
+ GET https://hjwebmpvaaeogbfqxwub.supabase.co/rest/v1/insumos?select=*&codigo_interno=eq.IODUMD 406 (Not Acceptable)
+@supabase_supabase-js.js?v=00b53c3d:3900 
+ GET https://hjwebmpvaaeogbfqxwub.supabase.co/rest/v1/insumos?select=*&codigo_interno=eq.IODUMD 406 (Not Acceptable)
+notaFiscalService.ts:790 Novo produto criado: IODUM PURUM 20ML  CH 2
+notaFiscalService.ts:799 Lote encontrado: 392774
+@supabase_supabase-js.js?v=00b53c3d:3900 
+ GET https://hjwebmpvaaeogbfqxwub.supabase.co/rest/v1/insumos?select=*&codigo_interno=eq.ZINMETD 406 (Not Acceptable)
+@supabase_supabase-js.js?v=00b53c3d:3900 
+ GET https://hjwebmpvaaeogbfqxwub.supabase.co/rest/v1/insumos?select=*&codigo_interno=eq.ZINMETD 406 (Not Acceptable)
+notaFiscalService.ts:790 Novo produto criado: ZINCUM METALLICUM 20ML  FC 998
+notaFiscalService.ts:799 Lote encontrado: 392780
+@supabase_supabase-js.js?v=00b53c3d:3900 
+ GET https://hjwebmpvaaeogbfqxwub.supabase.co/rest/v1/insumos?select=*&codigo_interno=eq.BAPTID 406 (Not Acceptable)
+@supabase_supabase-js.js?v=00b53c3d:3900 
+ GET https://hjwebmpvaaeogbfqxwub.supabase.co/rest/v1/insumos?select=*&codigo_interno=eq.BAPTID 406 (Not Acceptable)
+notaFiscalService.ts:790 Novo produto criado: BAPTISIA TINCTORIA 20ML  CH 2
+notaFiscalService.ts:799 Lote encontrado: 392766
+@supabase_supabase-js.js?v=00b53c3d:3900 
+ GET https://hjwebmpvaaeogbfqxwub.supabase.co/rest/v1/notas_fiscais?select=*&chave_acesso=eq.3525056… 406 (Not Acceptable)
+﻿
+

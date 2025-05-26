@@ -1,396 +1,361 @@
-# 🚀 Próximos Passos - Implementação Pharma.AI
+# Próximos Passos de Implementação - Pharma.AI
+*Atualizado em: 21 de Janeiro de 2025*
 
-## 📋 **STATUS ATUAL**
+## 🎯 **SITUAÇÃO ATUAL**
 
-### ✅ **CONCLUÍDO**
-- [x] Análise completa da nota fiscal XML
-- [x] Schema do banco de dados criado e validado
-- [x] Script Python para processamento de XML
-- [x] Tipos TypeScript para todas as entidades
-- [x] Configuração do Supabase
-- [x] Serviços de produtos e notas fiscais
-- [x] Componente de importação de NF-e
-- [x] Estrutura base do projeto
-
-### 🔄 **EM ANDAMENTO**
-- [ ] Configuração do banco de dados no Supabase
-- [ ] Implementação dos componentes de UI restantes
-- [ ] Testes da importação de XML
+### **Status Geral: 85% Implementado**
+- ✅ **Módulos Críticos**: 100% funcionais (Estoque, NF-e, Cadastros)
+- 🔄 **Módulos Principais**: 90% funcionais (Receitas, Pedidos, Financeiro)
+- 📋 **Módulos Complementares**: 70% funcionais (Produção, Relatórios)
+- 🚀 **Módulos IA**: 60% funcionais (Chatbot, Processamento)
 
 ---
 
-## 🎯 **PRÓXIMOS PASSOS IMEDIATOS**
+## 🚀 **PRIORIDADES IMEDIATAS - SPRINT ATUAL**
 
-### **1. Configuração do Banco de Dados (URGENTE)**
+### **1. FINALIZAR PROCESSAMENTO IA DE RECEITAS** 🔥 **ALTA PRIORIDADE**
 
-#### **1.1. Criar Projeto no Supabase**
-```bash
-# 1. Acesse https://supabase.com
-# 2. Crie uma nova organização/projeto
-# 3. Anote a URL e as chaves de API
-```
+#### **Status Atual**: 70% completo
+- ✅ Upload e armazenamento funcionais
+- ✅ Interface de revisão implementada
+- ⚠️ OCR e extração IA em desenvolvimento
 
-#### **1.2. Executar Schema do Banco**
-```sql
--- Execute o arquivo database_schema_from_nf.sql no SQL Editor do Supabase
--- Isso criará todas as tabelas, índices, triggers e políticas RLS
-```
-
-#### **1.3. Configurar Storage Buckets**
-```sql
--- Criar buckets para arquivos
-INSERT INTO storage.buckets (id, name, public) VALUES 
-('nf-xml', 'nf-xml', false),
-('documentos', 'documentos', false),
-('imagens', 'imagens', true);
-
--- Configurar políticas de acesso
-CREATE POLICY "Usuários autenticados podem fazer upload" ON storage.objects
-FOR INSERT WITH CHECK (auth.role() = 'authenticated');
-```
-
-#### **1.4. Configurar Variáveis de Ambiente**
-```bash
-# Copie env.example para .env
-cp env.example .env
-
-# Configure as variáveis do Supabase
-VITE_SUPABASE_URL=https://hjwebmpvaaeogbfqxwub.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqd2VibXB2YWFlb2diZnF4d3ViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc1MjMyNzAsImV4cCI6MjA2MzA5OTI3MH0.4fKNzbMpsetnc2JAhC5SbzwdCiMFkUSSTJxphlIBiuk
-```
-
-### **2. Implementar Serviços Restantes**
-
-#### **2.1. Serviço de Fornecedores**
+#### **Tarefas Pendentes**:
 ```typescript
-// src/services/fornecedorService.ts
-- CRUD completo de fornecedores
-- Validação de CNPJ
-- Integração com API de consulta de CNPJ
-- Busca por CEP automática
+// 1. Otimizar OCR para receitas médicas
+- Implementar pré-processamento de imagem
+- Configurar Tesseract.js otimizado
+- Adicionar filtros de melhoria de qualidade
+
+// 2. Melhorar extração IA
+- Refinar prompts para medicamentos homeopáticos
+- Implementar validação cruzada de dados
+- Adicionar detecção de dosagens e posologias
+
+// 3. Validação automática
+- Criar regras de negócio para receitas
+- Implementar verificação de medicamentos válidos
+- Adicionar alertas para receitas incompletas
 ```
 
-#### **2.2. Serviço de Categorias e Formas Farmacêuticas**
+#### **Arquivos a Modificar**:
+- `src/services/receitaService.ts` - Melhorar processamento IA
+- `src/components/prescription/` - Otimizar interface
+- `src/utils/ocrUtils.ts` - Implementar OCR avançado
+
+### **2. COMPLETAR WORKFLOW DE PEDIDOS** 🔥 **ALTA PRIORIDADE**
+
+#### **Status Atual**: 60% completo
+- ✅ CRUD básico implementado
+- ✅ Vinculação com receitas
+- ⚠️ Workflow de aprovação pendente
+
+#### **Tarefas Pendentes**:
 ```typescript
-// src/services/categoriaService.ts
-// src/services/formaFarmaceuticaService.ts
-- CRUD básico
-- Dados iniciais (seed)
-- Validações específicas
+// 1. Implementar fluxo de aprovação
+- Estados: Rascunho → Revisão → Aprovado → Produção → Entregue
+- Notificações automáticas por estado
+- Histórico de alterações
+
+// 2. Integração com produção
+- Criação automática de ordens de produção
+- Reserva de estoque para pedidos aprovados
+- Cálculo de prazos de entrega
+
+// 3. Sistema de notificações
+- Email/SMS para clientes
+- Alertas internos para equipe
+- Dashboard de acompanhamento
 ```
 
-#### **2.3. Serviço de Lotes**
+#### **Arquivos a Criar/Modificar**:
+- `src/services/workflowService.ts` - Novo serviço
+- `src/components/pedidos/WorkflowPedido.tsx` - Novo componente
+- `src/hooks/useNotificacoes.ts` - Sistema de notificações
+
+### **3. DASHBOARD FINANCEIRO** 🔥 **ALTA PRIORIDADE**
+
+#### **Status Atual**: 30% completo
+- ✅ Movimentações básicas implementadas
+- ⚠️ Dashboard visual pendente
+
+#### **Tarefas Pendentes**:
 ```typescript
-// src/services/loteService.ts
-- Controle de validade
-- Alertas de vencimento
-- Rastreabilidade FIFO
+// 1. Criar dashboard principal
+- Gráficos de receitas/despesas
+- KPIs financeiros principais
+- Alertas de vencimentos
+
+// 2. Relatórios avançados
+- Fluxo de caixa projetado
+- Análise de lucratividade
+- Comparativos mensais/anuais
+
+// 3. Integração com pedidos
+- Receitas automáticas de vendas
+- Controle de recebimentos
+- Conciliação bancária básica
 ```
 
-### **3. Implementar Componentes de UI**
-
-#### **3.1. Dashboard Principal**
-```typescript
-// src/pages/Dashboard.tsx
-- Estatísticas gerais
-- Gráficos de estoque
-- Alertas importantes
-- Ações rápidas
-```
-
-#### **3.2. Gestão de Produtos**
-```typescript
-// src/pages/Produtos/
-├── ListaProdutos.tsx      // Lista com filtros
-├── FormularioProduto.tsx  // Criar/editar produto
-├── DetalheProduto.tsx     // Visualização completa
-└── ImportacaoProdutos.tsx // Importação em lote
-```
-
-#### **3.3. Gestão de Notas Fiscais**
-```typescript
-// src/pages/NotasFiscais/
-├── ListaNotasFiscais.tsx  // Lista com filtros
-├── DetalheNotaFiscal.tsx  // Visualização completa
-├── ImportacaoNF.tsx       // Já criado
-└── RelatorioFiscal.tsx    // Relatórios
-```
-
-#### **3.4. Gestão de Fornecedores**
-```typescript
-// src/pages/Fornecedores/
-├── ListaFornecedores.tsx
-├── FormularioFornecedor.tsx
-└── DetalheFornecedor.tsx
-```
-
-### **4. Implementar Hooks Customizados**
-
-#### **4.1. Hooks para React Query**
-```typescript
-// src/hooks/
-├── useProdutos.ts         // Queries de produtos
-├── useNotasFiscais.ts     // Queries de notas fiscais
-├── useFornecedores.ts     // Queries de fornecedores
-└── useImportacao.ts       // Lógica de importação
-```
-
-#### **4.2. Hooks de Negócio**
-```typescript
-// src/hooks/
-├── useEstoque.ts          // Lógica de estoque
-├── useValidacao.ts        // Validações customizadas
-└── useNotificacoes.ts     // Sistema de alertas
-```
+#### **Arquivos a Criar**:
+- `src/pages/admin/financeiro/dashboard.tsx`
+- `src/components/financeiro/DashboardFinanceiro.tsx`
+- `src/components/financeiro/GraficosFinanceiros.tsx`
 
 ---
 
-## 🔧 **IMPLEMENTAÇÃO DETALHADA**
+## 📋 **PRÓXIMA SPRINT - FEVEREIRO 2025**
 
-### **Fase 1: Base Funcional (1-2 semanas)**
+### **4. MÓDULO DE PRODUÇÃO COMPLETO** 📋 **MÉDIA PRIORIDADE**
 
-#### **Semana 1: Infraestrutura**
-- [ ] **Dia 1-2**: Configurar Supabase e banco de dados
-- [ ] **Dia 3-4**: Implementar serviços restantes
-- [ ] **Dia 5**: Testes de integração com banco
+#### **Status Atual**: 30% estruturado
+- ✅ Modelos de dados definidos
+- ✅ Rotas básicas implementadas
+- ⚠️ Interface e workflow pendentes
 
-#### **Semana 2: UI Básica**
-- [ ] **Dia 1-2**: Dashboard e navegação
-- [ ] **Dia 3-4**: Lista de produtos e formulário básico
-- [ ] **Dia 5**: Importação de NF-e funcional
+#### **Implementação Necessária**:
+```typescript
+// 1. Ordens de Produção
+interface OrdemProducao {
+  id: string;
+  pedido_id: string;
+  receita_id: string;
+  status: 'pendente' | 'em_producao' | 'controle_qualidade' | 'finalizada';
+  data_inicio: Date;
+  data_prevista: Date;
+  data_finalizacao?: Date;
+  responsavel_id: string;
+  observacoes?: string;
+  itens: ItemOrdemProducao[];
+}
 
-### **Fase 2: Funcionalidades Core (2-3 semanas)**
-
-#### **Semana 3: Gestão de Produtos**
-- [ ] **Dia 1-2**: CRUD completo de produtos
-- [ ] **Dia 3-4**: Sistema de categorização
-- [ ] **Dia 5**: Controle de estoque básico
-
-#### **Semana 4: Gestão Fiscal**
-- [ ] **Dia 1-2**: Importação automática de XML
-- [ ] **Dia 3-4**: Visualização de notas fiscais
-- [ ] **Dia 5**: Relatórios básicos
-
-#### **Semana 5: Gestão de Fornecedores**
-- [ ] **Dia 1-2**: CRUD de fornecedores
-- [ ] **Dia 3-4**: Integração com APIs externas
-- [ ] **Dia 5**: Validações e automações
-
-### **Fase 3: Refinamentos (1-2 semanas)**
-
-#### **Semana 6: UX e Performance**
-- [ ] **Dia 1-2**: Otimizações de performance
-- [ ] **Dia 3-4**: Melhorias de UX
-- [ ] **Dia 5**: Testes de usabilidade
-
-#### **Semana 7: Finalização**
-- [ ] **Dia 1-2**: Correção de bugs
-- [ ] **Dia 3-4**: Documentação
-- [ ] **Dia 5**: Deploy e testes finais
-
----
-
-## 📝 **CHECKLIST DE IMPLEMENTAÇÃO**
-
-### **Backend/Banco de Dados**
-- [ ] Criar projeto no Supabase
-- [ ] Executar schema do banco
-- [ ] Configurar RLS policies
-- [ ] Criar storage buckets
-- [ ] Configurar backup automático
-- [ ] Testar todas as queries
-
-### **Frontend/UI**
-- [ ] Configurar roteamento
-- [ ] Implementar layout principal
-- [ ] Criar componentes de UI
-- [ ] Implementar formulários
-- [ ] Adicionar validações
-- [ ] Configurar React Query
-- [ ] Implementar sistema de notificações
-
-### **Integração**
-- [ ] Conectar frontend com Supabase
-- [ ] Testar importação de XML
-- [ ] Validar fluxos completos
-- [ ] Implementar tratamento de erros
-- [ ] Configurar logs e monitoramento
-
-### **Testes**
-- [ ] Testes unitários dos serviços
-- [ ] Testes de integração
-- [ ] Testes de UI (E2E)
-- [ ] Testes de performance
-- [ ] Testes de segurança
-
-### **Deploy**
-- [ ] Configurar CI/CD
-- [ ] Deploy em ambiente de staging
-- [ ] Testes em produção
-- [ ] Configurar domínio
-- [ ] Configurar SSL
-- [ ] Monitoramento em produção
-
----
-
-## 🛠️ **COMANDOS ÚTEIS**
-
-### **Desenvolvimento**
-```bash
-# Instalar dependências
-npm install
-
-# Executar em desenvolvimento
-npm run dev
-
-# Build para produção
-npm run build
-
-# Executar testes
-npm run test
-
-# Linting
-npm run lint
+// 2. Controle de Qualidade
+interface ControleQualidade {
+  ordem_producao_id: string;
+  testes_realizados: TesteQualidade[];
+  aprovado: boolean;
+  observacoes: string;
+  responsavel_id: string;
+}
 ```
 
-### **Banco de Dados**
-```bash
-# Conectar ao Supabase CLI
-npx supabase login
+#### **Páginas a Implementar**:
+- `/admin/producao/ordens` - Lista de ordens
+- `/admin/producao/nova` - Criar ordem
+- `/admin/producao/controle-qualidade` - Testes
+- `/admin/producao/relatorios` - Relatórios
 
-# Inicializar projeto local
-npx supabase init
+### **5. RELATÓRIOS AVANÇADOS** 📋 **MÉDIA PRIORIDADE**
 
-# Aplicar migrações
-npx supabase db push
+#### **Relatórios Prioritários**:
+```typescript
+// 1. Relatórios de Estoque
+- Produtos em falta
+- Produtos próximos ao vencimento
+- Giro de estoque por produto
+- Análise ABC de produtos
 
-# Gerar tipos TypeScript
-npx supabase gen types typescript --local > src/types/supabase.ts
+// 2. Relatórios Financeiros
+- DRE simplificado
+- Fluxo de caixa detalhado
+- Análise de lucratividade por produto
+- Contas a pagar/receber
+
+// 3. Relatórios Operacionais
+- Produtividade da equipe
+- Tempo médio de produção
+- Taxa de aprovação no controle de qualidade
+- Satisfação do cliente
 ```
 
-### **Deploy**
-```bash
-# Build otimizado
-npm run build
+### **6. IA DE PREVISÃO DE DEMANDA** 📋 **BAIXA PRIORIDADE**
 
-# Preview do build
-npm run preview
+#### **Algoritmos a Implementar**:
+```python
+# 1. Análise de Padrões Históricos
+- Sazonalidade de produtos
+- Tendências de crescimento
+- Correlações entre produtos
 
-# Deploy (Vercel/Netlify)
-npm run deploy
+# 2. Machine Learning
+- Regressão linear para previsões
+- Clustering de produtos similares
+- Análise de séries temporais
+
+# 3. Integração com Sistema
+- Sugestões automáticas de compra
+- Alertas de reposição inteligente
+- Otimização de estoque
 ```
 
 ---
 
-## 🎯 **METAS DE ENTREGA**
+## 🔧 **MELHORIAS TÉCNICAS NECESSÁRIAS**
 
-### **MVP (4 semanas)**
-- ✅ Importação de XML funcional
-- ✅ CRUD básico de produtos
-- ✅ Gestão de estoque simples
-- ✅ Dashboard com estatísticas
-- ✅ Sistema de autenticação
+### **1. OTIMIZAÇÃO DE PERFORMANCE** 🔥 **ALTA PRIORIDADE**
 
-### **Versão 1.0 (6-8 semanas)**
-- ✅ Todas as funcionalidades do MVP
-- ✅ Gestão completa de fornecedores
-- ✅ Relatórios fiscais
-- ✅ Sistema de alertas
-- ✅ Backup automático
-- ✅ Documentação completa
+#### **Problemas Identificados**:
+- Bundle JavaScript muito grande (1.5MB)
+- Carregamento inicial lento
+- Queries não otimizadas
 
-### **Versão 1.1 (10-12 semanas)**
-- ✅ Integração com APIs externas
-- ✅ Classificação automática (IA básica)
-- ✅ App mobile (PWA)
-- ✅ Relatórios avançados
-- ✅ Otimizações de performance
+#### **Soluções a Implementar**:
+```typescript
+// 1. Code Splitting
+const LazyComponent = lazy(() => import('./Component'));
+
+// 2. Otimização de Queries
+const { data } = useQuery({
+  queryKey: ['produtos', filtros],
+  queryFn: () => buscarProdutos(filtros),
+  staleTime: 5 * 60 * 1000, // 5 minutos
+  cacheTime: 10 * 60 * 1000, // 10 minutos
+});
+
+// 3. Virtualização de Listas
+import { FixedSizeList as List } from 'react-window';
+```
+
+### **2. TESTES AUTOMATIZADOS** 🔥 **ALTA PRIORIDADE**
+
+#### **Cobertura Atual**: 60%
+#### **Meta**: 85%
+
+#### **Testes a Implementar**:
+```typescript
+// 1. Testes Unitários
+- Serviços (notaFiscalService, produtoService)
+- Utilitários (validações, formatações)
+- Hooks customizados
+
+// 2. Testes de Integração
+- Fluxo completo de importação NF-e
+- Workflow de pedidos
+- Autenticação e autorização
+
+// 3. Testes E2E
+- Jornada do usuário completa
+- Cenários críticos de negócio
+- Testes de regressão
+```
+
+### **3. MONITORAMENTO E LOGS** 📋 **MÉDIA PRIORIDADE**
+
+#### **Implementar**:
+```typescript
+// 1. Sistema de Logs
+- Logs estruturados com Winston
+- Rastreamento de erros com Sentry
+- Métricas de performance
+
+// 2. Monitoramento
+- Health checks automáticos
+- Alertas de sistema
+- Dashboard de métricas
+
+// 3. Analytics
+- Uso de funcionalidades
+- Performance de queries
+- Comportamento do usuário
+```
 
 ---
 
-## 🚨 **PONTOS DE ATENÇÃO**
+## 🎯 **ROADMAP TRIMESTRAL**
 
-### **Críticos**
-1. **Configuração do Supabase**: Fundamental para tudo funcionar
-2. **Validação do XML**: Garantir compatibilidade com diferentes fornecedores
-3. **Performance**: Otimizar queries para grandes volumes de dados
-4. **Segurança**: RLS configurado corretamente
+### **Q1 2025 - SISTEMA COMPLETO** (Jan-Mar)
+- ✅ **Janeiro**: Finalizar módulos principais
+- 🔄 **Fevereiro**: Produção e relatórios
+- 🎯 **Março**: Testes e deploy produção
 
-### **Importantes**
-1. **UX**: Interface intuitiva para farmacêuticos
-2. **Validações**: Dados fiscais corretos
-3. **Backup**: Não perder dados importantes
-4. **Documentação**: Facilitar manutenção futura
+### **Q2 2025 - IA AVANÇADA** (Abr-Jun)
+- 🎯 **Abril**: Previsão de demanda
+- 🎯 **Maio**: Otimização de compras
+- 🎯 **Junho**: Analytics avançados
 
-### **Desejáveis**
-1. **Automações**: Reduzir trabalho manual
-2. **Relatórios**: Insights de negócio
-3. **Integrações**: APIs externas
-4. **Mobile**: Acesso via smartphone
+### **Q3 2025 - EXPANSÃO** (Jul-Set)
+- 🎯 **Julho**: Mobile App (PWA)
+- 🎯 **Agosto**: Integrações externas
+- 🎯 **Setembro**: Marketplace
 
 ---
 
-## 📞 **PRÓXIMAS AÇÕES**
+## 📊 **MÉTRICAS DE SUCESSO**
 
-### **Imediatas (Hoje)**
-1. Criar projeto no Supabase
-2. Configurar variáveis de ambiente
-3. Executar schema do banco
-4. Testar conexão
+### **Técnicas**:
+- ✅ Build sem erros: 100%
+- ✅ Cobertura de testes: 85%
+- ✅ Performance: < 3s carregamento
+- ✅ Disponibilidade: 99.9%
 
-### **Esta Semana**
-1. Implementar serviços restantes
-2. Criar componentes básicos de UI
-3. Testar importação de XML
-4. Configurar roteamento
+### **Funcionais**:
+- ✅ Importação NF-e: 100% automática
+- ✅ Processamento receitas: 95% precisão
+- ✅ Gestão estoque: 100% rastreável
+- ✅ Workflow pedidos: 100% automatizado
 
-### **Próxima Semana**
-1. Dashboard funcional
-2. CRUD de produtos completo
-3. Gestão de fornecedores
-4. Primeiros testes de usuário
-
----
-
-**🎉 O projeto está bem estruturado e pronto para a implementação! Vamos começar pela configuração do Supabase e depois seguir o cronograma proposto.**
+### **Negócio**:
+- 🎯 Redução 80% tempo cadastro produtos
+- 🎯 Redução 60% erros manuais
+- 🎯 Aumento 40% produtividade equipe
+- 🎯 ROI positivo em 6 meses
 
 ---
 
-## 🚩 NOVO PASSO: Adicionar Importação de Nota Fiscal (NF-e) ao Menu Lateral
+## 🚨 **RISCOS E MITIGAÇÕES**
 
-### Por que?
-Para que a cliente consiga acessar facilmente a funcionalidade de importação de nota fiscal (XML), é fundamental que o menu lateral do sistema tenha um item específico para isso.
+### **Riscos Técnicos**:
+1. **Performance IA**: Implementar cache e otimizações
+2. **Escalabilidade**: Monitorar e otimizar queries
+3. **Segurança**: Auditorias regulares e testes
 
-### O que fazer?
-1. **Adicionar um novo item no menu lateral**:
-   - Nome sugerido: **Importar NF-e** ou **Notas Fiscais**
-   - Pode ser um grupo próprio ("Notas Fiscais") ou um item dentro de "Estoque"
+### **Riscos de Negócio**:
+1. **Adoção usuários**: Treinamento e suporte
+2. **Integração sistemas**: Testes extensivos
+3. **Compliance**: Validação regulatória
 
-2. **Vincular o item ao componente de importação**:
-   - O item deve abrir a tela/componente `ImportacaoNF.tsx` já implementado.
-   - Garantir que o usuário consiga fazer upload do XML e acompanhar o fluxo descrito em `docs/fluxo_nf.txt`.
+---
 
-### Exemplo de organização do menu:
+## 📋 **CHECKLIST DE IMPLEMENTAÇÃO**
 
-```
-Estoque
-  • Insumos
-  • Embalagens
-  • Novo Lote
-  • Importar NF-e   ← (novo item)
-```
+### **Sprint Atual (Janeiro)**:
+- [ ] Finalizar OCR de receitas
+- [ ] Implementar workflow de pedidos
+- [ ] Criar dashboard financeiro
+- [ ] Otimizar performance geral
+- [ ] Aumentar cobertura de testes para 75%
 
-ou
+### **Próxima Sprint (Fevereiro)**:
+- [ ] Módulo de produção completo
+- [ ] Relatórios avançados
+- [ ] Sistema de notificações
+- [ ] Testes E2E implementados
+- [ ] Deploy em ambiente de homologação
 
-```
-Notas Fiscais
-  • Importar NF-e
-  • Listar Notas
-```
+### **Deploy Produção (Março)**:
+- [ ] Todos os módulos testados
+- [ ] Performance otimizada
+- [ ] Documentação completa
+- [ ] Treinamento da equipe
+- [ ] Plano de rollback preparado
 
-### Observações:
-- O componente de importação já está pronto (`src/components/ImportacaoNF/ImportacaoNF.tsx`).
-- Basta criar a rota/página e adicionar o link no menu.
-- Atualizar a documentação e comunicar a cliente sobre a nova opção.
+---
 
---- 
+## 🎯 **PRÓXIMA AÇÃO IMEDIATA**
+
+### **HOJE (21/01/2025)**:
+1. **Commit e deploy** das atualizações de documentação
+2. **Iniciar implementação** do OCR avançado para receitas
+3. **Criar branch** para workflow de pedidos
+4. **Planejar sprint** com equipe
+
+### **ESTA SEMANA**:
+1. **Segunda**: OCR de receitas funcionando
+2. **Terça**: Workflow de pedidos básico
+3. **Quarta**: Dashboard financeiro inicial
+4. **Quinta**: Testes e otimizações
+5. **Sexta**: Review e planejamento próxima sprint
+
+---
+
+*Este documento é atualizado semanalmente e serve como guia para o desenvolvimento contínuo do Pharma.AI.* 

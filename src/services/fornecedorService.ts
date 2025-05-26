@@ -228,4 +228,105 @@ export class FornecedorService {
 
     return errors;
   }
+
+  /**
+   * Busca fornecedor por CNPJ/documento
+   */
+  static async getFornecedorByCNPJ(cnpj: string): Promise<Fornecedor | null> {
+    const { data, error } = await supabase
+      .from('fornecedores')
+      .select('*')
+      .eq('documento', cnpj)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return null; // Fornecedor não encontrado
+      }
+      
+      // Log detalhado para debug
+      console.error('Erro detalhado na busca por CNPJ:', {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint
+      });
+      
+      // Se for erro de RLS/autenticação, retornar null em vez de erro
+      if (error.message?.includes('406') || error.message?.includes('Not Acceptable')) {
+        console.warn('Possível problema de RLS/autenticação na busca por CNPJ');
+        return null;
+      }
+      
+      throw new Error(`Erro ao buscar fornecedor por CNPJ: ${error.message}`);
+    }
+
+    return data;
+  }
+
+  /**
+   * Busca ou cria fornecedor baseado nos dados do XML da NF-e
+   */
+  static async buscarOuCriarFornecedor(dadosXML: {
+    cnpj?: string;
+    razaoSocial?: string;
+    nomeFantasia?: string;
+    inscricaoEstadual?: string;
+    telefone?: string;
+    logradouro?: string;
+    numero?: string;
+    complemento?: string;
+    bairro?: string;
+    cidade?: string;
+    uf?: string;
+    cep?: string;
+  }): Promise<string> {
+    if (!dadosXML.cnpj) {
+      throw new Error('CNPJ é obrigatório para importar fornecedor');
+    }
+
+    // Primeiro, tentar buscar fornecedor existente
+    const fornecedorExistente = await this.getFornecedorByCNPJ(dadosXML.cnpj);
+    
+    if (fornecedorExistente) {
+      return fornecedorExistente.id;
+    }
+
+    // Se não existe, criar novo fornecedor
+    const novoFornecedor: FornecedorInsert = {
+      nome: dadosXML.razaoSocial || 'Fornecedor Importado',
+      nome_fantasia: dadosXML.nomeFantasia,
+      documento: dadosXML.cnpj,
+      tipo_pessoa: 'JURIDICA',
+      telefone: dadosXML.telefone,
+      inscricao_estadual: dadosXML.inscricaoEstadual,
+      endereco: this.formatarEndereco(dadosXML),
+      cidade: dadosXML.cidade,
+      estado: dadosXML.uf,
+      cep: dadosXML.cep,
+      tipo_fornecedor: 'MEDICAMENTOS'
+    };
+
+    const fornecedorCriado = await this.createFornecedor(novoFornecedor);
+    return fornecedorCriado.id;
+  }
+
+  /**
+   * Formata endereço a partir dos dados do XML
+   */
+  private static formatarEndereco(dados: {
+    logradouro?: string;
+    numero?: string;
+    complemento?: string;
+    bairro?: string;
+  }): string {
+    const partes = [];
+    
+    if (dados.logradouro) partes.push(dados.logradouro);
+    if (dados.numero) partes.push(dados.numero);
+    if (dados.complemento) partes.push(dados.complemento);
+    if (dados.bairro) partes.push(dados.bairro);
+    
+    return partes.join(', ');
+  }
 } 

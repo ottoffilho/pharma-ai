@@ -23,10 +23,10 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const TABLES = {
   // Módulo M01 - Cadastros Essenciais
-  FORNECEDOR: 'fornecedor',
+  FORNECEDOR: 'fornecedores',
   CATEGORIA_PRODUTO: 'categoria_produto',
   FORMA_FARMACEUTICA: 'forma_farmaceutica',
-  PRODUTO: 'produto',
+  PRODUTO: 'insumos', // Tabela real no banco
   
   // Módulo M04 - Gestão de Estoque
   LOTE: 'lote',
@@ -114,28 +114,29 @@ export const uploadFile = async (
   file: File,
   options?: { upsert?: boolean }
 ) => {
-  // Verifica se o bucket existe antes do upload
-  const { data: buckets, error: bucketError } = await supabase.storage.listBuckets();
-  if (bucketError) {
-    console.error('Erro ao listar buckets:', bucketError);
-    throw new Error('Erro ao acessar o storage. Tente novamente mais tarde.');
-  }
-  const bucketExists = buckets?.some(b => b.name === bucket);
-  if (!bucketExists) {
-    console.error(`Bucket ${bucket} não encontrado. Contate o administrador do sistema.`);
-    throw new Error(`Bucket ${bucket} não existe no storage.`);
-  }
+  try {
+    // Tentar upload diretamente - se o bucket não existir, o Supabase retornará erro específico
+    const { data, error } = await supabase.storage
+      .from(bucket)
+      .upload(path, file, options);
 
-  const { data, error } = await supabase.storage
-    .from(bucket)
-    .upload(path, file, options);
+    if (error) {
+      // Verificar se é erro de bucket não encontrado
+      if (error.message?.includes('Bucket not found') || error.message?.includes('bucket does not exist')) {
+        console.error(`Bucket ${bucket} não encontrado. Contate o administrador do sistema.`);
+        throw new Error(`Bucket ${bucket} não encontrado. Contate o administrador do sistema.`);
+      }
+      
+      // Outros erros de upload
+      console.error('Erro no upload:', error);
+      throw error;
+    }
 
-  if (error) {
+    return data;
+  } catch (error) {
     console.error('Erro no upload:', error);
     throw error;
   }
-
-  return data;
 };
 
 /**
@@ -285,6 +286,29 @@ export const healthCheck = async (): Promise<boolean> => {
     return !error;
   } catch (error) {
     console.error('Health check falhou:', error);
+    return false;
+  }
+};
+
+/**
+ * Testa se um bucket está acessível
+ */
+export const testBucketAccess = async (bucketName: string): Promise<boolean> => {
+  try {
+    // Tentar listar arquivos do bucket (mesmo que vazio)
+    const { data, error } = await supabase.storage
+      .from(bucketName)
+      .list('', { limit: 1 });
+    
+    if (error) {
+      console.error(`Erro ao acessar bucket ${bucketName}:`, error);
+      return false;
+    }
+    
+    console.log(`Bucket ${bucketName} está acessível. Arquivos encontrados:`, data?.length || 0);
+    return true;
+  } catch (error) {
+    console.error(`Erro ao testar bucket ${bucketName}:`, error);
     return false;
   }
 };

@@ -8,6 +8,8 @@ import { useDropzone } from 'react-dropzone';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Upload, FileText, AlertCircle, CheckCircle, X, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -47,8 +49,28 @@ export const ImportacaoNF: React.FC<ImportacaoNFProps> = ({
 }) => {
   const [arquivos, setArquivos] = useState<ArquivoUpload[]>([]);
   const [importandoTodos, setImportandoTodos] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   
   const queryClient = useQueryClient();
+  const { toast: showToast } = useToast();
+
+  // Verificar autenticação ao carregar o componente
+  React.useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsAuthenticated(!!session);
+      
+      if (!session) {
+        showToast({
+          title: "Atenção",
+          description: "Você precisa estar logado para importar notas fiscais.",
+          variant: "destructive",
+        });
+      }
+    };
+    
+    checkAuth();
+  }, [toast]);
 
   // Mutation para importação individual
   const importarMutation = useMutation({
@@ -72,9 +94,7 @@ export const ImportacaoNF: React.FC<ImportacaoNFProps> = ({
       }
 
       // Toast de sucesso
-      toast.success(
-        `Nota fiscal importada com sucesso! ${resultado.produtos_importados} produtos processados.`
-      );
+      toast.success(`Nota fiscal importada com sucesso! ${resultado.produtos_importados} produtos processados.`);
     },
     onError: (error, arquivo) => {
       const mensagemErro = error instanceof Error ? error.message : 'Erro desconhecido';
@@ -227,6 +247,25 @@ export const ImportacaoNF: React.FC<ImportacaoNFProps> = ({
           </div>
         )}
       </div>
+
+      {/* Status de Autenticação */}
+      {isAuthenticated === false && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Você precisa estar logado para importar notas fiscais. Faça login e tente novamente.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {isAuthenticated === true && (
+        <Alert>
+          <CheckCircle className="h-4 w-4" />
+          <AlertDescription>
+            Usuário autenticado. Você pode importar notas fiscais.
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Estatísticas */}
       {arquivos.length > 0 && (

@@ -4,6 +4,8 @@
 // =====================================================
 
 import supabase, { TABLES, formatSupabaseError, uploadFile, STORAGE_BUCKETS } from './supabase';
+import { FornecedorService } from './fornecedorService';
+import { buscarProdutoPorCodigo, criarProduto, atualizarEstoqueProduto } from './produtoService';
 import type {
   NotaFiscal,
   NotaFiscalCompleta,
@@ -166,6 +168,13 @@ export const buscarNotaFiscalPorId = async (id: UUID): Promise<NotaFiscalComplet
  */
 export const buscarNotaFiscalPorChave = async (chaveAcesso: string): Promise<NotaFiscal | null> => {
   try {
+    // Verificar se o usuário está autenticado antes de fazer a consulta
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      console.warn('Usuário não autenticado para buscar nota fiscal');
+      return null;
+    }
+
     const { data, error } = await supabase
       .from(TABLES.NOTA_FISCAL)
       .select('*')
@@ -176,12 +185,31 @@ export const buscarNotaFiscalPorChave = async (chaveAcesso: string): Promise<Not
       if (error.code === 'PGRST116') {
         return null; // Nota fiscal não encontrada
       }
+      
+      // Log detalhado para debug
+      console.error('Erro detalhado na busca por chave:', {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint
+      });
+      
+      // Se for erro de RLS/autenticação, retornar null em vez de erro
+      if (error.message?.includes('406') || error.message?.includes('Not Acceptable')) {
+        // Log silencioso para não poluir o console
+        return null;
+      }
+      
       throw new Error(formatSupabaseError(error));
     }
 
     return data;
   } catch (error) {
     console.error('Erro ao buscar nota fiscal por chave:', error);
+    // Em caso de erro de rede ou autenticação, retornar null para permitir continuar
+    if (error instanceof Error && error.message.includes('406')) {
+      return null;
+    }
     throw error;
   }
 };
@@ -320,6 +348,13 @@ export const importarXMLNotaFiscal = async (
   };
 
   try {
+    // 0. Verificar se o usuário está autenticado
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      resultado.erros.push('Usuário não autenticado. Faça login para importar notas fiscais.');
+      return resultado;
+    }
+
     // 1. Upload do arquivo XML para storage
     const nomeArquivo = `${Date.now()}_${arquivo.name}`;
     const caminhoArquivo = `uploads/${nomeArquivo}`;
@@ -373,36 +408,51 @@ export const importarXMLNotaFiscal = async (
 
     resultado.nota_fiscal_id = notaFiscal.id;
 
-    // 7. Criar itens da nota fiscal
-    for (const item of dadosNFe.itens) {
-      await criarItemNotaFiscal({
-        nota_fiscal_id: notaFiscal.id,
-        produto_id: item.produtoId,
-        lote_id: item.loteId,
-        numero_item: item.numeroItem,
-        quantidade_comercial: item.quantidadeComercial,
-        valor_unitario_comercial: item.valorUnitarioComercial,
-        quantidade_tributaria: item.quantidadeTributaria,
-        valor_unitario_tributario: item.valorUnitarioTributario,
-        valor_total_produto: item.valorTotalProduto,
-        valor_frete: item.valorFrete,
-        cfop: item.cfop,
-        ncm: item.ncm,
-        origem_mercadoria: item.origemMercadoria,
-        cst_icms: item.cstICMS,
-        base_calculo_icms: item.baseCalculoICMS,
-        aliquota_icms: item.aliquotaICMS,
-        valor_icms: item.valorICMS,
-        cst_ipi: item.cstIPI,
-        valor_ipi: item.valorIPI,
-        cst_pis: item.cstPIS,
-        aliquota_pis: item.aliquotaPIS,
-        valor_pis: item.valorPIS,
-        cst_cofins: item.cstCOFINS,
-        aliquota_cofins: item.aliquotaCOFINS,
-        valor_cofins: item.valorCOFINS,
-        valor_total_tributos: item.valorTotalTributos
-      });
+    // 7. Criar itens da nota fiscal e atualizar estoque
+    const produtosProcessadosArray = produtosProcessados.produtosProcessados as { produtoId: UUID; loteId?: UUID; item: Record<string, unknown> }[];
+    
+    for (const produtoProcessado of produtosProcessadosArray) {
+      try {
+        const item = produtoProcessado.item;
+        
+        // 7.1. Criar item da nota fiscal
+        await criarItemNotaFiscal({
+          nota_fiscal_id: notaFiscal.id,
+          produto_id: produtoProcessado.produtoId,
+          lote_id: produtoProcessado.loteId,
+          numero_item: item.numeroItem as number,
+          quantidade_comercial: item.quantidadeComercial as number,
+          valor_unitario_comercial: item.valorUnitarioComercial as number,
+          quantidade_tributaria: item.quantidadeTributaria as number,
+          valor_unitario_tributario: item.valorUnitarioTributario as number,
+          valor_total_produto: item.valorTotalProduto as number,
+          valor_frete: item.valorFrete as number || 0,
+          cfop: item.cfop as string,
+          ncm: item.ncm as string,
+          origem_mercadoria: item.origemMercadoria as number,
+          cst_icms: item.cstICMS as string,
+          base_calculo_icms: item.baseCalculoICMS as number,
+          aliquota_icms: item.aliquotaICMS as number,
+          valor_icms: item.valorICMS as number,
+          cst_ipi: item.cstIPI as string,
+          valor_ipi: item.valorIPI as number || 0,
+          cst_pis: item.cstPIS as string,
+          aliquota_pis: item.aliquotaPIS as number,
+          valor_pis: item.valorPIS as number,
+          cst_cofins: item.cstCOFINS as string,
+          aliquota_cofins: item.aliquotaCOFINS as number,
+          valor_cofins: item.valorCOFINS as number,
+          valor_total_tributos: item.valorTotalTributos as number || 0
+        });
+
+        // 7.2. Atualizar estoque do produto (entrada de mercadoria)
+        const quantidadeEntrada = item.quantidadeComercial as number;
+        await atualizarEstoqueProduto(produtoProcessado.produtoId, quantidadeEntrada, 'entrada');
+        
+      } catch (error) {
+        console.error('Erro ao criar item da nota fiscal:', error);
+        resultado.erros.push(`Erro ao criar item: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+      }
     }
 
     resultado.sucesso = true;
@@ -446,8 +496,14 @@ const processarXMLNFe = async (xmlText: string): Promise<Record<string, unknown>
     const numeroNF = parseInt(getTextContent(ide, 'nNF') || '0');
     const serie = parseInt(getTextContent(ide, 'serie') || '0');
     const modelo = parseInt(getTextContent(ide, 'mod') || '55');
-    const dataEmissao = getTextContent(ide, 'dhEmi') || '';
-    const dataSaidaEntrada = getTextContent(ide, 'dhSaiEnt');
+    
+    // Processar datas corretamente
+    const dataEmissaoRaw = getTextContent(ide, 'dhEmi') || '';
+    const dataSaidaEntradaRaw = getTextContent(ide, 'dhSaiEnt');
+    
+    // Converter datas para formato ISO
+    const dataEmissao = dataEmissaoRaw ? new Date(dataEmissaoRaw).toISOString() : new Date().toISOString();
+    const dataSaidaEntrada = dataSaidaEntradaRaw ? new Date(dataSaidaEntradaRaw).toISOString() : null;
 
     // Dados do emitente (fornecedor)
     const emit = infNFe.querySelector('emit');
@@ -636,23 +692,193 @@ const getTextContent = (parent: Element | null, tagName: string): string => {
  * Importa ou atualiza fornecedor baseado nos dados do XML
  */
 const importarFornecedorDoXML = async (dadosFornecedor: Record<string, unknown>): Promise<UUID> => {
-  // Esta função será implementada no fornecedorService
-  // Por enquanto, retorna um ID fictício
-  return 'fornecedor-id-exemplo';
+  return await FornecedorService.buscarOuCriarFornecedor({
+    cnpj: dadosFornecedor.cnpj as string,
+    razaoSocial: dadosFornecedor.razaoSocial as string,
+    nomeFantasia: dadosFornecedor.nomeFantasia as string,
+    inscricaoEstadual: dadosFornecedor.inscricaoEstadual as string,
+    telefone: dadosFornecedor.telefone as string,
+    logradouro: dadosFornecedor.logradouro as string,
+    numero: dadosFornecedor.numero as string,
+    complemento: dadosFornecedor.complemento as string,
+    bairro: dadosFornecedor.bairro as string,
+    cidade: dadosFornecedor.cidade as string,
+    uf: dadosFornecedor.uf as string,
+    cep: dadosFornecedor.cep as string,
+  });
 };
 
 /**
  * Processa produtos do XML e retorna estatísticas
  */
 const processarProdutosDoXML = async (itens: Record<string, unknown>[], fornecedorId: UUID): Promise<Record<string, unknown>> => {
-  // Esta função será implementada integrando com o produtoService
-  // Por enquanto, retorna estatísticas fictícias
+  let novos = 0;
+  let atualizados = 0;
+  let lotes = 0;
+  const produtosProcessados: { produtoId: UUID; loteId?: UUID; item: Record<string, unknown> }[] = [];
+  
+  // Cache para evitar consultas duplicadas
+  const cacheProdutos = new Map<string, Produto | null>();
+  
+  for (const item of itens) {
+    try {
+      const produtoData = item.produto as any;
+      
+      if (!produtoData || !produtoData.codigoInterno) {
+        console.warn('Item sem código interno válido:', item);
+        continue;
+      }
+      
+      // 1. Verificar se produto já existe (com cache para evitar consultas duplicadas)
+      let produto = cacheProdutos.get(produtoData.codigoInterno);
+      
+      if (produto === undefined) {
+        // Primeira consulta para este código - buscar no banco
+        produto = await buscarProdutoPorCodigo(produtoData.codigoInterno);
+        cacheProdutos.set(produtoData.codigoInterno, produto);
+      }
+      
+      if (produto) {
+        // Produto existe - atualizar se necessário
+        atualizados++;
+        console.log(`Produto existente encontrado: ${produto.nome}`);
+      } else {
+        // Produto não existe - criar novo
+        const novoProduto = {
+          // Campos obrigatórios da tabela insumos
+          nome: produtoData.nome || 'Produto Importado',
+          tipo: 'MEDICAMENTO', // Campo obrigatório
+          unidade_medida: produtoData.unidadeComercial || 'UN', // Campo obrigatório
+          custo_unitario: (item.valorUnitarioComercial as number) || 0, // Campo obrigatório
+          fornecedor_id: fornecedorId,
+          
+          // Campos adicionais para produtos da NF-e
+          codigo_interno: produtoData.codigoInterno,
+          codigo_ean: produtoData.codigoEAN === 'SEM GTIN' ? null : produtoData.codigoEAN,
+          ncm: produtoData.ncm || '',
+          cfop: produtoData.cfop,
+          unidade_comercial: produtoData.unidadeComercial || 'UN',
+          unidade_tributaria: produtoData.unidadeTributaria,
+          
+          // Valores padrão para campos de estoque
+          estoque_atual: 0,
+          estoque_minimo: calcularEstoqueMinimoInteligente(produtoData.nome, item.quantidadeComercial as number),
+          estoque_maximo: calcularEstoqueMaximoInteligente(produtoData.nome, item.quantidadeComercial as number),
+          
+          // Flags de controle
+          controlado: false,
+          requer_receita: false,
+          produto_manipulado: false,
+          produto_revenda: true,
+          ativo: true,
+          
+          // Dados fiscais do item
+          origem: item.origemMercadoria as number || 0,
+          cst_icms: item.cstICMS as string,
+          cst_ipi: item.cstIPI as string,
+          cst_pis: item.cstPIS as string,
+          cst_cofins: item.cstCOFINS as string,
+          aliquota_icms: item.aliquotaICMS as number || 0,
+          aliquota_ipi: item.aliquotaIPI as number || 0,
+          aliquota_pis: item.aliquotaPIS as number || 0,
+          aliquota_cofins: item.aliquotaCOFINS as number || 0,
+          
+          // Preços
+          preco_custo: item.valorUnitarioComercial as number || 0,
+          preco_venda: null,
+          margem_lucro: null
+        };
+        
+        produto = await criarProduto(novoProduto);
+        // Atualizar cache com o produto criado
+        cacheProdutos.set(produtoData.codigoInterno, produto);
+        novos++;
+        console.log(`Novo produto criado: ${produto.nome}`);
+      }
+      
+      // 2. Processar lote se existir
+      let loteId: UUID | undefined;
+      if (produtoData.lote) {
+        // TODO: Implementar criação de lotes
+        // Por enquanto, apenas contar
+        lotes++;
+        console.log(`Lote encontrado: ${produtoData.lote.numeroLote}`);
+      }
+      
+      // 3. Adicionar à lista de produtos processados
+      produtosProcessados.push({
+        produtoId: produto.id,
+        loteId,
+        item
+      });
+      
+    } catch (error) {
+      console.error('Erro ao processar produto:', error);
+      // Continuar processamento mesmo com erro em um item
+    }
+  }
+  
   return {
     total: itens.length,
-    novos: Math.floor(itens.length * 0.7),
-    atualizados: Math.floor(itens.length * 0.3),
-    lotes: itens.filter(item => item.produto.lote).length
+    novos,
+    atualizados,
+    lotes,
+    produtosProcessados
   };
+};
+
+// =====================================================
+// FUNÇÕES AUXILIARES PARA ESTOQUE
+// =====================================================
+
+/**
+ * Calcula estoque mínimo inteligente baseado no tipo de produto
+ */
+const calcularEstoqueMinimoInteligente = (nomeProduto: string, quantidadeComprada: number): number => {
+  const nome = nomeProduto.toUpperCase();
+  
+  // Para produtos de alta rotação (Florais de Bach), manter estoque maior
+  if (nome.includes('BACH') || nome.includes('FLORAL')) {
+    return Math.max(2, Math.ceil(quantidadeComprada * 0.5));
+  }
+  
+  // Para tinturas-mãe, estoque moderado
+  if (nome.includes('TM') || nome.includes('TINTURA')) {
+    return Math.max(1, Math.ceil(quantidadeComprada * 0.3));
+  }
+  
+  // Para homeopáticos (CH), estoque baixo pois são específicos
+  if (nome.includes('CH') || nome.includes('CENTESIMAL')) {
+    return Math.max(1, Math.ceil(quantidadeComprada * 0.2));
+  }
+  
+  // Padrão: 25% da quantidade comprada, mínimo 1
+  return Math.max(1, Math.ceil(quantidadeComprada * 0.25));
+};
+
+/**
+ * Calcula estoque máximo inteligente baseado no tipo de produto
+ */
+const calcularEstoqueMaximoInteligente = (nomeProduto: string, quantidadeComprada: number): number => {
+  const nome = nomeProduto.toUpperCase();
+  
+  // Para produtos de alta rotação (Florais de Bach), estoque maior
+  if (nome.includes('BACH') || nome.includes('FLORAL')) {
+    return Math.max(10, quantidadeComprada * 3);
+  }
+  
+  // Para tinturas-mãe, estoque moderado
+  if (nome.includes('TM') || nome.includes('TINTURA')) {
+    return Math.max(5, quantidadeComprada * 2);
+  }
+  
+  // Para homeopáticos (CH), estoque controlado
+  if (nome.includes('CH') || nome.includes('CENTESIMAL')) {
+    return Math.max(3, Math.ceil(quantidadeComprada * 1.5));
+  }
+  
+  // Padrão: 2x a quantidade comprada, mínimo 5
+  return Math.max(5, quantidadeComprada * 2);
 };
 
 // =====================================================

@@ -1,564 +1,157 @@
-1. Arquitetura de Software Sugerida
-Com base no seu objetivo de um sistema robusto, escalável e comercializável, a arquitetura híbrida que você definiu (Monolito Modular + Microsserviços/Serviços Dedicados para IA) é uma excelente escolha. Ela oferece um bom equilíbrio entre a simplicidade de desenvolvimento inicial do monolito para os módulos de negócio principais e a flexibilidade/escalabilidade dos microsserviços para as funcionalidades mais complexas e intensivas em IA. O frontend desacoplado também é fundamental para a manutenibilidade e evolução independente da interface do usuário.
+# =====================================================
+# VARIÁVEIS DE AMBIENTE - PHARMA.AI
+# Copie este arquivo para .env e configure os valores
+# =====================================================
 
-Principais Componentes e Camadas:
+# =====================================================
+# SUPABASE - CONFIGURAÇÕES DO BANCO DE DADOS
+# =====================================================
 
-Podemos visualizar a arquitetura da seguinte forma:
+# URL do projeto Supabase
+VITE_SUPABASE_URL=https://hjwebmpvaaeogbfqxwub.supabase.co
 
-Camada de Apresentação (Frontend):
+# Chave pública (anon key) do Supabase
+VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqd2VibXB2YWFlb2diZnF4d3ViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc1MjMyNzAsImV4cCI6MjA2MzA5OTI3MH0.4fKNzbMpsetnc2JAhC5SbzwdCiMFkUSSTJxphlIBiuk
+# Chave de serviço (service role) - APENAS PARA DESENVOLVIMENTO
+# NUNCA exponha esta chave no frontend em produção
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhqd2VibXB2YWFlb2diZnF4d3ViIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NzUyMzI3MCwiZXhwIjoyMDYzMDk5MjcwfQ.43Ba329wGkz1C7fPY7odKcdoi21AFb99WDRNHRHF6C4
 
-Portal do Cliente (Web): Interface para clientes enviarem receitas, acompanharem pedidos, FAQs e, futuramente, chatbot.
-Painel Administrativo (Web): Interface para funcionários da farmácia gerenciarem todos os módulos do sistema.
-Tecnologia: React/TypeScript (conforme já implementado com Lovable), Shadcn/ui, Tailwind CSS, React Router DOM, React Query, Zod.
-Camada de Gateway/API:
+# =====================================================
+# CONFIGURAÇÕES DE AMBIENTE
+# =====================================================
 
-API Gateway: Ponto de entrada único para todas as requisições do frontend. Responsável por roteamento, autenticação inicial, e agregação de respostas de diferentes serviços.
-Sugestão: Pode ser implementado com um serviço como Kong, Tyk, ou mesmo uma Supabase Edge Function mais robusta se o número de microsserviços for limitado inicialmente.
-Camada de Aplicação (Backend):
+# Ambiente atual (development, staging, production)
+VITE_APP_ENV=development
 
-Monolito Modular (Backend Principal):
-Responsável pelos módulos de negócio centrais com complexidade moderada.
-Cada módulo (Atendimento, Estoque, Financeiro, Usuários) seria um "módulo" lógico dentro deste monolito, com separação clara de responsabilidades e interfaces bem definidas entre eles.
-Tecnologia: Supabase (PostgreSQL, Authentication, Storage) como BaaS/Backend inicial é uma boa escolha para agilidade. Conforme a complexidade crescer, pode-se considerar um backend dedicado em Node.js (com NestJS ou Express) ou Python (com Django/Flask) para este monolito modular, mantendo o Supabase para banco e autenticação.
-Microsserviços/Serviços Dedicados:
-Serviço de Processamento de Receitas (IA):
-Responsável pelo OCR, NLU/NER para extração de dados de receitas (imagem, PDF, áudio, vídeo).
-Tecnologia: Python (com bibliotecas como Tesseract, OpenCV, spaCy, NLTK, ou serviços de nuvem como Google Vision AI, AWS Textract, Azure Form Recognizer + serviços de NLU). FastAPI ou Flask para a API do serviço.
-Serviço de Orçamentação Inteligente:
-Se a lógica de cálculo de orçamentos se tornar muito complexa e demandar recursos específicos ou atualizações frequentes, pode ser um microsserviço. Inicialmente, pode residir no Monolito Modular ou em Supabase Edge Functions.
-Tecnologia: Se migrado, Python ou Node.js.
-Serviço de Machine Learning (ML):
-Para funcionalidades como previsão de demanda, otimização de compras, segmentação de clientes e detecção de anomalias.
-Tecnologia: Python (com Scikit-learn, TensorFlow, PyTorch). API com FastAPI ou Flask.
-Serviço de Notificações/Automação (se n8n/Make não for suficiente ou precisar de lógica mais complexa):
-Embora o n8n/Make seja planejado para automação, um serviço dedicado pode ser necessário para integrações muito específicas ou fluxos com alta demanda de processamento.
-Camada de Persistência de Dados:
+# URL base da aplicação
+VITE_APP_URL=http://localhost:5173
 
-Banco de Dados Principal (SQL):
-Supabase (PostgreSQL) para dados relacionais (pedidos, clientes, estoque, financeiro, usuários).
-Banco de Dados NoSQL (Opcional):
-Poderia ser usado para armazenar dados não estruturados ou semi-estruturados, como logs de processamento de IA, dados de sessões de chatbot, ou perfis de usuário mais complexos para segmentação.
-Sugestão: MongoDB, Firestore, ou DynamoDB se optar por AWS.
-Armazenamento de Arquivos:
-Supabase Storage para receitas (arquivos originais), imagens de produtos, etc.
-Camada de Integração:
+# Versão da aplicação
+VITE_APP_VERSION=1.0.0
 
-WhatsApp API: Para comunicação via WhatsApp.
-Stripe (Pagamentos): Para processamento de pagamentos.
-n8n/Make: Para automação de fluxos de trabalho.
-Serviços de E-mail (Resend, etc.): Para notificações e comunicações.
-Serviços de Nuvem e Infraestrutura:
+# =====================================================
+# CONFIGURAÇÕES DE API EXTERNA (FUTURO)
+# =====================================================
 
-Plataforma de hospedagem para frontend, backend (monolito e microsserviços), bancos de dados e serviços de IA.
-Serviços de Logging, Monitoramento, CI/CD.
-2. Detalhamento de Funcionalidades Essenciais por Módulo
-Aqui está uma lista de sub-funcionalidades chave, expandindo os requisitos já definidos:
+# API de consulta de CNPJ (ReceitaWS, etc.)
+VITE_CNPJ_API_URL=https://www.receitaws.com.br/v1
 
-Módulo de Atendimento Multicanal e Pedidos:
+# API de consulta de CEP (ViaCEP, etc.)
+VITE_CEP_API_URL=https://viacep.com.br/ws
 
-Submissão de Receitas (já bem detalhado no status):
-Upload de arquivos (JPG, PNG, PDF, DOCX) - Implementado (nova-receita.tsx)
-[IA] Extração de dados de imagem (OCR + NLU/NER).
-[IA] Extração de dados de PDF/DOCX (NLU/NER).
-[IA] Transcrição e interpretação de Áudio (Speech-to-Text + NLU/NER).
-[IA] Análise e interpretação de Vídeo (Áudio e/ou Frames).
-Entrada de Texto Digitado (para farmácia ou cliente).
-Seleção de canal de origem do pedido (WhatsApp, Portal Web, Balcão).
-Revisão e Validação de Receitas (já bem detalhado no status):
-Interface para farmacêutico revisar dados extraídos pela IA - Implementado (PrescriptionReviewForm.tsx).
-Edição de dados do paciente, prescritor e medicamentos.
-Adição/Remoção manual de medicamentos na receita.
-Visualização da imagem/arquivo original da receita.
-Registro do usuário que validou a receita.
-Criação de Pedidos (já bem detalhado no status):
-Criação de um "rascunho de pedido" após validação da receita - Implementado.
-Associação da receita processada ao pedido.
-Gestão e Acompanhamento de Pedidos (já bem detalhado no status):
-Listagem de pedidos com filtros (status, data, cliente, etc.) - Implementado (admin/pedidos/index.tsx).
-Visualização de detalhes do pedido - Implementado (admin/pedidos/detalhes.tsx).
-Alteração de status do pedido (Ex: Aguardando Pagamento, Em Manipulação, Pronto, Enviado, Entregue, Cancelado) - Implementado.
-Registro de histórico de alterações de status do pedido - Implementado.
-Chatbot (Portal Web e WhatsApp):
-Respostas para FAQs (horário de funcionamento, formas de pagamento, etc.).
-Triagem inicial de pedidos (coleta de informações básicas).
-Consulta de status de pedido (integrado ao sistema).
-Encaminhamento para atendente humano.
-Comunicação com Cliente:
-Notificações automáticas de status do pedido (WhatsApp, E-mail, SMS).
-Envio de orçamento para aprovação.
-Canal de comunicação direto (chat dentro do portal, integração WhatsApp).
-Módulo de Orçamentação Inteligente:
+# API de consulta de NCM (futuro)
+VITE_NCM_API_URL=
 
-Cálculo Automático de Orçamento:
-[IA] Interpretação da fórmula (medicamentos, dinamizações, formas farmacêuticas).
-Consulta automática de custos de insumos (matrizes, veículos) e embalagens do estoque.
-Cálculo de mão de obra baseado na forma farmacêutica, dinamização, e/ou tempo estimado.
-Aplicação de margens de lucro configuráveis (global, por produto, por cliente).
-Consideração de impostos e outras taxas.
-Cálculo de descontos (se aplicável, manual ou automático por regras).
-Interface de Orçamentação:
-Visualização detalhada do cálculo (custos, margens).
-Permitir ajustes manuais no orçamento pelo farmacêutico (com justificativa).
-Geração de PDF do orçamento para envio ao cliente.
-Associação do orçamento ao pedido.
-Regras de Negócio Configuráveis:
-Cadastro de custos de manipulação por forma farmacêutica/dinamização.
-Configuração de margens de lucro padrão.
-Regras para descontos.
-Definição de preços mínimos/máximos para determinados produtos/serviços.
-Módulo de Gestão de Estoque Homeopático:
+# =====================================================
+# CONFIGURAÇÕES DE INTEGRAÇÃO IA (FASE 3)
+# =====================================================
 
-Cadastro de Insumos (já bem detalhado no status):
-CRUD de Matrizes, Veículos (álcool, água destilada, etc.), Excipientes - Implementado (InsumoForm.tsx).
-Campos: Nome, Tipo, Unidade de Medida (g, ml, L, Kg), Custo Unitário Médio, Estoque Mínimo/Máximo, Fornecedor Padrão, Código Interno, Observações.
-"Soft delete" implementado.
-Cadastro de Embalagens (já bem detalhado no status):
-CRUD de Embalagens (frascos, potes, rótulos) - Implementado (EmbalagemForm.tsx).
-Campos: Nome, Tipo (vidro âmbar, plástico), Capacidade/Volume, Custo Unitário, Estoque Mínimo/Máximo, Fornecedor Padrão.
-"Soft delete" implementado.
-Gestão de Lotes de Insumos (já bem detalhado no status):
-CRUD de Lotes para cada insumo - Implementado (LoteInsumoForm.tsx).
-Campos: Número do Lote, Data de Fabricação, Data de Validade, Quantidade Entrada, Quantidade Atual, Custo de Aquisição do Lote, Fornecedor do Lote, NF de Entrada (opcional).
-"Soft delete" implementado.
-Controle de Estoque:
-Baixa automática de insumos e embalagens ao confirmar a produção de um pedido.
-Baixa manual (perdas, uso interno, descarte).
-Ajuste de inventário.
-Alertas e Relatórios:
-Alertas de estoque mínimo para insumos e embalagens.
-Alertas de lotes próximos do vencimento.
-Relatório de Posição de Estoque (quantidades, valor).
-Relatório de Movimentação de Estoque (entradas, saídas, ajustes).
-Relatório de Curva ABC de insumos.
-Rastreabilidade:
-Associação de lotes de insumos utilizados em cada fórmula manipulada.
-Módulo de Controle Financeiro:
+# OpenAI API Key (para classificação automática)
+OPENAI_API_KEY=
 
-Gestão de Caixa (Fluxo de Caixa - já bem detalhado no status):
-CRUD de Movimentações de Caixa (entradas e saídas manuais) - Implementado (MovimentacaoCaixaForm.tsx).
-Filtros por período, tipo, categoria - Implementado.
-Cards de resumo (entradas, saídas, saldo) - Implementado.
-Conciliação bancária (importação de extrato OFX/CNAB - Futuro).
-Transferência entre contas (caixa físico, contas bancárias - Futuro).
-Contas a Pagar (já bem detalhado no status):
-CRUD de Contas a Pagar - Implementado (ContaPagarForm.tsx).
-Campos: Descrição, Fornecedor, Data de Emissão, Data de Vencimento, Valor, Categoria Financeira, Status (Pendente, Pago, Vencido).
-"Soft delete" implementado.
-Registro de Pagamento (com baixa automática no caixa) - Implementado.
-Agendamento de pagamentos (lembretes).
-Contas a Receber:
-CRUD de Contas a Receber (geradas a partir de pedidos ou manualmente).
-Campos: Descrição, Cliente, Data de Emissão, Data de Vencimento, Valor, Status (Pendente, Pago, Vencido).
-Registro de Recebimento (com entrada automática no caixa).
-Lembretes de cobrança (manual ou automático).
-Integração com Pedidos (gerar conta a receber ao faturar pedido).
-Categorias Financeiras (já bem detalhado no status):
-CRUD de Categorias (Receita/Despesa) - Implementado (CategoriaFinanceiraForm.tsx).
-"Soft delete" implementado.
-Integração com Meios de Pagamento (Stripe - Planejado):
-Geração de links de pagamento.
-Processamento de pagamentos online (cartão de crédito, PIX).
-Baixa automática de contas a receber após confirmação do pagamento.
-Relatórios Financeiros:
-Demonstrativo de Fluxo de Caixa (DFC).
-Relatório de Contas a Pagar/Receber (por vencimento, por fornecedor/cliente).
-Relatório de Despesas por Categoria.
-Relatório de Receitas por Categoria/Produto.
-Módulo de Gestão de Usuários Internos (já bem detalhado no status):
+# Modelo GPT a ser usado
+OPENAI_MODEL=gpt-4
 
-Login Seguro:
-Autenticação via Supabase Auth - Implementado.
-Autenticação de dois fatores (2FA) - Futuro.
-Cadastro e Gestão de Funcionários:
-CRUD de usuários internos - Implementado (UsuarioInternoForm.tsx).
-Campos: Nome, Email, Cargo/Perfil, Telefone, Senha (hash), Status (Ativo/Inativo).
-Criação no Supabase Auth e na tabela usuarios_internos - Implementado.
-Perfis de Acesso e Permissões:
-Definição de perfis (Farmacêutico, Atendente, Administrador).
-Atribuição de permissões granulares por perfil (Ex: Farmacêutico pode validar receitas, Atendente pode criar pedidos, Administrador pode gerenciar usuários e configurações).
-Controle de acesso baseado em perfil para módulos e funcionalidades.
-Logs de Atividade do Usuário:
-Registro de ações importantes realizadas pelos usuários no sistema (quem alterou o quê e quando).
-Módulo de Automação (via n8n/Make - Planejado):
+# =====================================================
+# CONFIGURAÇÕES DE EMAIL (FUTURO)
+# =====================================================
 
-Notificações:
-Notificações de status de pedido para clientes (WhatsApp, Email).
-Alertas internos para farmacêuticos (nova receita para validação, estoque baixo).
-Lembretes de tarefas pendentes.
-Integrações:
-Sincronização de dados com outras ferramentas (planilhas, CRM, etc., se necessário).
-Relatórios Programados:
-Envio automático de relatórios diários/semanais/mensais.
-Implementação de Machine Learning (ML):
+# Configurações SMTP para envio de emails
+SMTP_HOST=
+SMTP_PORT=587
+SMTP_USER=
+SMTP_PASS=
+SMTP_FROM=noreply@pharma-ai.com
 
-Interpretação de Receitas (NLU/NER):
-Identificação de entidades: nome do medicamento, dinamização, forma farmacêutica, posologia, nome do paciente, nome do prescritor, CRM.
-Classificação da intenção (ex: receita nova, repetição).
-Normalização de termos (ex: "glóbs" para "Glóbulos").
-Previsão de Demanda de Insumos:
-Análise de histórico de vendas e uso de insumos.
-Consideração de sazonalidade e tendências.
-Modelos de séries temporais (ARIMA, Prophet) ou regressão.
-Otimização de Compras:
-Sugestão de quantidades e momentos ideais para compra de insumos, com base na previsão de demanda, prazos de entrega de fornecedores e custos.
-Consideração de descontos por volume.
-Segmentação de Clientes (respeitando LGPD):
-Agrupamento de clientes com base em histórico de compras, frequência, tipos de medicamentos.
-Identificação de clientes VIP.
-Personalização de comunicação e ofertas (com consentimento).
-Modelos de clustering (K-Means, DBSCAN).
-Detecção de Anomalias:
-Pedidos com combinações incomuns de medicamentos ou dosagens.
-Variações bruscas na demanda de um insumo.
-Atividades financeiras suspeitas.
-Modelos de detecção de outliers (Isolation Forest, One-Class SVM).
-Requisitos Não-Funcionais Chave:
+# =====================================================
+# CONFIGURAÇÕES DE STORAGE
+# =====================================================
 
-Escalabilidade: Conforme definido.
-Comercialização: Conforme definido.
-Segurança: Conforme definido.
-Usabilidade (UX/UI): Conforme definido.
-Performance: Conforme definido.
-Auditabilidade: Logs detalhados de todas as operações críticas.
-Manutenibilidade: Código bem documentado, modular e testado.
-Configurabilidade: Permitir que farmácias ajustem aspectos do sistema (margens, formas farmacêuticas, etc.) sem necessidade de código.
-3. Pilha Tecnológica (Stack) Recomendada
-A pilha que você já está utilizando e planejando é bastante moderna e adequada. Vou expandir e sugerir algumas opções:
+# Configurações para upload de arquivos
+VITE_MAX_FILE_SIZE=10485760  # 10MB em bytes
+VITE_ALLOWED_FILE_TYPES=.xml,.pdf,.jpg,.png
 
-Linguagens de Programação:
+# =====================================================
+# CONFIGURAÇÕES DE SEGURANÇA
+# =====================================================
 
-Frontend: TypeScript (com React) - Já em uso.
-Backend (Monolito Modular):
-Inicial: Supabase (PL/pgSQL para funções e RLS) - Já em uso.
-Evolução (se necessário): Node.js (com TypeScript) usando frameworks como NestJS (altamente recomendado pela modularidade, tipagem forte e arquitetura escalável) ou Express.js. Python com Django ou FastAPI também são excelentes opções.
-Microsserviços (IA/ML): Python é a escolha predominante devido ao ecossistema robusto de bibliotecas (Scikit-learn, TensorFlow, PyTorch, spaCy, NLTK, OpenCV).
-Supabase Edge Functions: JavaScript/TypeScript.
-Frameworks:
+# Chave secreta para JWT (se necessário)
+JWT_SECRET=sua-chave-secreta-muito-forte-aqui
 
-Frontend: React - Já em uso.
-UI Components: Shadcn/ui - Já em uso.
-Styling: Tailwind CSS - Já em uso.
-Routing: React Router DOM - Já em uso.
-State Management & Data Fetching: React Query (TanStack Query) - Já em uso.
-Form Validation: Zod (com React Hook Form) - Já em uso.
-Backend (Monolito Modular - se evoluir do Supabase BaaS):
-Node.js: NestJS (preferencial), Express.js.
-Python: FastAPI (moderno, alta performance, tipagem), Django (robusto, full-featured).
-Microsserviços (API):
-Python: FastAPI, Flask.
-Bancos de Dados:
+# Configurações de CORS
+CORS_ORIGIN=http://localhost:5173
 
-SQL (Principal): PostgreSQL (via Supabase) - Já em uso.
-NoSQL (Opcional, para casos específicos):
-MongoDB: Flexível, bom para documentos JSON.
-Redis: Cache, filas, sessões.
-Elasticsearch: Para buscas avançadas e logs, se necessário.
-Serviços de IA:
+# =====================================================
+# CONFIGURAÇÕES DE MONITORAMENTO (FUTURO)
+# =====================================================
 
-OCR:
-Open Source: Tesseract OCR.
-Serviços de Nuvem: Google Cloud Vision AI, AWS Textract, Azure AI Vision (OCR).
-Speech-to-Text:
-Open Source: Vosk, Coqui STT.
-Serviços de Nuvem: Google Cloud Speech-to-Text, AWS Transcribe, Azure AI Speech.
-NLU/NER (Processamento de Linguagem Natural / Reconhecimento de Entidade Nomeada):
-Open Source: spaCy, NLTK, Stanford CoreNLP.
-Modelos Pré-treinados: BERT, GPT (via APIs como OpenAI, Hugging Face Transformers).
-Serviços de Nuvem: Google Cloud Natural Language AI, AWS Comprehend, Azure AI Language.
-Bibliotecas de ML (Python):
-Scikit-learn (para ML clássico).
-TensorFlow, Keras, PyTorch (para Deep Learning).
-Pandas, NumPy (para manipulação de dados).
-XGBoost, LightGBM (para modelos baseados em árvores de gradient boosting).
-Prophet (para previsão de séries temporais).
-Plataformas de Nuvem:
+# Sentry DSN para monitoramento de erros
+VITE_SENTRY_DSN=
 
-AWS (Amazon Web Services): Ampla gama de serviços (EC2, S3, RDS, Lambda, SageMaker para ML, Textract, Comprehend, Lex para chatbots).
-Azure (Microsoft Azure): Similar à AWS (Virtual Machines, Blob Storage, Azure SQL, Azure Functions, Azure ML, Form Recognizer, Azure AI Language).
-GCP (Google Cloud Platform): Similar (Compute Engine, Cloud Storage, Cloud SQL, Cloud Functions, Vertex AI para ML, Vision AI, Natural Language AI, Speech-to-Text, Dialogflow para chatbots).
-Vercel/Netlify: Excelente para deploy de frontend React.
-Supabase: Já em uso para BaaS, pode continuar sendo a base ou ser complementado.
-Ferramentas para n8n e ML:
+# Google Analytics ID
+VITE_GA_ID=
 
-n8n/Make: Conforme planejado, para automação de fluxos.
-MLOps (para gerenciar o ciclo de vida dos modelos de ML):
-MLflow: Open source, para rastreamento de experimentos, empacotamento de modelos e deploy.
-Kubeflow: Para orquestração de pipelines de ML em Kubernetes.
-DVC (Data Version Control): Para versionamento de dados e modelos.
-Serviços de Nuvem: AWS SageMaker, Azure ML, Google Vertex AI Pipelines.
-Jupyter Notebooks/Lab: Para desenvolvimento e experimentação de modelos de ML.
-Docker & Kubernetes: Para containerização e orquestração de microsserviços e modelos de ML.
-Outras Ferramentas:
+# =====================================================
+# CONFIGURAÇÕES DE DESENVOLVIMENTO
+# =====================================================
 
-Controle de Versão: Git (com GitHub/GitLab/Bitbucket).
-CI/CD: GitHub Actions, GitLab CI, Jenkins, CircleCI.
-Monitoramento e Logging: Prometheus, Grafana, ELK Stack (Elasticsearch, Logstash, Kibana), Sentry, Datadog.
-API Gateway: Kong, Tyk, AWS API Gateway, Azure API Management.
-Mensageria (para comunicação assíncrona entre microsserviços): RabbitMQ, Kafka, AWS SQS/SNS, Google Pub/Sub.
-4. Estratégias para Integração de IA e ML
-A integração eficaz de IA/ML requer uma abordagem bem planejada:
+# Habilitar logs detalhados
+VITE_DEBUG=true
 
-Interpretação de Receitas:
+# Habilitar modo de demonstração
+VITE_DEMO_MODE=false
 
-Fluxo de Dados:
-Frontend envia o arquivo (imagem, PDF, etc.) para um endpoint da API Gateway.
-API Gateway encaminha para o Serviço de Processamento de Receitas (IA).
-O serviço de IA executa as seguintes etapas:
-Pré-processamento: Limpeza da imagem, conversão de formato, etc.
-OCR (se imagem/PDF de imagem): Extração do texto bruto.
-Speech-to-Text (se áudio/vídeo): Transcrição do áudio.
-NLU/NER:
-Segmentação de texto (sentenças, tokens).
-Identificação de entidades (medicamentos, dinamizações, formas farmacêuticas, posologia, dados do paciente, dados do prescritor). Utilizar modelos pré-treinados (como BioBERT ou específicos para farmácia, se disponíveis) ou treinar modelos customizados com dados anotados de receitas homeopáticas.
-Normalização dos dados extraídos (ex: "5 gl" para "5 glóbulos", padronização de nomes de medicamentos).
-Extração de relações (ex: qual posologia pertence a qual medicamento).
-O serviço retorna os dados estruturados (JSON) para o backend principal.
-Backend principal salva os dados brutos da IA e os apresenta no PrescriptionReviewForm.tsx para validação humana.
-Feedback Loop para Melhoria Contínua (Importante!):
-Armazenar as correções feitas pelo farmacêutico no PrescriptionReviewForm.tsx.
-Periodicamente, usar esses dados corrigidos para re-treinar ou refinar os modelos de NLU/NER, melhorando a precisão da IA ao longo do tempo.
-Escolha de Modelos:
-OCR: Tesseract (open-source) é um bom ponto de partida. Para maior precisão, especialmente com escrita manual, serviços de nuvem (Google Vision AI, AWS Textract) são mais robustos.
-NLU/NER:
-Começar com bibliotecas como spaCy (eficiente e com modelos pré-treinados em português) ou NLTK.
-Para entidades médicas/farmacêuticas, considerar modelos BERT pré-treinados em domínios biomédicos (ex: BioBERT, PubMedBERT) e ajustá-los (fine-tuning) com dados específicos de homeopatia.
-Hugging Face Transformers facilita o uso desses modelos.
-Speech-to-Text: Serviços de nuvem geralmente oferecem melhor acurácia.
-Previsão de Demanda de Insumos:
+# Dados de teste (usuário demo)
+VITE_DEMO_EMAIL=demo@pharma-ai.com
+VITE_DEMO_PASSWORD=demo123
 
-Coleta de Dados: Histórico de vendas de produtos finais, histórico de uso de insumos por fórmula, datas.
-Engenharia de Features: Criar features como dia da semana, mês, feriados, promoções, histórico de demanda defasado (lagged features).
-Modelos:
-Séries Temporais Clássicas: ARIMA, SARIMA, Holt-Winters (bons para dados com tendências e sazonalidade claras).
-Modelos de Regressão: Linear Regression, Random Forest, Gradient Boosting (XGBoost, LightGBM) se houver features externas relevantes.
-Facebook Prophet: Robusto e fácil de usar para séries temporais com múltiplos padrões sazonais e feriados.
-Redes Neurais Recorrentes (RNNs/LSTMs): Para padrões mais complexos, mas exigem mais dados e expertise.
-Validação: Backtesting (treinar com dados até um ponto no tempo e prever para o futuro, comparando com dados reais).
-Integração: O modelo treinado pode ser exposto via uma API (no Serviço de ML). O sistema de estoque consulta essa API para obter previsões.
-Otimização de Compras:
+# =====================================================
+# CONFIGURAÇÕES DE PERFORMANCE
+# =====================================================
 
-Inputs: Previsão de demanda, custos de insumos, lead time de fornecedores, custos de pedido, custos de armazenagem, descontos por volume.
-Modelos: Algoritmos de otimização (programação linear, programação inteira) ou heurísticas para determinar a quantidade ótima de pedido (EOQ - Economic Order Quantity) e o ponto de ressuprimento (ROP - Reorder Point).
-Integração: O resultado da otimização gera sugestões de compra no módulo de estoque.
-Segmentação de Clientes:
+# Timeout para requisições HTTP (em ms)
+VITE_HTTP_TIMEOUT=30000
 
-Coleta de Dados: Histórico de compras (produtos, frequência, valor), dados demográficos (com consentimento e anonimizados quando possível), interações com a farmácia.
-Engenharia de Features: RFM (Recency, Frequency, Monetary value), tipos de produtos preferidos, etc.
-Modelos:
-K-Means Clustering: Simples e eficaz para encontrar grupos distintos.
-DBSCAN: Bom para encontrar clusters de formas arbitrárias e identificar outliers (clientes atípicos).
-Hierarchical Clustering: Para entender a estrutura hierárquica dos segmentos.
-Interpretação: Analisar as características de cada segmento (ex: "Clientes fiéis de alto valor", "Compradores ocasionais de produtos específicos").
-Integração: Os segmentos podem ser usados para direcionar campanhas de marketing (com consentimento explícito para uso de dados para essa finalidade, conforme LGPD), personalizar recomendações ou ofertas.
-Detecção de Anomalias:
+# Limite de itens por página
+VITE_DEFAULT_PAGE_SIZE=50
 
-Pedidos:
-Features: Combinações de medicamentos, dosagens, quantidades, frequência de pedidos para um mesmo paciente.
-Modelos: Isolation Forest, One-Class SVM, Autoencoders. Regras de negócio também podem ser usadas (ex: dosagem máxima permitida).
-Financeiro:
-Features: Valores de transações, frequência, horários, categorias.
-Modelos: Similar aos de pedidos, ou algoritmos específicos para detecção de fraude se aplicável.
-Integração: Anomalias detectadas geram alertas para revisão manual.
-Abordagens de ML mais adequadas:
+# Intervalo de auto-save (em ms)
+VITE_AUTOSAVE_INTERVAL=30000
 
-Para Interpretação de Receitas: Aprendizado Supervisionado (se tiver dados anotados para treinar modelos customizados de NER) e uso de Modelos Pré-treinados (BERT, GPT) com fine-tuning.
-Para Previsão de Demanda: Modelos de Séries Temporais (Prophet, ARIMA) e Regressão Supervisionada.
-Para Otimização de Compras: Algoritmos de Otimização e Pesquisa Operacional.
-Para Segmentação de Clientes: Aprendizado Não Supervisionado (Clustering).
-Para Detecção de Anomalias: Aprendizado Não Supervisionado (detecção de outliers) ou Semi-supervisionado.
-Como integrar IA/ML efetivamente:
+# =====================================================
+# CONFIGURAÇÕES ESPECÍFICAS DO NEGÓCIO
+# =====================================================
 
-Comece Pequeno e Iterativamente: Implemente um caso de uso de IA por vez, valide e depois expanda. A interpretação de receitas é um ótimo ponto de partida.
-Foco no Valor: Priorize funcionalidades de IA que tragam o maior impacto para o negócio (redução de erros, economia de tempo, aumento de vendas).
-Dados são Cruciais: Garanta a coleta de dados de qualidade. A performance dos modelos de ML depende diretamente da qualidade dos dados de treinamento.
-Human-in-the-Loop: Para tarefas críticas como interpretação de receitas e orçamentação, a IA deve auxiliar o humano, não substituí-lo completamente. A validação farmacêutica é essencial. As correções humanas devem retroalimentar os modelos.
-Monitoramento Contínuo: Monitore a performance dos modelos de IA/ML em produção e retreine-os periodicamente com novos dados para evitar degradação do desempenho (model drift).
-APIs Bem Definidas: Os serviços de IA/ML devem expor APIs claras e bem documentadas para fácil integração com o restante do sistema.
-Escalabilidade da Infraestrutura de IA: Considere o uso de serviços de nuvem para treinamento e inferência de modelos, pois eles oferecem escalabilidade sob demanda.
-Considerações Éticas e LGPD: Especialmente para segmentação de clientes e qualquer uso de dados de pacientes, garanta anonimização/pseudoanonimização sempre que possível e obtenha consentimento explícito para o uso dos dados, respeitando integralmente a LGPD.
-5. Principais Desafios e Pontos de Atenção
-Desafios Técnicos:
+# CNPJ da farmácia (para validações)
+VITE_FARMACIA_CNPJ=
 
-Complexidade da Interpretação de Receitas Homeopáticas: A caligrafia variada, abreviações específicas da homeopatia, diferentes nomenclaturas para medicamentos (científico, popular), e a complexidade das dinamizações e formas farmacêuticas representam um desafio significativo para OCR e NLU.
-Qualidade dos Dados para Treinamento de IA: Obter um volume suficiente de receitas homeopáticas anotadas e de boa qualidade para treinar modelos de IA customizados pode ser difícil e demorado.
-Integração de Múltiplos Serviços: Gerenciar a comunicação e a consistência de dados entre o monolito modular e os diversos microsserviços (IA, pagamentos, etc.) pode ser complexo.
-Escalabilidade dos Serviços de IA: Modelos de ML, especialmente os baseados em deep learning, podem exigir recursos computacionais significativos para inferência em tempo real.
-Manutenção dos Modelos de ML: Modelos de ML podem degradar com o tempo (model drift) e precisam ser monitorados e retreinados periodicamente.
-Precisão Inicial da IA: A IA pode não ser 100% precisa inicialmente, exigindo um forte componente de validação humana e um ciclo de feedback para melhoria contínua.
-Regulatórios:
+# Razão social da farmácia
+VITE_FARMACIA_RAZAO_SOCIAL=
 
-LGPD (Lei Geral de Proteção de Dados): O sistema lidará com dados sensíveis de pacientes (receitas, histórico de saúde). É crucial garantir:
-Consentimento explícito para coleta e processamento de dados.
-Anonimização/pseudoanonimização sempre que possível.
-Segurança robusta para prevenir vazamentos.
-Direito de acesso, correção e exclusão de dados pelos titulares.
-Políticas claras de privacidade e termos de uso.
-ANVISA e Conselho Federal de Farmácia (CFF):
-Validade de Receitas Digitais: Verificar as normativas atuais sobre a validade de receitas enviadas por foto, PDF, áudio, especialmente para controle especial (se aplicável à homeopatia, embora menos comum).
-Boas Práticas de Manipulação: Embora o sistema auxilie na gestão, ele deve estar alinhado com as boas práticas de manipulação farmacêutica.
-Rastreabilidade de Lotes: O sistema deve garantir a rastreabilidade completa dos insumos utilizados em cada fórmula.
-Validação Farmacêutica: O sistema não substitui a responsabilidade técnica do farmacêutico. A validação final da receita e do processo de manipulação deve ser sempre do profissional.
-Assinatura Digital (se aplicável): Se o sistema evoluir para prescrições eletrônicas com validade jurídica, a integração com padrões de assinatura digital (ICPBrasil) será necessária.
-De Negócio:
+# Endereço da farmácia
+VITE_FARMACIA_ENDERECO=
 
-Adoção pelos Usuários (Farmacêuticos e Atendentes): A interface deve ser intuitiva e o sistema deve demonstrar claramente os benefícios para facilitar a transição de processos manuais ou sistemas legados. Treinamento adequado será essencial.
-Concorrência: Mapear outros softwares existentes para farmácias de manipulação e destacar os diferenciais do Homeo-AI, especialmente a integração com IA.
-Custo de Desenvolvimento e Manutenção: Desenvolver e manter um sistema com IA pode ter custos elevados. É preciso um plano de negócios sustentável.
-Modelo de Comercialização: Definir um modelo de precificação (licença única, assinatura mensal/anual, por volume de pedidos) que seja atraente para as farmácias e rentável para o negócio.
-Resistência à Mudança: Alguns profissionais podem ser resistentes à adoção de novas tecnologias, especialmente aquelas envolvendo IA.
-Usabilidade (UX/UI):
+# Telefone da farmácia
+VITE_FARMACIA_TELEFONE=
 
-Interface Intuitiva para Clientes: O processo de envio de receitas e acompanhamento de pedidos deve ser simples e claro para clientes de diferentes níveis de familiaridade com tecnologia.
-Eficiência para Funcionários: O painel administrativo deve otimizar os fluxos de trabalho dos farmacêuticos e atendentes, reduzindo cliques e tempo gasto em tarefas repetitivas.
-Feedback Claro do Sistema: Informar o usuário sobre o que está acontecendo (carregamentos, erros, sucessos) de forma clara e imediata (conforme já implementado com toasts).
-Acessibilidade: Garantir que o sistema seja acessível para pessoas com deficiência.
-6. Fases de Desenvolvimento Sugeridas
-A abordagem faseada que você delineou é muito boa. Vou refinar e adicionar alguns detalhes:
+# Email da farmácia
+VITE_FARMACIA_EMAIL=
 
-MVP (Produto Mínimo Viável) - Foco na Validação da Receita e Pedido Básico:
+# =====================================================
+# CONFIGURAÇÕES DE BACKUP (FUTURO)
+# =====================================================
 
-O MVP deve focar em resolver o principal problema: agilizar e dar mais segurança ao processo de entrada e validação de receitas, e criar um pedido inicial.
+# Configurações para backup automático
+BACKUP_ENABLED=false
+BACKUP_FREQUENCY=daily
+BACKUP_RETENTION_DAYS=30
 
-Módulo de Atendimento e Gestão de Pedidos (Núcleo do MVP):
-Entrada de Receitas (Upload de Imagem/PDF): Interface funcional para upload (JPG, PNG, PDF) - Já implementado (nova-receita.tsx).
-Serviço de IA (Simulado ou Real Simplificado para o MVP):
-Opção A (IA Real Simplificada - Ideal): Implementar um OCR básico (Tesseract) e um extrator de entidades simples (regex ou spaCy com poucas regras) para os campos mais críticos (nome do paciente, um medicamento principal, nome do prescritor). O objetivo aqui é ter algo que a IA preencha, mesmo que precise de muita correção.
-Opção B (IA Simulada - se o tempo for crítico): Ter um botão "Processar com IA" que preenche o formulário de revisão com dados mockados, como está atualmente, mas com a estrutura de dados que a IA real retornaria.
-Formulário de Revisão e Validação de Receita: Completo para exibir e permitir a edição dos dados (paciente, prescritor, medicamentos). Deve permitir adicionar/remover medicamentos manualmente. Já implementado (PrescriptionReviewForm.tsx), conectar à IA (Opção A ou B).
-Criação de "Rascunho de Pedido": Lógica para criar um registro de "pedido" com status inicial (ex: "Aguardando Orçamento") na tabela pedidos após a validação da receita pelo usuário. Vincular à receitas_processadas. Já implementado.
-Listagem de Pedidos Simples: Exibir os pedidos criados com informações básicas (paciente, data, status da receita) - Já implementado (admin/pedidos/index.tsx).
-Detalhes do Pedido Simples: Exibir informações da receita processada e do pedido associado - Já implementado (admin/pedidos/detalhes.tsx).
-Módulo de Gestão de Usuários Internos (Básico):
-Login/Logout para funcionários - Já implementado.
-Cadastro manual de usuários pelo administrador (sem criação no Supabase Auth para o MVP, apenas na tabela usuarios_internos se o foco for na funcionalidade de pedido). Se a autenticação for essencial desde o início, manter a implementação atual.
-Estrutura Geral e Funcionalidades Comuns:
-Layout Administrativo - Já implementado.
-Autenticação (se mantida no MVP) - Já implementado.
-FASE 1: Lógica de Orçamentação e Integração com Estoque (Pós-MVP)
+# =====================================================
+# NOTAS IMPORTANTES
+# =====================================================
 
-Conforme você já identificou, esta é uma prioridade após o MVP e depende dos requisitos da cliente.
-
-Coletar e Documentar Detalhadamente a Lógica de Cálculo de Orçamentação Homeopática.
-Módulo de Gestão de Estoque Homeopático (CRUDs Essenciais):
-CRUD completo para Insumos (Matrizes, Veículos) - Já implementado.
-CRUD completo para Embalagens - Já implementado.
-(Opcional para esta fase, mas útil) CRUD para Lotes de Insumos (sem baixa automática ainda, apenas cadastro) - Já implementado.
-Módulo de Orçamentação Inteligente (Implementação Inicial):
-Modelar/Ajustar Tabelas Supabase (Ex: formas_farmaceuticas_custos, dinamizacoes_fatores, pedidos com valor_orcado, itens_pedido).
-Implementar Lógica de Cálculo (Supabase Edge Functions ou no backend monolítico).
-Permitir seleção manual de insumos por fórmula (se a IA ainda não fizer isso).
-Cálculo baseado nos custos de insumos e embalagens cadastrados.
-Adição de custos de manipulação (inicialmente, pode ser um valor fixo ou selecionável).
-Aplicação de margens.
-Integrar Orçamentação na Interface (página de detalhes do pedido):
-Botão "Gerar Orçamento".
-Exibição do orçamento detalhado.
-Permitir edição do orçamento pelo farmacêutico.
-Salvar o orçamento no pedido.
-Módulo de Atendimento e Gestão de Pedidos (Evolução):
-Funcionalidade de Alteração de Status do Pedido (para incluir status como "Orçamento Enviado", "Aguardando Aprovação") - Já implementado, adaptar status.
-Registro de Histórico de Status - Já implementado.
-FASE 2: Integração Real da Inteligência Artificial (Processamento de Receitas)
-
-Aqui entra o desenvolvimento robusto do serviço de IA.
-
-Serviço de IA (Processamento de Receitas):
-Definir/Desenvolver/Integrar o Serviço de IA real (OCR + NLU/NER).
-Criar o microsserviço/endpoint de IA.
-Retorno de dados estruturados (medicamentos, dinamizações, formas, posologias, paciente, prescritor).
-Frontend:
-Conectar nova-receita.tsx ao serviço de IA real.
-Popular PrescriptionReviewForm.tsx com dados da IA.
-Implementar tratamento de erros e feedback do processamento da IA.
-Backend:
-Armazenar os dados brutos da IA e os dados validados pelo farmacêutico (para futuro re-treinamento).
-FASE 3: Funcionalidades Adicionais e Refinamentos
-
-Esta fase pode ser trabalhada em paralelo ou após as fases principais, com priorização baseada no feedback da cliente e estratégia de negócio.
-
-Completar Módulo Financeiro:
-Contas a Receber (CRUD, vinculação com pedidos).
-Integração com Meios de Pagamento (Stripe).
-Aprimoramentos no Dashboard Financeiro.
-Aprimoramentos no Módulo de Estoque:
-Baixa automática de insumos/embalagens na produção.
-Alertas de estoque mínimo/lotes a vencer.
-Relatórios de estoque.
-Aprimoramentos no Módulo de Atendimento:
-Melhorias na interface de acompanhamento de pedidos.
-Chatbot (MVP inicial com FAQs).
-Notificações automáticas de status de pedido (via n8n/Make ou serviço dedicado).
-Módulo de Gestão de Usuários (Avançado):
-Permissões mais granulares.
-Supabase Edge Functions para gestão avançada (alteração de email/senha por admin).
-Módulo de Relatórios Básicos:
-Relatórios de Pedidos, Movimentações de Caixa, Posição de Estoque (exportáveis).
-Machine Learning (Início - mais a longo prazo, após coleta de dados):
-Começar com a Previsão de Demanda de Insumos (requer histórico de dados).
-Implementar o ciclo de feedback para o modelo de interpretação de receitas.
-Evolução a partir do MVP:
-
-Coletar Feedback Intensivamente: O feedback dos primeiros usuários (a cliente inicial) será crucial para priorizar as próximas funcionalidades.
-Fortalecer o Core: Garantir que os módulos de Pedidos, Orçamentação e Estoque estejam robustos e bem integrados.
-Aprimorar a IA: Melhorar continuamente a precisão da interpretação de receitas com base no feedback e novos dados.
-Expandir Funcionalidades: Adicionar gradualmente os módulos e funcionalidades da Fase 3, começando pelos que agregam mais valor ou são mais solicitados.
-Foco na Comercialização: Desde cedo, pensar em como o sistema será "empacotado" para outras farmácias (configurações, temas, etc.).
-Investir em ML: Conforme o volume de dados cresce, implementar os modelos de ML mais avançados (otimização de compras, segmentação, detecção de anomalias).
-Automação: Expandir o uso do n8n/Make para automatizar mais processos.
-7. Considerações para Comercialização do Sistema
-Para que o sistema seja vendável a outras farmácias, alguns aspectos de design e desenvolvimento são fundamentais:
-
-Modularidade (Já Considerado na Arquitetura):
-Componentes Independentes: A arquitetura de microsserviços para IA e, potencialmente, para outros módulos complexos, facilita a oferta de diferentes "pacotes" ou funcionalidades opcionais.
-APIs Claras: Interfaces bem definidas entre os módulos permitem que novas funcionalidades sejam adicionadas ou que módulos existentes sejam substituídos/customizados com menor impacto no restante do sistema.
-Customização e Configurabilidade:
-Configurações por Farmácia (Tenant): O sistema deve ser multi-tenant, onde cada farmácia (cliente do software) tenha seus dados e configurações isolados.
-Parâmetros de cálculo de orçamento (margens, custos de mão de obra específicos).
-Formas farmacêuticas e dinamizações mais utilizadas.
-Modelos de etiquetas e relatórios.
-Permissões de usuário personalizáveis.
-Integrações específicas (ex: sistema contábil local).
-Temas/Branding: Permitir uma customização básica da interface (logo da farmácia, cores principais) para que o sistema pareça mais integrado à identidade visual do cliente.
-Campos Customizáveis (Opcional Avançado): Para alguns cadastros (clientes, produtos), permitir que a farmácia adicione campos específicos que necessite.
-Escalabilidade e Performance:
-O sistema deve ser capaz de lidar com o crescimento de cada farmácia cliente (volume de pedidos, usuários) sem degradação de performance.
-A arquitetura de nuvem deve permitir escalar recursos horizontal e verticalmente.
-Facilidade de Implantação e Onboarding:
-Processo de setup simplificado para novas farmácias.
-Ferramentas de importação de dados existentes (ex: cadastro de clientes, insumos de planilhas).
-Documentação clara e tutoriais para usuários.
-Segurança Multi-Tenant:
-Garantir isolamento total dos dados de cada farmácia cliente.
-Controles de acesso robustos para evitar que um cliente acesse dados de outro.
-Manutenção e Atualizações:
-Capacidade de aplicar atualizações de forma centralizada e com mínimo impacto para os clientes.
-Versionamento de APIs para evitar quebras de compatibilidade.
-Integrações:
-Design que facilite a integração com outros sistemas que as farmácias possam utilizar (ERPs, sistemas contábeis, plataformas de e-commerce, etc.) através de APIs.
-Documentação Técnica e de Usuário:
-Documentação completa para desenvolvedores (se planeja abrir para customizações por terceiros) e para usuários finais.
-Modelos de Licenciamento/Subscrição:
-
-Software as a Service (SaaS) - Modelo mais comum e recomendado:
-Assinatura Mensal/Anual:
-Por Usuário: Custo por funcionário cadastrado no sistema.
-Por Volume: Baseado no número de pedidos processados, volume de receitas, ou tamanho do estoque.
-Por Funcionalidades (Tiers/Planos):
-Plano Básico: Funcionalidades essenciais (Pedidos, Estoque básico, Financeiro básico, sem IA avançada).
-Plano Profissional: Todas as funcionalidades do básico + IA para receitas, Orçamentação completa, Automações.
-Plano Premium/Enterprise: Todas as funcionalidades + ML avançado (previsão, otimização), Suporte prioritário, Customizações.
-Vantagens: Receita recorrente, facilidade de atualização, menor custo inicial para o cliente.
-Licença Perpétua (Menos Comum para Sistemas Modernos):
-Custo único pela licença do software.
-Pode incluir um contrato de manutenção/suporte anual separado.
-Desvantagens: Maior custo inicial para o cliente, mais complexo para gerenciar atualizações, fluxo de caixa menos previsível para você.
-Modelo Híbrido:
-Uma taxa de setup inicial + assinatura mensal.
-Add-ons/Módulos Opcionais:
-Funcionalidades específicas (ex: integração avançada com e-commerce, módulo de marketing) podem ser vendidas como add-ons à assinatura principal.
-Considerações Adicionais para Comercialização:
-
-Demonstrações Eficazes: Ter um ambiente de demonstração robusto e a capacidade de realizar apresentações personalizadas para as necessidades de cada farmácia.
-Material de Marketing: Website, folhetos, estudos de caso (quando tiver).
-Suporte ao Cliente: Estruturar um bom sistema de suporte (FAQ, chat, telefone, tickets) é crucial para a retenção de clientes.
-Contrato de Prestação de Serviços (SLA): Definir claramente os níveis de serviço, uptime, responsabilidades, etc.
+# 1. Nunca commite o arquivo .env no Git
+# 2. Use VITE_ apenas para variáveis que devem ser expostas no frontend
+# 3. Variáveis sem VITE_ são apenas para o backend/build
+# 4. Em produção, configure estas variáveis no seu provedor de hosting
+# 5. Mantenha as chaves secretas seguras e rotacione-as regularmente 

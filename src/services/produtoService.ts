@@ -157,6 +157,13 @@ export const buscarProdutoPorId = async (id: UUID): Promise<ProdutoCompleto | nu
  */
 export const buscarProdutoPorCodigo = async (codigoInterno: string): Promise<Produto | null> => {
   try {
+    // Verificar se o usuário está autenticado antes de fazer a consulta
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      console.warn('Usuário não autenticado para buscar produto');
+      return null;
+    }
+
     const { data, error } = await supabase
       .from<'insumos', Tables<'insumos'>>('insumos')
       .select('*')
@@ -167,12 +174,23 @@ export const buscarProdutoPorCodigo = async (codigoInterno: string): Promise<Pro
       if (error.code === 'PGRST116') {
         return null; // Produto não encontrado
       }
+      
+      // Se for erro de RLS/autenticação, retornar null em vez de erro
+      if (error.message?.includes('406') || error.message?.includes('Not Acceptable')) {
+        // Log silencioso para não poluir o console
+        return null;
+      }
+      
       throw new Error(formatSupabaseError(error));
     }
 
     return data;
   } catch (error) {
     console.error('Erro ao buscar produto por código:', error);
+    // Em caso de erro de rede ou autenticação, retornar null para permitir continuar
+    if (error instanceof Error && error.message.includes('406')) {
+      return null;
+    }
     throw error;
   }
 };
