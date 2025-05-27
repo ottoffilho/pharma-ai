@@ -9,6 +9,9 @@
   :root {
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
+    
+    --sidebar-width: 16rem;
+    --sidebar-collapsed-width: 6rem;
 
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
@@ -86,6 +89,10 @@
 @layer components {
   .container-section {
     @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24;
+  }
+  
+  .container-fluid {
+    @apply w-full max-w-none px-0 mx-0;
   }
 
   .heading-xl {

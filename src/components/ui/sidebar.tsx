@@ -2,6 +2,7 @@ import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { VariantProps, cva } from "class-variance-authority"
 import { PanelLeft } from "lucide-react"
+import { Link } from "react-router-dom"
 
 import { useIsMobile } from "@/hooks/use-mobile"
 import { cn } from "@/lib/utils"
@@ -733,6 +734,98 @@ const SidebarMenuSubButton = React.forwardRef<
 })
 SidebarMenuSubButton.displayName = "SidebarMenuSubButton"
 
+// Novo componente para corrigir o problema do dropdown
+interface SidebarDropdownProps {
+  icon?: React.ReactNode
+  label: string | React.ReactNode
+  children: React.ReactNode
+  isActive?: boolean
+  defaultOpen?: boolean
+  className?: string
+  size?: "default" | "sm" | "lg"
+  variant?: "default" | "outline"
+  href?: string
+}
+
+const SidebarDropdown = React.forwardRef<
+  HTMLDivElement,
+  SidebarDropdownProps
+>(({
+  icon,
+  label,
+  children,
+  isActive = false,
+  defaultOpen = false,
+  className,
+  size = "default",
+  variant = "default",
+  href,
+  ...props
+}, ref) => {
+  const [isOpen, setIsOpen] = React.useState(defaultOpen || isActive);
+  
+  const handleToggle = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsOpen(!isOpen);
+  };
+  
+  return (
+    <SidebarMenuItem ref={ref} className={className} {...props}>
+      <div className="relative flex items-center w-full">
+        {/* Link principal que ocupa a maior parte do espaço */}
+        {href ? (
+          <Link 
+            to={href}
+            className="flex-1 flex items-center gap-2 p-2 rounded-md hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
+          >
+            {icon}
+            {label && <span className="truncate">{label}</span>}
+          </Link>
+        ) : (
+          <button
+            onClick={handleToggle}
+            className="flex-1 flex items-center gap-2 p-2 rounded-md hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors text-left"
+          >
+            {icon}
+            {label && <span className="truncate">{label}</span>}
+          </button>
+        )}
+        
+        {/* Botão de toggle do dropdown */}
+        <button
+          onClick={handleToggle}
+          className="p-2 rounded-md hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
+          aria-label={isOpen ? "Fechar submenu" : "Abrir submenu"}
+        >
+          <svg 
+            className={`size-4 shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+            xmlns="http://www.w3.org/2000/svg" 
+            width="24" 
+            height="24" 
+            viewBox="0 0 24 24" 
+            fill="none" 
+            stroke="currentColor" 
+            strokeWidth="2" 
+            strokeLinecap="round" 
+            strokeLinejoin="round"
+          >
+            <path d="m6 9 6 6 6-6"/>
+          </svg>
+        </button>
+      </div>
+      
+      {/* Submenu com animação */}
+      {isOpen && (
+        <SidebarMenuSub className="mt-1">
+          {children}
+        </SidebarMenuSub>
+      )}
+    </SidebarMenuItem>
+  );
+});
+SidebarDropdown.displayName = "SidebarDropdown";
+
 export {
   Sidebar,
   SidebarContent,
@@ -757,5 +850,6 @@ export {
   SidebarRail,
   SidebarSeparator,
   SidebarTrigger,
+  SidebarDropdown,
   useSidebar,
 }
