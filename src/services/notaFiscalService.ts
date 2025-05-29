@@ -5,7 +5,9 @@
 
 import supabase, { TABLES, formatSupabaseError, uploadFile, STORAGE_BUCKETS } from './supabase';
 import { FornecedorService } from './fornecedorService';
-import { buscarProdutoPorCodigo, criarProduto, atualizarEstoqueProduto } from './produtoService';
+import { buscarProdutoPorCodigo, atualizarEstoqueProduto } from './produtoService';
+import { MarkupService } from './markupService';
+import { loteService } from './loteService';
 import type {
   NotaFiscal,
   NotaFiscalCompleta,
@@ -168,49 +170,31 @@ export const buscarNotaFiscalPorId = async (id: UUID): Promise<NotaFiscalComplet
  */
 export const buscarNotaFiscalPorChave = async (chaveAcesso: string): Promise<NotaFiscal | null> => {
   try {
-    // Verificar se o usuário está autenticado antes de fazer a consulta
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      console.warn('Usuário não autenticado para buscar nota fiscal');
-      return null;
-    }
+    console.log('🔍 Buscando nota fiscal por chave:', chaveAcesso);
 
     const { data, error } = await supabase
       .from(TABLES.NOTA_FISCAL)
       .select('*')
       .eq('chave_acesso', chaveAcesso)
-      .single();
+      .maybeSingle();
 
     if (error) {
-      if (error.code === 'PGRST116') {
-        return null; // Nota fiscal não encontrada
-      }
-      
-      // Log detalhado para debug
-      console.error('Erro detalhado na busca por chave:', {
-        code: error.code,
-        message: error.message,
-        details: error.details,
-        hint: error.hint
-      });
-      
-      // Se for erro de RLS/autenticação, retornar null em vez de erro
-      if (error.message?.includes('406') || error.message?.includes('Not Acceptable')) {
-        // Log silencioso para não poluir o console
-        return null;
-      }
-      
-      throw new Error(formatSupabaseError(error));
+      console.error('❌ Erro ao buscar nota fiscal por chave:', error);
+      // Em caso de erro, retornar null para permitir continuar
+      return null;
+    }
+
+    if (data) {
+      console.log('✅ Nota fiscal encontrada:', data.numero_nf);
+    } else {
+      console.log('ℹ️ Nota fiscal não encontrada');
     }
 
     return data;
   } catch (error) {
-    console.error('Erro ao buscar nota fiscal por chave:', error);
-    // Em caso de erro de rede ou autenticação, retornar null para permitir continuar
-    if (error instanceof Error && error.message.includes('406')) {
-      return null;
-    }
-    throw error;
+    console.error('❌ Erro no serviço de busca por chave:', error);
+    // Em caso de erro, retornar null para permitir continuar
+    return null;
   }
 };
 
@@ -348,42 +332,70 @@ export const importarXMLNotaFiscal = async (
   };
 
   try {
+    console.log('🚀 Iniciando importação do XML:', arquivo.name);
+    
     // 0. Verificar se o usuário está autenticado
+    console.log('🔐 Verificando autenticação...');
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
+      console.error('❌ Usuário não autenticado');
       resultado.erros.push('Usuário não autenticado. Faça login para importar notas fiscais.');
       return resultado;
     }
+    console.log('✅ Usuário autenticado');
 
     // 1. Upload do arquivo XML para storage
+    console.log('📤 Fazendo upload do arquivo...');
     const nomeArquivo = `${Date.now()}_${arquivo.name}`;
     const caminhoArquivo = `uploads/${nomeArquivo}`;
     
     await uploadFile(STORAGE_BUCKETS.NF_XML, caminhoArquivo, arquivo);
+    console.log('✅ Upload concluído');
 
     // 2. Ler e processar o XML
+    console.log('📄 Lendo e processando XML...');
     const xmlText = await arquivo.text();
+    console.log('📄 XML lido, tamanho:', xmlText.length, 'caracteres');
+    
     const dadosNFe = await processarXMLNFe(xmlText);
+    console.log('✅ XML processado:', {
+      chave: dadosNFe.chaveAcesso,
+      numero: dadosNFe.numeroNF,
+      itens: dadosNFe.itens?.length || 0
+    });
 
     // 3. Verificar se nota já existe
+    console.log('🔍 Verificando se nota já existe...');
     const notaExistente = await buscarNotaFiscalPorChave(dadosNFe.chaveAcesso);
     if (notaExistente) {
+      console.warn('⚠️ Nota fiscal já existe');
       resultado.erros.push(`Nota fiscal ${dadosNFe.numeroNF} já foi importada anteriormente`);
       return resultado;
     }
+    console.log('✅ Nota fiscal é nova');
 
     // 4. Importar/atualizar fornecedor
+    console.log('🏢 Importando fornecedor...');
     const fornecedorId = await importarFornecedorDoXML(dadosNFe.fornecedor);
     resultado.fornecedor_id = fornecedorId;
+    console.log('✅ Fornecedor processado:', fornecedorId);
 
     // 5. Processar produtos e lotes
+    console.log('📦 Processando produtos...');
     const produtosProcessados = await processarProdutosDoXML(dadosNFe.itens, fornecedorId);
     resultado.produtos_importados = produtosProcessados.total;
     resultado.produtos_novos = produtosProcessados.novos;
     resultado.produtos_atualizados = produtosProcessados.atualizados;
     resultado.lotes_criados = produtosProcessados.lotes;
+    console.log('✅ Produtos processados:', {
+      total: produtosProcessados.total,
+      novos: produtosProcessados.novos,
+      atualizados: produtosProcessados.atualizados,
+      lotes: produtosProcessados.lotes
+    });
 
     // 6. Criar nota fiscal
+    console.log('📋 Criando nota fiscal...');
     const notaFiscal = await criarNotaFiscal({
       chave_acesso: dadosNFe.chaveAcesso,
       numero_nf: dadosNFe.numeroNF,
@@ -407,12 +419,18 @@ export const importarXMLNotaFiscal = async (
     });
 
     resultado.nota_fiscal_id = notaFiscal.id;
+    console.log('✅ Nota fiscal criada:', notaFiscal.id);
 
     // 7. Criar itens da nota fiscal e atualizar estoque
+    console.log('📝 Criando itens da nota fiscal...');
     const produtosProcessadosArray = produtosProcessados.produtosProcessados as { produtoId: UUID; loteId?: UUID; item: Record<string, unknown> }[];
     
-    for (const produtoProcessado of produtosProcessadosArray) {
+    for (let i = 0; i < produtosProcessadosArray.length; i++) {
+      const produtoProcessado = produtosProcessadosArray[i];
+      console.log(`📝 Processando item ${i + 1}/${produtosProcessadosArray.length}...`);
+      
       try {
+        const produtoProcessado = produtosProcessadosArray[i];
         const item = produtoProcessado.item;
         
         // 7.1. Criar item da nota fiscal
@@ -449,17 +467,19 @@ export const importarXMLNotaFiscal = async (
         const quantidadeEntrada = item.quantidadeComercial as number;
         await atualizarEstoqueProduto(produtoProcessado.produtoId, quantidadeEntrada, 'entrada');
         
+        console.log(`✅ Item ${i + 1} processado com sucesso`);
       } catch (error) {
-        console.error('Erro ao criar item da nota fiscal:', error);
+        console.error(`❌ Erro ao criar item ${i + 1}:`, error);
         resultado.erros.push(`Erro ao criar item: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
       }
     }
 
+    console.log('🎉 Importação concluída com sucesso!');
     resultado.sucesso = true;
     return resultado;
 
   } catch (error) {
-    console.error('Erro na importação do XML:', error);
+    console.error('💥 Erro na importação do XML:', error);
     resultado.erros.push(error instanceof Error ? error.message : 'Erro desconhecido');
     return resultado;
   }
@@ -712,6 +732,8 @@ const importarFornecedorDoXML = async (dadosFornecedor: Record<string, unknown>)
  * Processa produtos do XML e retorna estatísticas
  */
 const processarProdutosDoXML = async (itens: Record<string, unknown>[], fornecedorId: UUID): Promise<Record<string, unknown>> => {
+  console.log('📦 Iniciando processamento de produtos. Total de itens:', itens.length);
+  
   let novos = 0;
   let atualizados = 0;
   let lotes = 0;
@@ -720,36 +742,93 @@ const processarProdutosDoXML = async (itens: Record<string, unknown>[], forneced
   // Cache para evitar consultas duplicadas
   const cacheProdutos = new Map<string, Produto | null>();
   
-  for (const item of itens) {
+  for (let index = 0; index < itens.length; index++) {
+    const item = itens[index];
+    console.log(`📦 Processando produto ${index + 1}/${itens.length}...`);
+    
     try {
-      const produtoData = item.produto as any;
+      const produtoData = item.produto as {
+        codigoInterno: string;
+        nome: string;
+        ncm?: string;
+        codigoEAN?: string;
+        cfop?: string;
+        unidadeComercial?: string;
+        unidadeTributaria?: string;
+        origem?: number;
+        cstIcms?: string;
+        cstIpi?: string;
+        cstPis?: string;
+        cstCofins?: string;
+        aliquotaIcms?: number;
+        aliquotaIpi?: number;
+        aliquotaPis?: number;
+        aliquotaCofins?: number;
+        lote?: {
+          numeroLote: string;
+          dataValidade?: string;
+          quantidade?: number;
+        };
+      };
       
       if (!produtoData || !produtoData.codigoInterno) {
-        console.warn('Item sem código interno válido:', item);
+        console.warn('⚠️ Item sem código interno válido:', item);
         continue;
       }
+      
+      console.log(`🔍 Buscando produto com código: ${produtoData.codigoInterno}`);
       
       // 1. Verificar se produto já existe (com cache para evitar consultas duplicadas)
       let produto = cacheProdutos.get(produtoData.codigoInterno);
       
       if (produto === undefined) {
+        console.log('🔍 Produto não está no cache, buscando no banco...');
         // Primeira consulta para este código - buscar no banco
         produto = await buscarProdutoPorCodigo(produtoData.codigoInterno);
         cacheProdutos.set(produtoData.codigoInterno, produto);
+        console.log('✅ Busca no banco concluída');
+      } else {
+        console.log('✅ Produto encontrado no cache');
       }
       
       if (produto) {
         // Produto existe - atualizar se necessário
         atualizados++;
-        console.log(`Produto existente encontrado: ${produto.nome}`);
+        console.log(`✅ Produto existente encontrado: ${produto.nome}`);
       } else {
+        console.log('🆕 Produto não existe, criando novo...');
+        
         // Produto não existe - criar novo
+        const custoProduto = (item.valorUnitarioComercial as number) || 0;
+        console.log(`💰 Custo do produto: ${custoProduto}`);
+        
+        // Determinar categoria para markup baseado no tipo de produto
+        let categoria = 'medicamentos'; // padrão
+        const nomeProduto = (produtoData.nome || '').toUpperCase();
+        
+        if (nomeProduto.includes('FRASCO') || nomeProduto.includes('POTE') || nomeProduto.includes('EMBALAGEM')) {
+          categoria = 'embalagens';
+        } else if (nomeProduto.includes('INSUMO') || nomeProduto.includes('VEÍCULO') || nomeProduto.includes('EXCIPIENTE')) {
+          categoria = 'insumos';
+        }
+        
+        console.log(`📊 Categoria determinada: ${categoria}`);
+        console.log('💹 Calculando markup...');
+        
+        // Calcular markup automático
+        const markupService = new MarkupService();
+        const markupCalculado = await markupService.calcularMarkup(custoProduto, categoria);
+        
+        console.log('✅ Markup calculado:', markupCalculado);
+        
         const novoProduto = {
-          // Campos obrigatórios da tabela insumos
+          // Campos obrigatórios da tabela produtos
           nome: produtoData.nome || 'Produto Importado',
-          tipo: 'MEDICAMENTO', // Campo obrigatório
-          unidade_medida: produtoData.unidadeComercial || 'UN', // Campo obrigatório
-          custo_unitario: (item.valorUnitarioComercial as number) || 0, // Campo obrigatório
+          tipo: classificarTipoProduto(produtoData.ncm, produtoData.nome), // Classificação automática
+          unidade_medida: produtoData.unidadeComercial || 'UN', // Campo obrigatório  
+          custo_unitario: custoProduto, // Campo obrigatório
+          markup: markupCalculado.markup,
+          markup_personalizado: false, // Usar markup padrão da categoria
           fornecedor_id: fornecedorId,
           
           // Campos adicionais para produtos da NF-e
@@ -757,52 +836,73 @@ const processarProdutosDoXML = async (itens: Record<string, unknown>[], forneced
           codigo_ean: produtoData.codigoEAN === 'SEM GTIN' ? null : produtoData.codigoEAN,
           ncm: produtoData.ncm || '',
           cfop: produtoData.cfop,
-          unidade_comercial: produtoData.unidadeComercial || 'UN',
+          unidade_comercial: produtoData.unidadeComercial,
           unidade_tributaria: produtoData.unidadeTributaria,
+          origem: produtoData.origem || 0,
           
-          // Valores padrão para campos de estoque
+          // Informações fiscais
+          cst_icms: produtoData.cstIcms,
+          cst_ipi: produtoData.cstIpi,
+          cst_pis: produtoData.cstPis,
+          cst_cofins: produtoData.cstCofins,
+          aliquota_icms: produtoData.aliquotaIcms || 0,
+          aliquota_ipi: produtoData.aliquotaIpi || 0,
+          aliquota_pis: produtoData.aliquotaPis || 0,
+          aliquota_cofins: produtoData.aliquotaCofins || 0,
+          
+          // Controle
+          preco_custo: custoProduto,
+          preco_venda: markupCalculado.preco_venda,
           estoque_atual: 0,
-          estoque_minimo: calcularEstoqueMinimoInteligente(produtoData.nome, item.quantidadeComercial as number),
-          estoque_maximo: calcularEstoqueMaximoInteligente(produtoData.nome, item.quantidadeComercial as number),
-          
-          // Flags de controle
-          controlado: false,
-          requer_receita: false,
-          produto_manipulado: false,
+          estoque_minimo: 1,
           produto_revenda: true,
           ativo: true,
-          
-          // Dados fiscais do item
-          origem: item.origemMercadoria as number || 0,
-          cst_icms: item.cstICMS as string,
-          cst_ipi: item.cstIPI as string,
-          cst_pis: item.cstPIS as string,
-          cst_cofins: item.cstCOFINS as string,
-          aliquota_icms: item.aliquotaICMS as number || 0,
-          aliquota_ipi: item.aliquotaIPI as number || 0,
-          aliquota_pis: item.aliquotaPIS as number || 0,
-          aliquota_cofins: item.aliquotaCOFINS as number || 0,
-          
-          // Preços
-          preco_custo: item.valorUnitarioComercial as number || 0,
-          preco_venda: null,
-          margem_lucro: null
+          is_deleted: false
         };
+
+        const { data: produtoInserido, error: errorProduto } = await supabase
+          .from(TABLES.PRODUTO)
+          .insert(novoProduto)
+          .select()
+          .single();
+
+        if (errorProduto) {
+          throw new Error(formatSupabaseError(errorProduto));
+        }
         
-        produto = await criarProduto(novoProduto);
+        // Atualizar variável para ter consistência
+        produto = produtoInserido;
+        
         // Atualizar cache com o produto criado
         cacheProdutos.set(produtoData.codigoInterno, produto);
         novos++;
-        console.log(`Novo produto criado: ${produto.nome}`);
+        console.log(`✅ Novo produto criado: ${produto.nome}`);
       }
       
       // 2. Processar lote se existir
       let loteId: UUID | undefined;
       if (produtoData.lote) {
-        // TODO: Implementar criação de lotes
-        // Por enquanto, apenas contar
-        lotes++;
-        console.log(`Lote encontrado: ${produtoData.lote.numeroLote}`);
+        try {
+          console.log(`📦 Processando lote: ${produtoData.lote.numeroLote}`);
+          
+          // Criar ou atualizar lote usando o serviço de lotes
+          const loteCriado = await loteService.criarLoteDoXML({
+            produto_id: produto.id,
+            numero_lote: produtoData.lote.numeroLote,
+            data_validade: produtoData.lote.dataValidade,
+            quantidade: produtoData.lote.quantidade || (item.quantidadeComercial as number),
+            preco_custo_unitario: item.valorUnitarioComercial as number,
+            fornecedor_id: fornecedorId
+          });
+          
+          loteId = loteCriado.id;
+          lotes++;
+          console.log(`✅ Lote processado: ${loteCriado.numero_lote} (ID: ${loteId})`);
+          
+        } catch (error) {
+          console.error(`❌ Erro ao processar lote ${produtoData.lote.numeroLote}:`, error);
+          // Continuar processamento mesmo com erro no lote
+        }
       }
       
       // 3. Adicionar à lista de produtos processados
@@ -812,11 +912,21 @@ const processarProdutosDoXML = async (itens: Record<string, unknown>[], forneced
         item
       });
       
+      console.log(`✅ Produto ${index + 1} processado com sucesso`);
+      
     } catch (error) {
-      console.error('Erro ao processar produto:', error);
+      console.error(`❌ Erro ao processar produto ${index + 1}:`, error);
       // Continuar processamento mesmo com erro em um item
     }
   }
+  
+  console.log('📦 Processamento de produtos concluído:', {
+    total: itens.length,
+    novos,
+    atualizados,
+    lotes,
+    processados: produtosProcessados.length
+  });
   
   return {
     total: itens.length,
@@ -880,6 +990,179 @@ const calcularEstoqueMaximoInteligente = (nomeProduto: string, quantidadeComprad
   // Padrão: 2x a quantidade comprada, mínimo 5
   return Math.max(5, quantidadeComprada * 2);
 };
+
+// =====================================================
+// FUNÇÃO DE CLASSIFICAÇÃO DE TIPO DE PRODUTO
+// =====================================================
+
+/**
+ * Classifica o tipo do produto baseado em NCM e nome
+ * Com foco específico em farmácia de manipulação
+ */
+function classificarTipoProduto(ncm: string, nome: string): string {
+  const ncmLimpo = (ncm || '').replace(/\D/g, '');
+  const nomeUpper = (nome || '').toUpperCase();
+
+  // === EMBALAGENS ESPECÍFICAS PARA FARMÁCIA DE MANIPULAÇÃO ===
+  
+  // NCMs específicos de embalagens para farmácia
+  const ncmEmbalagensFarmacia = [
+    // Frascos e recipientes de plástico
+    '39232990', // Outros artigos de plástico (categoria que inclui frascos, potes)
+    '39233000', // Garrafas, frascos e artigos similares
+    '39234000', // Bobinas, carretéis e suportes similares
+    '39269090', // Outras obras de plástico
+    '39199090', // Outros artigos de plástico
+    
+    // Frascos e recipientes de vidro
+    '70109010', // Frascos de vidro para medicamentos
+    '70109090', // Outros recipientes de vidro
+    '70139000', // Artigos de vidro para mesa, cozinha, laboratório
+    '70200000', // Outras obras de vidro
+    
+    // Embalagens de papel/papelão
+    '48194000', // Sacos de papel multifolhados
+    '48195000', // Outras embalagens de papel e papelão
+    '48211000', // Rótulos de papel ou cartão, impressos
+    '48219000', // Outros rótulos de papel ou cartão
+    '48236900', // Outras bandejas, pratos, copos de papel/cartão
+    
+    // Tampas e fechos
+    '83099000', // Outras rolhas, tampas e fechos
+    '39235000', // Rolhas, tampas e fechos de plástico
+    
+    // Seringas e materiais para aplicação
+    '90183100', // Seringas, mesmo com agulhas
+    '90183200', // Agulhas tubulares de metal
+    '90189010', // Instrumentos para medicina
+    
+    // Embalagens secundárias e de transporte
+    '48194000', // Sacos de papel
+    '63053200', // Sacas para produtos a granel
+    '39232100', // Sacas e sacos de polímeros de etileno
+    '39232990', // Outros artigos de plástico
+    
+    // Fitas e materiais de vedação
+    '39191000', // Chapas e tiras autoadesivas de plástico
+    '48239000', // Outros papéis, cartões, guata de celulose
+    
+    // Embalagens especiais para homeopatia
+    '70109010', // Frascos conta-gotas
+    '39269000', // Artigos de plástico para medicamentos
+    
+    // Materiais de proteção e lacração
+    '39232990', // Filmes de proteção
+    '83099000', // Lacres e selos de segurança
+  ];
+  
+  // Verificação por NCM completo (8 dígitos)
+  if (ncmEmbalagensFarmacia.includes(ncmLimpo)) {
+    return 'EMBALAGEM';
+  }
+  
+  // Verificação por prefixos de NCM de embalagens
+  const prefixosEmbalagemFarmacia = [
+    '3923', // Artigos de transporte ou embalagem, de plásticos
+    '3926', // Outras obras de plásticos
+    '4819', // Caixas, sacos e embalagens de papel/cartão
+    '4821', // Rótulos de papel ou cartão
+    '4823', // Outros papéis, cartões de celulose
+    '7010', // Garrafas, frascos e recipientes de vidro
+    '7013', // Objetos de vidro para mesa/cozinha
+    '7020', // Outras obras de vidro
+    '7612', // Recipientes de alumínio
+    '8309', // Rolhas, tampas e fechos
+    '9018', // Instrumentos para medicina/veterinária (seringas, etc.)
+  ];
+  
+  if (prefixosEmbalagemFarmacia.some(prefixo => ncmLimpo.startsWith(prefixo))) {
+    return 'EMBALAGEM';
+  }
+
+  // === CLASSIFICAÇÃO POR PALAVRAS-CHAVE NO NOME ===
+  
+  // Palavras-chave específicas de embalagens farmacêuticas
+  const palavrasEmbalagem = [
+    'FRASCO', 'POTE', 'BISNAGA', 'TAMPA', 'RÓTULO', 'EMBALAGEM', 'AMPOLA',
+    'SERINGA', 'AGULHA', 'CONTA-GOTAS', 'GOTEJADOR', 'VIDRO', 'PLÁSTICO',
+    'RECIPIENTE', 'CONTAINER', 'LACRE', 'SELO', 'ETIQUETA', 'ADESIVO',
+    'SACO', 'SACOLA', 'ENVELOPE', 'CAIXA', 'CARTUCHO', 'TUBO',
+    'BOIÃO', 'JARRO', 'FLACONETE', 'VIAL', 'AMPOULE'
+  ];
+  
+  if (palavrasEmbalagem.some(palavra => nomeUpper.includes(palavra))) {
+    return 'EMBALAGEM';
+  }
+
+  // === COSMÉTICOS POR NCM ===
+  const ncmCosmeticos = ['3301', '3302', '3303', '3304', '3305', '3306', '3307'];
+  if (ncmCosmeticos.some(prefixo => ncmLimpo.startsWith(prefixo))) {
+    return 'COSMÉTICO';
+  }
+
+  // === MEDICAMENTOS POR NCM ===
+  const ncmMedicamentos = ['3003', '3004', '3002'];
+  if (ncmMedicamentos.some(prefixo => ncmLimpo.startsWith(prefixo))) {
+    return 'MEDICAMENTO';
+  }
+
+  // === INSUMOS/MATÉRIAS-PRIMAS POR NCM ===
+  const ncmInsumos = ['28', '29', '38'];
+  if (ncmInsumos.some(prefixo => ncmLimpo.startsWith(prefixo))) {
+    return 'INSUMO';
+  }
+
+  // === CLASSIFICAÇÃO POR PALAVRAS-CHAVE FARMACÊUTICAS ===
+  
+  // Cosméticos e produtos de beleza
+  if (/(ÓLEO ESSENCIAL|BATOM|PROTETOR SOLAR|HIDRATANTE|SHAMPOO|CONDICIONADOR|SABONETE|PERFUME|COLÔNIA|DESODORANTE|CREME FACIAL|LOÇÃO|SÉRUM|MÁSCARA|ESFOLIANTE|TÔNICO|DEMAQUILANTE|BASE|PÓ|RÍMEL|SOMBRA|BLUSH|GLOSS|ESMALTE|REMOVEDOR|ACETONA|MAQUIAGEM|COSMÉTICO|BELEZA|ANTI-IDADE|ANTIRRUGAS|CLAREADOR|BRONZEADOR|AUTOBRONZEADOR|FPS|PROTEÇÃO SOLAR)/.test(nomeUpper)) {
+    return 'COSMÉTICO';
+  }
+  
+  // Insumos e excipientes
+  if (/(EXCIPIENTE|VEÍCULO|INSUMO|CONSERVANTE|ESTABILIZANTE|DILUENTE)/.test(nomeUpper)) {
+    return 'INSUMO';
+  }
+  
+  // Formas farmacêuticas - Medicamentos
+  if (/(COMPRIMIDO|CÁPSULA|CREME|SOLUÇÃO|GEL|POMADA|XAROPE|SUSPENSÃO|ELIXIR)/.test(nomeUpper)) {
+    return 'MEDICAMENTO';
+  }
+  
+  // Matérias-primas ativas
+  if (/(PRINCÍPIO ATIVO|MATÉRIA PRIMA|ATIVO|EXTRATO|TINTURA)/.test(nomeUpper)) {
+    return 'MATERIA_PRIMA';
+  }
+  
+  // Homeopáticos específicos
+  if (/(CH|DH|LM|FC|TM|FLORAL|BACH|DINAMIZAÇÃO|POTÊNCIA)/.test(nomeUpper)) {
+    return 'HOMEOPATICO';
+  }
+
+  // === FALLBACK INTELIGENTE ===
+  
+  // Se contém números que parecem potência homeopática
+  if (/\d+(CH|DH|LM|FC)/.test(nomeUpper)) {
+    return 'HOMEOPATICO';
+  }
+  
+  // Se o nome sugere manipulação
+  if (/(MANIPULADO|FÓRMULA|PREPARAÇÃO)/.test(nomeUpper)) {
+    return 'MEDICAMENTO';
+  }
+  
+  // Fallback final baseado no NCM
+  if (ncmLimpo.startsWith('30')) {
+    return 'MEDICAMENTO'; // Grupo 30 geralmente são medicamentos
+  }
+  
+  if (ncmLimpo.startsWith('33')) {
+    return 'COSMÉTICO'; // Grupo 33 são cosméticos
+  }
+
+  // Fallback padrão
+  return 'OUTRO';
+}
 
 // =====================================================
 // VALIDAÇÕES

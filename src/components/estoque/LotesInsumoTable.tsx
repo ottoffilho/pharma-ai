@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -58,11 +57,22 @@ const LotesInsumoTable: React.FC<LotesInsumoTableProps> = ({ insumoId, insumoNom
     queryKey: ['lotes', insumoId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('lotes_insumos')
-        .select('*, fornecedores(nome)')
+        .from('lotes_produtos')
+        .select(`
+          *,
+          produto:produto_id(
+            id,
+            nome,
+            codigo_interno
+          ),
+          fornecedor:fornecedor_id(
+            id,
+            nome
+          )
+        `)
         .eq('insumo_id', insumoId)
         .eq('is_deleted', false)
-        .order('created_at', { ascending: false });
+        .order('data_validade', { ascending: true });
       
       if (error) throw error;
       return data as Lote[];
@@ -74,7 +84,7 @@ const LotesInsumoTable: React.FC<LotesInsumoTableProps> = ({ insumoId, insumoNom
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
-        .from('lotes_insumos')
+        .from('lotes_produtos')
         .update({ is_deleted: true })
         .eq('id', id);
       

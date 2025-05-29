@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useAuth } from '@/modules/usuarios-permissoes/hooks/useAuth';
+import { useAuthSimple } from '@/modules/usuarios-permissoes/hooks/useAuthSimple';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 import {
   Form,
@@ -18,6 +19,8 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, LogIn, Eye, EyeOff } from 'lucide-react';
+import backgroundImg from '@/assets/images/ambiente_interno.jpg';
+import logoPharma from '@/assets/logo/phama-horizon.png';
 
 // Schema de validação para o formulário de login
 const loginSchema = z.object({
@@ -27,18 +30,20 @@ const loginSchema = z.object({
 
 type LoginFormData = z.infer<typeof loginSchema>;
 
+// Timeout máximo para verificação inicial (4 segundos)
+const MAX_VERIFY_TIME = 4000;
+
 const Login: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { login, autenticado, carregando } = useAuth();
+  const { login, autenticado, carregando } = useAuthSimple();
   const [mostrarSenha, setMostrarSenha] = useState(false);
   const [fazendoLogin, setFazendoLogin] = useState(false);
+  
+  // Estado local para controle mais granular do carregamento
+  const [verificandoAuth, setVerificandoAuth] = useState(true);
 
-  // Se já está autenticado, redireciona para o dashboard
-  if (autenticado) {
-    return <Navigate to="/admin" replace />;
-  }
-
+  // ✅ Hooks SEMPRE devem ser chamados primeiro
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -47,20 +52,84 @@ const Login: React.FC = () => {
     },
   });
 
+  // Verificação rápida da sessão
+  useEffect(() => {
+    const verificarSessao = async () => {
+      try {
+        // Tentar usar cache primeiro
+        try {
+          const authCache = sessionStorage.getItem('auth_cache');
+          if (authCache) {
+            const cache = JSON.parse(authCache);
+            if (cache.valido && cache.usuario) {
+              console.log('✅ Login - Cache de autenticação válido');
+              setVerificandoAuth(false);
+              return;
+            }
+          }
+        } catch (cacheError) {
+          console.log('⚠️ Erro ao verificar cache:', cacheError);
+        }
+        
+        // Verificação direta com Supabase (rápida)
+        const { data } = await supabase.auth.getSession();
+        console.log('🔄 Login - Verificação rápida de sessão:', data.session ? 'Com sessão' : 'Sem sessão');
+      } catch (error) {
+        console.error('⚠️ Login - Erro na verificação rápida:', error);
+      } finally {
+        setVerificandoAuth(false);
+      }
+    };
+    
+    // Executar verificação
+    verificarSessao();
+    
+    // Timeout de segurança para não bloquear a UI
+    const timeoutId = setTimeout(() => {
+      if (verificandoAuth) {
+        console.log('⏰ Login - Timeout de verificação');
+        setVerificandoAuth(false);
+      }
+    }, MAX_VERIFY_TIME);
+    
+    return () => clearTimeout(timeoutId);
+  }, [verificandoAuth]);
+
+  // Debug: Log do estado de autenticação
+  useEffect(() => {
+    console.log('Login page - Estado de autenticação:', { autenticado, carregando, verificandoAuth });
+    
+    // Se autenticado e não está carregando, redirecionar imediatamente
+    if (autenticado && !carregando) {
+      console.log('✅ Login - Usuário autenticado, redirecionando para /admin');
+      navigate('/admin', { replace: true });
+    }
+  }, [autenticado, carregando, verificandoAuth, navigate]);
+
+  // Se já está autenticado, redireciona para o dashboard
+  if (autenticado && !carregando) {
+    console.log('🔄 Login - Redirecionamento via Navigate component');
+    return <Navigate to="/admin" replace />;
+  }
+
   const onSubmit = async (data: LoginFormData) => {
     setFazendoLogin(true);
     try {
+      console.log('🔐 Login - Tentando login:', data.email);
       const resultado = await login(data.email, data.senha);
       
       if (resultado.sucesso) {
+        console.log('✅ Login - Login bem-sucedido');
+        
         toast({
           title: 'Login realizado com sucesso!',
-          description: 'Redirecionando para seu dashboard...',
+          description: 'Redirecionando...',
         });
         
-        // O DashboardRouter irá automaticamente direcionar para o dashboard correto
-        navigate('/admin');
+        // Redirecionamento será feito pelo useEffect
+        
       } else {
+        console.error('❌ Login - Erro:', resultado.erro);
         toast({
           title: 'Erro no login',
           description: resultado.erro || 'Credenciais inválidas',
@@ -68,7 +137,7 @@ const Login: React.FC = () => {
         });
       }
     } catch (error) {
-      console.error('Erro no login:', error);
+      console.error('❌ Login - Erro:', error);
       toast({
         title: 'Erro no login',
         description: 'Ocorreu um erro inesperado. Tente novamente.',
@@ -83,6 +152,7 @@ const Login: React.FC = () => {
     setMostrarSenha(!mostrarSenha);
   };
 
+  // Loading state simplificado
   if (carregando) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -95,13 +165,19 @@ const Login: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Pharma.AI</h1>
+    <div
+      className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8"
+      style={{
+        backgroundImage: `url(${backgroundImg})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }}
+    >
+      <div className="max-w-md w-full space-y-8 bg-white/80 rounded-xl shadow-lg p-8">
+        <div className="text-center mb-4">
+          <img src={logoPharma} alt="Pharma.AI" className="mx-auto h-16 mb-2" />
           <p className="text-gray-600">Sistema de Gestão para Farmácias de Manipulação</p>
         </div>
-
         <Card>
           <CardHeader>
             <CardTitle>Fazer Login</CardTitle>
@@ -131,7 +207,6 @@ const Login: React.FC = () => {
                     </FormItem>
                   )}
                 />
-
                 {/* Campo Senha */}
                 <FormField
                   control={form.control}
@@ -166,7 +241,6 @@ const Login: React.FC = () => {
                     </FormItem>
                   )}
                 />
-
                 {/* Botão de Login */}
                 <Button
                   type="submit"
@@ -185,7 +259,6 @@ const Login: React.FC = () => {
                     </>
                   )}
                 </Button>
-
                 {/* Link para recuperar senha */}
                 <div className="text-center">
                   <Button
@@ -199,27 +272,6 @@ const Login: React.FC = () => {
                 </div>
               </form>
             </Form>
-          </CardContent>
-        </Card>
-
-        {/* Informações de demonstração */}
-        <Card className="bg-blue-50 border-blue-200">
-          <CardContent className="pt-6">
-            <h3 className="font-semibold text-blue-900 mb-2">Contas de Demonstração</h3>
-            <div className="space-y-2 text-sm text-blue-800">
-              <div>
-                <strong>Proprietário:</strong> proprietario@farmacia.com / 123456
-              </div>
-              <div>
-                <strong>Farmacêutico:</strong> farmaceutico@farmacia.com / 123456
-              </div>
-              <div>
-                <strong>Atendente:</strong> atendente@farmacia.com / 123456
-              </div>
-              <div>
-                <strong>Manipulador:</strong> manipulador@farmacia.com / 123456
-              </div>
-            </div>
           </CardContent>
         </Card>
       </div>

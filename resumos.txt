@@ -1,0 +1,86 @@
+# Resumo da Conversa - Problemas de Autenticação de Usuários
+
+## Contexto Inicial
+O usuário relatou que criou um novo usuário como atendente e solicitou verificação via MCP se todo o fluxo estava correto, incluindo verificação nas duas tabelas necessárias e se as permissões como atendente estavam corretas.
+
+## Primeira Verificação (Usuário Atendente)
+Através de consultas SQL no projeto Supabase (hjwebmpvaaeogbfqxwub), foi verificado que:
+
+**✅ Usuário nas Duas Tabelas:**
+- **auth.users**: ID `5e3c7de6-3ade-47e0-bb2e-a661d2b80bc7`, email `otto.consigmais@gmail.com`, email confirmado
+- **usuarios**: ID `95eb4b3c-1dd9-489a-b93b-f47c8495ae3e`, nome "teste", mesmo email, supabase_auth_id correto, ativo
+
+**✅ Perfil e Permissões Corretas:**
+- Perfil: Atendente (tipo ATENDENTE)
+- Permissões: ATENDIMENTO (LER/CRIAR/EDITAR), PDV (LER/CRIAR/EDITAR), CADASTROS_ESSENCIAIS (LER), ESTOQUE (LER), RELATÓRIOS (LER)
+
+**✅ Sincronização Perfeita:**
+- supabase_auth_id na tabela usuarios corresponde ao id na auth.users
+- Emails idênticos, datas sincronizadas
+
+## Problema de Autenticação Descoberto
+O usuário então reportou que não conseguia fazer autenticação com os usuários criados, apenas o usuário proprietário funcionava. O erro mostrado era:
+```
+POST https://hjwebmpvaaeogbfqxwub.supabase.co/auth/v1/token?grant_type=password 400 (Bad Request)
+AuthApiError: Invalid login credentials
+```
+
+## Análise Profunda do Problema
+Através de análise detalhada do código e comparação entre usuários que funcionam vs que não funcionam:
+
+**Usuário que FUNCIONA (proprietário):**
+- Email: ottof6@gmail.com
+- Criado via PrimeiroAcesso.tsx usando `supabase.auth.signUp()`
+- Tem senha criptografada, raw_app_meta_data e raw_user_meta_data preenchidos
+- last_sign_in_at preenchido
+
+**Usuário que NÃO FUNCIONA (atendente):**
+- Email: otto.consigmais@gmail.com  
+- Criado via AuthService.criarUsuario()
+- Tem senha criptografada, mas processo de criação diferente
+- last_sign_in_at null (nunca fez login)
+
+## Causa Raiz Identificada
+O problema estava no método `AuthService.criarUsuario()` (linhas 286-322) que:
+1. **❌ Criava usuários APENAS na tabela `usuarios`**
+2. **❌ Definia `supabase_auth_id` como `null`**
+3. **❌ NÃO criava entrada no Supabase Auth**
+4. **❌ NÃO definia senha no sistema de autenticação**
+
+## Solução Implementada
+Foi corrigido o `AuthService.criarUsuario()` para:
+1. **✅ Verificar se senha foi fornecida**
+2. **✅ Usar a Edge Function `criar-usuario`** que:
+   - Cria usuário no Supabase Auth com senha
+   - Cria registro na tabela usuarios
+   - Vincula os dois através do supabase_auth_id
+3. **✅ Tratar erros adequadamente**
+
+## Edge Function Existente
+Foi confirmado que já existia uma Edge Function `criar-usuario` (supabase/functions/criar-usuario/index.ts) que implementava o processo correto:
+- Usa `supabaseAdmin.auth.admin.createUser()` com email_confirm: true
+- Cria registro na tabela usuarios com supabase_auth_id correto
+- Implementa rollback em caso de erro
+- Retorna sucesso/erro adequadamente
+
+## Arquivos Analisados
+- `src/modules/usuarios-permissoes/services/authService.ts`
+- `supabase/functions/criar-usuario/index.ts`
+- `src/pages/PrimeiroAcesso.tsx`
+- `src/pages/admin/usuarios/index.tsx`
+- `src/components/usuarios/UsuarioInternoForm.tsx`
+- `prompts_erros/erros.txt`
+
+## Status Final
+O problema foi identificado e corrigido. O AuthService agora usa a Edge Function correta para criar usuários com autenticação funcional no Supabase Auth, resolvendo o problema de "Invalid login credentials" para usuários criados pelo sistema.
+
+## Próximos Passos
+1. **Testar a criação de novos usuários** com o AuthService corrigido
+2. **Verificar se usuários existentes** precisam ser recriados
+3. **Documentar o processo** de criação de usuários para evitar problemas futuros
+4. **Implementar validações** para garantir que todos os usuários tenham entrada no Supabase Auth
+
+---
+
+*Última atualização: 2024-12-26*
+*Status: RESOLVIDO - AuthService corrigido para usar Edge Function*

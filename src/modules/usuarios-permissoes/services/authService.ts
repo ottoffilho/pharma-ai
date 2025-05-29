@@ -11,10 +11,13 @@ import type {
   EstatisticasUsuarios,
   LogAuditoria,
   PerfilUsuarioInterface,
+  PerfilUsuario
+} from '../types';
+
+import {
   ModuloSistema,
   AcaoPermissao,
-  NivelAcesso,
-  PerfilUsuario
+  NivelAcesso
 } from '../types';
 
 /**
@@ -84,10 +87,12 @@ export class AuthService {
       };
 
     } catch (error) {
-      console.error('Erro no login:', error);
+      console.error('Erro na autenticação:', error);
+      
       return {
         sucesso: false,
-        erro: 'Erro interno do servidor'
+        erro: error instanceof Error ? error.message : 'Erro desconhecido na autenticação',
+        usuario: null
       };
     }
   }
@@ -125,22 +130,48 @@ export class AuthService {
    */
   static async obterUsuarioAtual(): Promise<SessaoUsuario | null> {
     try {
-      const { data: { user }, error } = await supabase.auth.getUser();
+      console.log('🔍 AuthService - Obtendo usuário da sessão...');
       
-      if (error || !user) {
+      // Timeout de 5 segundos para evitar travamento
+      const timeoutPromise = new Promise<null>((_, reject) => {
+        setTimeout(() => reject(new Error('Timeout na obtenção do usuário')), 5000);
+      });
+      
+      const getUserPromise = supabase.auth.getUser();
+      
+      const { data: { user }, error } = await Promise.race([getUserPromise, timeoutPromise]) as Awaited<typeof getUserPromise>;
+      
+      if (error) {
+        console.log('❌ AuthService - Erro ao obter usuário da sessão:', error);
+        return null;
+      }
+      
+      if (!user) {
+        console.log('⚠️ AuthService - Nenhum usuário na sessão');
         return null;
       }
 
-      const usuario = await this.obterUsuarioCompleto(user.id);
+      console.log('👤 AuthService - Usuário encontrado na sessão, ID:', user.id);
       
-      if (!usuario || !usuario.ativo) {
+      // Buscar usuário diretamente com timeout
+      const usuarioPromise = this.obterUsuarioCompleto(user.id);
+      const usuario = await Promise.race([usuarioPromise, timeoutPromise]) as Awaited<typeof usuarioPromise>;
+      
+      if (!usuario) {
+        console.log('❌ AuthService - Usuário não encontrado no banco de dados');
+        return null;
+      }
+      
+      if (!usuario.ativo) {
+        console.log('⚠️ AuthService - Usuário inativo');
         return null;
       }
 
+      console.log('✅ AuthService - Usuário completo obtido:', usuario.nome);
       return {
         usuario,
         permissoes: usuario.perfil?.permissoes || [],
-        dashboard: usuario.perfil?.dashboard || 'atendimento'
+        dashboard: usuario.perfil?.dashboard_padrao || 'administrativo'
       };
 
     } catch (error) {
@@ -154,34 +185,79 @@ export class AuthService {
    */
   static async obterUsuarioCompleto(authId: string): Promise<Usuario | null> {
     try {
-      const { data, error } = await supabase
+      console.log('🔍 AuthService - Buscando usuário completo para auth_id:', authId);
+      
+      // Consultar usuário primeiro
+      const { data: userData, error: userError } = await supabase
         .from('usuarios')
-        .select(`
-          *,
-          perfil:perfis_usuario(
-            *,
-            permissoes:permissoes_perfil(
-              permissao:permissoes(*)
-            )
-          )
-        `)
-        .eq('auth_id', authId)
+        .select('*')
+        .eq('supabase_auth_id', authId)
         .single();
 
-      if (error || !data) {
+      if (userError) {
+        if (userError.code === 'PGRST116') {
+          console.error(`❌ AuthService - Usuário não encontrado para auth_id: ${authId}. Verifique se o usuário foi criado corretamente na tabela usuarios.`);
+        } else {
+          console.error('Erro ao buscar usuário:', userError);
+        }
+        return null;
+      }
+      
+      if (!userData) {
+        console.error(`❌ AuthService - Nenhum usuário encontrado para auth_id: ${authId}`);
         return null;
       }
 
-      // Transformar permissões para formato adequado
-      const permissoes = data.perfil?.permissoes?.map((p: any) => p.permissao) || [];
-      
-      return {
-        ...data,
-        perfil: data.perfil ? {
-          ...data.perfil,
-          permissoes
-        } : undefined
-      };
+      console.log('👤 AuthService - Usuário encontrado:', userData.nome, 'perfil_id:', userData.perfil_id);
+
+      // Consultar perfil e permissões em consultas separadas
+      if (userData.perfil_id) {
+        console.log('🔍 AuthService - Buscando perfil:', userData.perfil_id);
+        
+        const { data: perfilData, error: perfilError } = await supabase
+          .from('perfis_usuario')
+          .select('*')
+          .eq('id', userData.perfil_id)
+          .single();
+
+        if (perfilError) {
+          console.error('❌ AuthService - Erro ao buscar perfil:', perfilError);
+        } else if (perfilData) {
+          console.log('✅ AuthService - Perfil encontrado:', perfilData.nome);
+          
+          // Buscar permissões do perfil
+          console.log('🔍 AuthService - Buscando permissões para perfil:', userData.perfil_id);
+          
+          const { data: permissoesData, error: permissoesError } = await supabase
+            .from('permissoes')
+            .select('*')
+            .eq('perfil_id', userData.perfil_id)
+            .eq('permitido', true);
+
+          if (permissoesError) {
+            console.error('❌ AuthService - Erro ao buscar permissões:', permissoesError);
+          } else {
+            console.log('✅ AuthService - Permissões encontradas:', permissoesData?.length || 0);
+          }
+
+          const permissoes = permissoesData || [];
+
+          const usuarioCompleto = {
+            ...userData,
+            perfil: {
+              ...perfilData,
+              permissoes: permissoes
+            }
+          };
+          
+          console.log('✅ AuthService - Usuário completo montado com sucesso');
+          return usuarioCompleto;
+        }
+      }
+
+      // Retornar usuário sem perfil se não conseguiu buscar o perfil
+      console.log('⚠️ AuthService - Retornando usuário sem perfil');
+      return userData;
 
     } catch (error) {
       console.error('Erro ao obter usuário completo:', error);
@@ -193,7 +269,7 @@ export class AuthService {
    * Verifica se usuário tem permissão específica
    */
   static verificarPermissao(
-    permissoes: any[],
+    permissoes: Permissao[],
     modulo: ModuloSistema,
     acao: AcaoPermissao,
     nivel?: NivelAcesso
@@ -208,48 +284,49 @@ export class AuthService {
   /**
    * Cria novo usuário
    */
-  static async criarUsuario(dados: CriarEditarUsuario): Promise<{ sucesso: boolean; erro?: string; usuario?: Usuario }> {
+  static async criarUsuario(dados: Partial<SessaoUsuario>): Promise<RespostaOperacao> {
     try {
-      // Criar usuário no Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email: dados.email,
-        password: dados.senha || this.gerarSenhaTemporaria(),
-        email_confirm: true
-      });
-
-      if (authError) {
+      // Verificar se senha foi fornecida
+      if (!dados.senha) {
         return {
           sucesso: false,
-          erro: 'Erro ao criar usuário: ' + authError.message
+          erro: 'Senha é obrigatória para criar um novo usuário'
         };
       }
 
-      // Criar registro na tabela usuarios
-      const { data: userData, error: userError } = await supabase
-        .from('usuarios')
-        .insert({
-          auth_id: authData.user.id,
+      // Usar Edge Function para criar usuário no Auth e na tabela usuarios
+      const { data, error: functionError } = await supabase.functions.invoke('criar-usuario', {
+        body: {
           email: dados.email,
-          nome: dados.nome,
-          telefone: dados.telefone,
-          perfil_id: dados.perfil_id,
-          ativo: dados.ativo
-        })
-        .select()
-        .single();
+          password: dados.senha,
+          userData: {
+            nome: dados.nome,
+            telefone: dados.telefone,
+            perfil_id: dados.perfil_id,
+            ativo: dados.ativo
+          }
+        }
+      });
 
-      if (userError) {
-        // Reverter criação no Auth se falhou na tabela
-        await supabase.auth.admin.deleteUser(authData.user.id);
+      if (functionError) {
+        console.error('Erro ao chamar Edge Function:', functionError);
         return {
           sucesso: false,
-          erro: 'Erro ao salvar dados do usuário'
+          erro: `Erro ao criar usuário: ${functionError.message}`
+        };
+      }
+
+      if (!data?.sucesso) {
+        console.error('Erro retornado pela Edge Function:', data);
+        return {
+          sucesso: false,
+          erro: (data as { error?: string })?.error || 'Erro ao criar usuário'
         };
       }
 
       return {
         sucesso: true,
-        usuario: userData
+        usuario: (data as { usuario?: Usuario }).usuario
       };
 
     } catch (error) {
@@ -266,12 +343,10 @@ export class AuthService {
    */
   static async listarUsuarios(filtros: FiltrosUsuarios = {}): Promise<Usuario[]> {
     try {
+      // Primeiro, consultar usuários com filtros
       let query = supabase
         .from('usuarios')
-        .select(`
-          *,
-          perfil:perfis_usuario(*)
-        `);
+        .select('*');
 
       if (filtros.ativo !== undefined) {
         query = query.eq('ativo', filtros.ativo);
@@ -289,13 +364,63 @@ export class AuthService {
         query = query.lte('created_at', filtros.data_fim);
       }
 
-      const { data, error } = await query.order('created_at', { ascending: false });
+      const { data: usuarios, error } = await query.order('created_at', { ascending: false });
 
       if (error) {
         throw error;
       }
 
-      return data || [];
+      if (!usuarios || usuarios.length === 0) {
+        return [];
+      }
+
+      // Coletar todos os IDs de perfil únicos
+      const perfilIds = [...new Set(usuarios.filter(u => u.perfil_id).map(u => u.perfil_id))];
+      
+      // Buscar todos os perfis necessários em uma única consulta
+      const { data: perfis, error: perfilError } = await supabase
+        .from('perfis_usuario')
+        .select('*')
+        .in('id', perfilIds);
+
+      if (perfilError) {
+        console.error('Erro ao buscar perfis:', perfilError);
+      }
+
+      // Mapear perfis por ID para fácil acesso
+      const perfisPorId = (perfis || []).reduce((acc, perfil) => {
+        acc[perfil.id] = perfil;
+        return acc;
+      }, {} as Record<string, PerfilUsuarioInterface>);
+
+      // Buscar permissões para todos os perfis
+      const { data: todasPermissoes, error: permissoesError } = await supabase
+        .from('permissoes')
+        .select('*')
+        .in('perfil_id', perfilIds)
+        .eq('permitido', true);
+
+      if (permissoesError) {
+        console.error('Erro ao buscar permissões:', permissoesError);
+      }
+
+      // Agrupar permissões por perfil_id
+      const permissoesPorPerfil = (todasPermissoes || []).reduce((acc, permissao) => {
+        if (!acc[permissao.perfil_id]) {
+          acc[permissao.perfil_id] = [];
+        }
+        acc[permissao.perfil_id].push(permissao);
+        return acc;
+      }, {} as Record<string, Permissao[]>);
+
+      // Juntar usuários com seus perfis e permissões
+      return usuarios.map(usuario => ({
+        ...usuario,
+        perfil: usuario.perfil_id && perfisPorId[usuario.perfil_id] ? {
+          ...perfisPorId[usuario.perfil_id],
+          permissoes: permissoesPorPerfil[usuario.perfil_id] || []
+        } : undefined
+      }));
 
     } catch (error) {
       console.error('Erro ao listar usuários:', error);
@@ -306,7 +431,7 @@ export class AuthService {
   /**
    * Atualiza usuário
    */
-  static async atualizarUsuario(id: string, dados: Partial<CriarEditarUsuario>): Promise<{ sucesso: boolean; erro?: string }> {
+  static async atualizarUsuario(id: string, dados: Partial<SessaoUsuario>): Promise<RespostaOperacao> {
     try {
       const { error } = await supabase
         .from('usuarios')
@@ -339,8 +464,8 @@ export class AuthService {
     acao: string,
     modulo: ModuloSistema,
     recurso: string,
-    dadosAnteriores: Record<string, any>,
-    dadosNovos: Record<string, any>
+    dadosAnteriores: Record<string, unknown>,
+    dadosNovos: Record<string, unknown>
   ): Promise<void> {
     try {
       await supabase
@@ -375,6 +500,242 @@ export class AuthService {
   }
 
   /**
+   * Solicita recuperação de senha para um email
+   */
+  static async solicitarRecuperacaoSenha(email: string): Promise<{ sucesso: boolean; erro?: string }> {
+    try {
+      // Verificar se email existe
+      const { data: userData, error: userError } = await supabase
+        .from('usuarios')
+        .select('id, nome')
+        .eq('email', email)
+        .single();
+
+      if (userError || !userData) {
+        return {
+          sucesso: false,
+          erro: 'Email não encontrado'
+        };
+      }
+
+      // Gerar token de recuperação
+      const token = this.gerarTokenRecuperacao();
+      const expiresAt = new Date();
+      expiresAt.setHours(expiresAt.getHours() + 1); // Token válido por 1 hora
+
+      // Salvar token no banco
+      const { error: tokenError } = await supabase
+        .from('tokens_recuperacao_senha')
+        .insert({
+          usuario_id: userData.id,
+          token,
+          email: email,
+          expires_at: expiresAt.toISOString(),
+          usado: false
+        });
+
+      if (tokenError) {
+        console.error('Erro ao salvar token:', tokenError);
+        return {
+          sucesso: false,
+          erro: 'Erro interno do servidor'
+        };
+      }
+
+      // Construir URL de recuperação
+      const resetUrl = `${window.location.origin}/redefinir-senha?token=${token}&email=${encodeURIComponent(email)}`;
+      
+      // Chamar Edge Function para enviar email
+      console.log('Enviando requisição para função de recuperação de senha...');
+      try {
+        const { data, error: emailError } = await supabase.functions.invoke('enviar-email-recuperacao', {
+          body: {
+            email,
+            nome: userData.nome,
+            token,
+            resetUrl
+          }
+        });
+
+        if (emailError) {
+          console.error('Erro ao enviar email:', emailError);
+          console.error('Detalhes do erro:', emailError.message);
+          
+          // Tentar obter mais informações do erro
+          if (emailError.message && emailError.message.includes('500')) {
+            console.error('Erro interno na função Edge. Verifique os logs no painel do Supabase.');
+          }
+          
+          return {
+            sucesso: false,
+            erro: 'Erro ao enviar email de recuperação. Por favor, tente novamente mais tarde.'
+          };
+        }
+        
+        console.log('Resposta da função:', data);
+      } catch (funcError) {
+        console.error('Exceção ao chamar função:', funcError);
+        return {
+          sucesso: false,
+          erro: 'Erro ao processar solicitação de recuperação'
+        };
+      }
+
+      // Registrar log
+      await this.registrarLogAuditoria(
+        userData.id,
+        'SOLICITAR_RECUPERACAO_SENHA',
+        ModuloSistema.USUARIOS_PERMISSOES,
+        'senha',
+        {},
+        { email, timestamp: new Date().toISOString() }
+      );
+
+      return { sucesso: true };
+
+    } catch (error) {
+      console.error('Erro na solicitação de recuperação:', error);
+      return {
+        sucesso: false,
+        erro: 'Erro interno do servidor'
+      };
+    }
+  }
+
+  /**
+   * Verifica se o token de recuperação é válido
+   */
+  static async verificarTokenRecuperacao(token: string, email: string): Promise<{ sucesso: boolean; erro?: string }> {
+    try {
+      const { data: tokenData, error } = await supabase
+        .from('tokens_recuperacao_senha')
+        .select('*')
+        .eq('token', token)
+        .eq('email', email)
+        .eq('usado', false)
+        .single();
+
+      if (error || !tokenData) {
+        return {
+          sucesso: false,
+          erro: 'Token inválido ou não encontrado'
+        };
+      }
+
+      // Verificar se não expirou
+      if (new Date() > new Date(tokenData.expires_at)) {
+        return {
+          sucesso: false,
+          erro: 'Token expirado'
+        };
+      }
+
+      return { sucesso: true };
+
+    } catch (error) {
+      console.error('Erro ao verificar token:', error);
+      return {
+        sucesso: false,
+        erro: 'Erro interno do servidor'
+      };
+    }
+  }
+
+  /**
+   * Redefine a senha do usuário
+   */
+  static async redefinirSenha(token: string, email: string, novaSenha: string): Promise<{ sucesso: boolean; erro?: string }> {
+    try {
+      // Verificar token primeiro
+      const verificacao = await this.verificarTokenRecuperacao(token, email);
+      if (!verificacao.sucesso) {
+        return verificacao;
+      }
+
+      // Buscar dados do token
+      const { data: tokenData, error: tokenError } = await supabase
+        .from('tokens_recuperacao_senha')
+        .select('usuario_id')
+        .eq('token', token)
+        .eq('email', email)
+        .eq('usado', false)
+        .single();
+
+      if (tokenError || !tokenData) {
+        return {
+          sucesso: false,
+          erro: 'Token inválido'
+        };
+      }
+
+      // Buscar usuário
+      const { data: userData, error: userError } = await supabase
+        .from('usuarios')
+        .select('supabase_auth_id')
+        .eq('id', tokenData.usuario_id)
+        .single();
+
+      if (userError || !userData) {
+        return {
+          sucesso: false,
+          erro: 'Usuário não encontrado'
+        };
+      }
+
+      // Atualizar senha no Supabase Auth
+      const { error: authError } = await supabase.auth.admin.updateUserById(
+        userData.supabase_auth_id,
+        { password: novaSenha }
+      );
+
+      if (authError) {
+        console.error('Erro ao atualizar senha:', authError);
+        return {
+          sucesso: false,
+          erro: 'Erro ao atualizar senha'
+        };
+      }
+
+      // Marcar token como usado
+      await supabase
+        .from('tokens_recuperacao_senha')
+        .update({ usado: true, usado_em: new Date().toISOString() })
+        .eq('token', token);
+
+      // Registrar log
+      await this.registrarLogAuditoria(
+        tokenData.usuario_id,
+        'REDEFINIR_SENHA',
+        ModuloSistema.USUARIOS_PERMISSOES,
+        'senha',
+        {},
+        { email, timestamp: new Date().toISOString() }
+      );
+
+      return { sucesso: true };
+
+    } catch (error) {
+      console.error('Erro ao redefinir senha:', error);
+      return {
+        sucesso: false,
+        erro: 'Erro interno do servidor'
+      };
+    }
+  }
+
+  /**
+   * Gera token de recuperação seguro
+   */
+  private static gerarTokenRecuperacao(): string {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let result = '';
+    for (let i = 0; i < 64; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+  }
+
+  /**
    * Gera senha temporária
    */
   private static gerarSenhaTemporaria(): string {
@@ -401,16 +762,16 @@ export class AuthService {
     try {
       const { data: usuarios } = await supabase
         .from('usuarios')
-        .select('ativo, perfil:perfis_usuario(tipo), ultimo_acesso');
+        .select('ativo, perfil_id, atualizado_em');
 
       const total = usuarios?.length || 0;
       const ativos = usuarios?.filter(u => u.ativo).length || 0;
       
       const porPerfil = usuarios?.reduce((acc, u) => {
-        const tipo = u.perfil?.tipo || PerfilUsuario.ATENDENTE;
+        const tipo = u.perfil_id || 'ATENDENTE';
         acc[tipo] = (acc[tipo] || 0) + 1;
         return acc;
-      }, {} as Record<PerfilUsuario, number>) || {} as Record<PerfilUsuario, number>;
+      }, {} as Record<string, number>) || {} as Record<string, number>;
 
       const agora = new Date();
       const hoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
@@ -418,15 +779,15 @@ export class AuthService {
       const mesAtras = new Date(hoje.getTime() - 30 * 24 * 60 * 60 * 1000);
 
       const ultimosAcessos = {
-        hoje: usuarios?.filter(u => u.ultimo_acesso && new Date(u.ultimo_acesso) >= hoje).length || 0,
-        semana: usuarios?.filter(u => u.ultimo_acesso && new Date(u.ultimo_acesso) >= semanaAtras).length || 0,
-        mes: usuarios?.filter(u => u.ultimo_acesso && new Date(u.ultimo_acesso) >= mesAtras).length || 0
+        hoje: usuarios?.filter(u => u.atualizado_em && new Date(u.atualizado_em) >= hoje).length || 0,
+        semana: usuarios?.filter(u => u.atualizado_em && new Date(u.atualizado_em) >= semanaAtras).length || 0,
+        mes: usuarios?.filter(u => u.atualizado_em && new Date(u.atualizado_em) >= mesAtras).length || 0
       };
 
       return {
         total,
         ativos,
-        por_perfil: porPerfil,
+        por_perfil: porPerfil as Record<string, number>,
         ultimos_acessos: ultimosAcessos
       };
 
@@ -440,4 +801,378 @@ export class AuthService {
       };
     }
   }
-} 
+
+  /**
+   * Exclui usuário usando Edge Function (método seguro)
+   */
+  static async excluirUsuarioCompleto(usuarioId: string, supabaseAuthId: string): Promise<{ sucesso: boolean; erro?: string }> {
+    try {
+      // Obter token de autenticação atual
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.access_token) {
+        return { 
+          sucesso: false, 
+          erro: 'Usuário não autenticado' 
+        };
+      }
+
+      // Chamar Edge Function para exclusão segura
+      const { data, error } = await supabase.functions.invoke('excluir-usuario', {
+        body: {
+          usuarioId,
+          supabaseAuthId
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (error) {
+        console.error('Erro na Edge Function excluir-usuario:', error);
+        return { 
+          sucesso: false, 
+          erro: error.message || 'Erro ao excluir usuário' 
+        };
+      }
+
+      if (data?.error) {
+        console.error('Erro retornado pela Edge Function:', data.error);
+        return { 
+          sucesso: false, 
+          erro: data.error 
+        };
+      }
+
+      return { sucesso: true };
+    } catch (error: unknown) {
+      console.error('Exceção ao excluir usuário:', error);
+      return { 
+        sucesso: false, 
+        erro: error instanceof Error ? error.message : 'Erro desconhecido ao excluir usuário' 
+      };
+    }
+  }
+
+  /**
+   * Exclui usuário do Supabase Auth (auth.users) usando Service Role
+   * @deprecated Use excluirUsuarioCompleto() em vez disso
+   */
+  static async excluirUsuarioAuth(supabaseAuthId: string): Promise<{ sucesso: boolean; erro?: string }> {
+    console.warn('⚠️ excluirUsuarioAuth() está deprecated. Use excluirUsuarioCompleto() em vez disso.');
+    
+    try {
+      // Importar o cliente administrativo
+      const { getAdminClient, isAdminClientAvailable } = await import('@/lib/supabase-admin');
+      
+      // Verificar se o cliente admin está disponível
+      if (!isAdminClientAvailable()) {
+        console.error('Cliente administrativo não disponível. Verifique se VITE_SUPABASE_SERVICE_ROLE_KEY está configurada.');
+        return { 
+          sucesso: false, 
+          erro: 'Configuração administrativa não disponível. Use a Edge Function excluir-usuario em vez disso.' 
+        };
+      }
+      
+      // Obter cliente administrativo
+      const adminClient = getAdminClient();
+      
+      // Excluir usuário usando o cliente administrativo
+      const { error } = await adminClient.auth.admin.deleteUser(supabaseAuthId);
+      
+      if (error) {
+        console.error('Erro ao excluir usuário do Supabase Auth:', error);
+        return { sucesso: false, erro: error.message };
+      }
+      
+      return { sucesso: true };
+    } catch (error: unknown) {
+      console.error('Exceção ao excluir usuário do Supabase Auth:', error);
+      return { sucesso: false, erro: error instanceof Error ? error.message : 'Erro desconhecido ao excluir usuário' };
+    }
+  }
+
+  /**
+   * Cria e envia um convite para um novo usuário
+   * @param email - Email do usuário a ser convidado
+   * @param perfilId - ID do perfil a ser atribuído ao novo usuário
+   * @param usuarioAtualId - ID do usuário que está enviando o convite (opcional)
+   * @param nomeConvidado - Nome do usuário convidado (opcional)
+   * @returns Resposta indicando sucesso ou falha
+   */
+  static async criarEnviarConvite(
+    email: string, 
+    perfilId: string, 
+    usuarioAtualId?: string,
+    nomeConvidado?: string
+  ): Promise<{ sucesso: boolean; erro?: string }> {
+    try {
+      // Verificar se o email já está cadastrado
+      const { data: usuarioExistente } = await supabase
+        .from('usuarios')
+        .select('id')
+        .eq('email', email)
+        .maybeSingle();
+
+      if (usuarioExistente) {
+        return {
+          sucesso: false,
+          erro: 'Este email já está cadastrado no sistema'
+        };
+      }
+
+      // Verificar se já existe um convite ativo para este email
+      const { data: conviteExistente } = await supabase
+        .from('convites_usuario')
+        .select('id')
+        .eq('email', email)
+        .eq('usado', false)
+        .gt('expires_at', new Date().toISOString())
+        .maybeSingle();
+
+      if (conviteExistente) {
+        return {
+          sucesso: false,
+          erro: 'Já existe um convite ativo para este email'
+        };
+      }
+
+      // Verificar perfil
+      const { data: perfilData, error: perfilError } = await supabase
+        .from('perfis_usuario')
+        .select('id, nome, tipo')
+        .eq('id', perfilId)
+        .single();
+
+      if (perfilError || !perfilData) {
+        return {
+          sucesso: false,
+          erro: 'Perfil não encontrado'
+        };
+      }
+
+      // Gerar token único para o convite
+      const token = crypto.randomUUID().replace(/-/g, '');
+
+      // Definir data de expiração (48 horas)
+      const expiresAt = new Date();
+      expiresAt.setHours(expiresAt.getHours() + 48);
+
+      // Salvar convite no banco
+      const conviteData: {
+        email: string;
+        token: string;
+        perfil_id: string;
+        expires_at: string;
+        usado: boolean;
+        criado_por?: string;
+      } = {
+        email,
+        token,
+        perfil_id: perfilId,
+        expires_at: expiresAt.toISOString(),
+        usado: false
+      };
+      
+      // Adicionar criado_por apenas se fornecido
+      if (usuarioAtualId) {
+        conviteData.criado_por = usuarioAtualId;
+      }
+      
+      const { error: conviteError } = await supabase
+        .from('convites_usuario')
+        .insert(conviteData);
+
+      if (conviteError) {
+        console.error('Erro ao criar convite:', conviteError);
+        return {
+          sucesso: false,
+          erro: 'Erro interno ao criar convite'
+        };
+      }
+
+      // Buscar informações da farmácia (nome do proprietário)
+      let nomeFarmacia = 'Pharma.AI';
+      
+      if (usuarioAtualId) {
+        const { data: proprietarioData } = await supabase
+          .from('usuarios')
+          .select('nome')
+          .eq('id', usuarioAtualId)
+          .single();
+  
+        if (proprietarioData?.nome) {
+          nomeFarmacia = `Farmácia de ${proprietarioData.nome}`;
+        }
+      }
+
+      // Construir URL para aceitação do convite
+      const conviteUrl = `${window.location.origin}/aceitar-convite?token=${token}&email=${encodeURIComponent(email)}`;
+      
+      // Chamar Edge Function para enviar email
+      console.log('Enviando convite por email...');
+      try {
+        const { data, error: emailError } = await supabase.functions.invoke('enviar-convite-usuario', {
+          body: {
+            email,
+            nome: nomeConvidado || '',
+            token,
+            conviteUrl,
+            nomeFarmacia,
+            perfil: perfilData.nome
+          }
+        });
+
+        if (emailError) {
+          console.error('Erro ao enviar email:', emailError);
+          return {
+            sucesso: false,
+            erro: 'Erro ao enviar email de convite. Por favor, tente novamente.'
+          };
+        }
+        
+        console.log('Resposta da função:', data);
+      } catch (funcError) {
+        console.error('Exceção ao chamar função:', funcError);
+        return {
+          sucesso: false,
+          erro: 'Erro ao processar envio de convite'
+        };
+      }
+
+      // Registrar log se houver usuário atual
+      if (usuarioAtualId) {
+        await this.registrarLogAuditoria(
+          usuarioAtualId,
+          'ENVIAR_CONVITE',
+          ModuloSistema.USUARIOS_PERMISSOES,
+          'convites_usuario',
+          {},
+          { email, perfil_id: perfilId, timestamp: new Date().toISOString() }
+        );
+      }
+
+      return { 
+        sucesso: true
+      };
+
+    } catch (error) {
+      console.error('Erro ao criar e enviar convite:', error);
+      return {
+        sucesso: false,
+        erro: 'Erro interno do servidor'
+      };
+    }
+  }
+
+  /**
+   * Verifica se um token de convite é válido
+   * @param token - Token do convite
+   * @param email - Email associado ao convite
+   * @returns Resposta indicando se o token é válido
+   */
+  static async verificarConvite(token: string, email: string): Promise<{ 
+    sucesso: boolean; 
+    erro?: string; 
+    perfilId?: string;
+    perfilNome?: string;
+  }> {
+    try {
+      // Buscar convite
+      const { data: conviteData, error: conviteError } = await supabase
+        .from('convites_usuario')
+        .select('*, perfis_usuario:perfil_id(nome, tipo)')
+        .eq('token', token)
+        .eq('email', email)
+        .eq('usado', false)
+        .single();
+
+      if (conviteError || !conviteData) {
+        return {
+          sucesso: false,
+          erro: 'Convite não encontrado ou já utilizado'
+        };
+      }
+
+      // Verificar se expirou
+      if (new Date(conviteData.expires_at) < new Date()) {
+        return {
+          sucesso: false,
+          erro: 'Este convite expirou'
+        };
+      }
+
+      return {
+        sucesso: true,
+        perfilId: conviteData.perfil_id,
+        perfilNome: conviteData.perfis_usuario?.nome
+      };
+    } catch (error) {
+      console.error('Erro ao verificar convite:', error);
+      return {
+        sucesso: false,
+        erro: 'Erro interno do servidor'
+      };
+    }
+  }
+
+  /**
+   * Aceita um convite e cria um novo usuário
+   * @param token - Token do convite
+   * @param email - Email associado ao convite
+   * @param nome - Nome do novo usuário
+   * @param senha - Senha do novo usuário
+   * @param telefone - Telefone do novo usuário (opcional)
+   * @returns Resposta indicando sucesso ou falha
+   */
+  static async aceitarConvite(
+    token: string,
+    email: string,
+    nome: string,
+    senha: string,
+    telefone?: string
+  ): Promise<{ sucesso: boolean; erro?: string; usuario?: Usuario }> {
+    try {
+      // Verificar convite
+      const verificacao = await this.verificarConvite(token, email);
+      if (!verificacao.sucesso || !verificacao.perfilId) {
+        return verificacao;
+      }
+
+      // Criar usuário usando a função existente
+      const resultado = await this.criarUsuario({
+        nome,
+        email,
+        senha,
+        telefone,
+        perfil_id: verificacao.perfilId,
+        ativo: true
+      });
+
+      if (!resultado.sucesso) {
+        return resultado;
+      }
+
+      // Marcar convite como usado
+      await supabase
+        .from('convites_usuario')
+        .update({ 
+          usado: true,
+          updated_at: new Date().toISOString() 
+        })
+        .eq('token', token)
+        .eq('email', email);
+
+      return resultado;
+    } catch (error) {
+      console.error('Erro ao aceitar convite:', error);
+      return {
+        sucesso: false,
+        erro: 'Erro interno do servidor'
+      };
+    }
+  }
+}
+
+// Exportar instância para uso direto
+export const authService = AuthService;

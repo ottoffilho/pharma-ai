@@ -3,11 +3,11 @@ description:
 globs: 
 alwaysApply: true
 ---
-# Regras do Projeto Homeo-AI
+# Regras do Projeto Pharma.AI
 
 Sempre Fale em PT-BR
 
-Este documento define as diretrizes gerais para o desenvolvimento do projeto Homeo-AI, estabelecendo padrões, fluxos de trabalho e critérios de qualidade a serem seguidos por todos os contribuidores.
+Este documento define as diretrizes gerais para o desenvolvimento do projeto Pharma.AI, estabelecendo padrões, fluxos de trabalho e critérios de qualidade a serem seguidos por todos os contribuidores.
 
 ## 1. Padrões de Código e Arquitetura
 
@@ -158,7 +158,43 @@ Este documento define as diretrizes gerais para o desenvolvimento do projeto Hom
 - Revisões periódicas de código/arquitetura
 - Retrospectivas após cada milestone importante
 
+## 8. Especificidades do Pharma.AI
+
+### 8.1. Sistema de Autenticação
+- **Obrigatório:** Usar Supabase Auth para autenticação
+- **Perfis:** Proprietário, Farmacêutico, Atendente, Manipulador
+- **Permissões:** Sistema granular (módulo + ação + nível)
+- **Proteção:** Todas as rotas admin devem usar PrivateRoute
+- **Sincronização:** Automática entre auth.users e usuarios
+
+### 8.2. Estrutura de Banco de Dados
+- **MCP SUPABASE:** Sempre use mcp para interagir com o banco de dados
+- **RLS obrigatório:** Todas as tabelas devem ter Row Level Security
+- **Nomenclatura:** snake_case para tabelas e colunas
+- **Triggers:** Automáticos para updated_at e histórico
+- **Relacionamentos:** Sempre com ON DELETE apropriado
+
+### 8.3. Padrões de Componentes
+- **TypeScript:** Obrigatório para todos os componentes
+- **Props:** Sempre tipadas com interfaces
+- **Hooks:** Usar custom hooks para lógica reutilizável
+- **UI:** Baseado em shadcn/ui + Tailwind CSS
+
+### 8.4. Módulos Implementados
+- **M09 - Usuários e Permissões:** 100% (Production Ready)
+- **M05 - Manipulação Básica:** 85% (Funcional)
+- **M02 - Estoque:** 75% (Funcional)
+- **M06 - Financeiro:** 60% (Parcial)
+- **M01 - Cadastros:** 50% (Parcial)
+- **M03 - Atendimento:** 30% (Parcial)
+
+### 8.5. Próximas Prioridades
+1. **Unificar dashboards** - Integrar dashboard administrativo
+2. **Finalizar M03** - Sistema de atendimento completo
+3. **Implementar M08** - Funcionalidades de IA
+4. **Testes automatizados** - Cobertura mínima de 80%
+
 ---
 
-*Última atualização: 2024-05-21*
-*Versão: 1.0.0* 
+*Última atualização: 2024-12-26*
+*Versão: 2.0.0* 

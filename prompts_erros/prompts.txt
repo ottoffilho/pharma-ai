@@ -1,73 +1,234 @@
-**PERSONA:** Você é um Gerente de Projetos de Tecnologia e Arquiteto de Software sênior.
-
-**TAREFA:** Sua missão é realizar uma análise de progresso e "gap analysis" completa do projeto Pharma.AI. Você deve comparar o que está planejado no documento de requisitos do produto (PRD) com o que já foi implementado no código-fonte. O objetivo final é gerar um relatório claro que nos permita definir as prioridades para concluir o MVP (Produto Mínimo Viável).
-
-**DOCUMENTO DE REFERÊNCIA:** Utilize o arquivo `Pharma_AI_PRD_v1.0.md` como a única fonte da verdade para o planejamento, especialmente a seção "7.1. FASE 1: MVP (Produto Mínimo Viável)".
-
-**PROCESSO DE ANÁLISE (PASSO A PASSO):**
-
-1.  **Análise do Planejamento (PRD):**
-    * Leia atentamente a seção "7.1. FASE 1: MVP" no arquivo `Pharma_AI_PRD_v1.0.md`.
-    * Crie uma lista detalhada de todos os módulos e sub-funcionalidades que foram definidos como escopo do MVP.
-
-2.  **Análise do Código-Fonte Implementado:**
-    * Analise TODOS os arquivos do projeto, incluindo componentes React (`.tsx`), serviços, hooks, páginas, rotas (`App.tsx`) e funções do Supabase (`supabase/functions`).
-    * Mapeie todas as funcionalidades que já existem no código. Por exemplo, "foi criado o formulário de cadastro de fornecedores em `FornecedorForm.tsx`", "a rota `/admin/estoque/insumos` está definida", "a função `buscar-dados-documento` está implementada".
-
-3.  **Geração do Relatório de Status e Gap Analysis:**
-    * Compare os resultados dos passos 1 e 2.
-    * Para cada item do escopo do MVP, classifique seu status atual em uma das seguintes categorias:
-        * **✅ CONCLUÍDO:** A funcionalidade está implementada e alinhada com os critérios do PRD. (Ex: O CRUD de Fornecedores está completo).
-        * **🟡 PARCIAL:** A funcionalidade foi iniciada, mas não está completa. (Ex: O formulário de Insumos existe, mas a lógica de submissão para o banco de dados não foi implementada).
-        * **❌ NÃO INICIADO:** A funcionalidade é parte do MVP, mas não há código correspondente. (Ex: O módulo de Ordens de Produção ainda não foi criado).
-    * Identifique qualquer divergência ou implementação fora do escopo do MVP.
-
-4.  **Recomendações Estratégicas (Próximos Passos):**
-    * Com base na análise de Gaps (itens Parciais e Não Iniciados), crie uma lista priorizada de tarefas de desenvolvimento.
-    * Sugira os próximos 3 a 5 "sprints" ou blocos de trabalho para focar em completar as funcionalidades essenciais do MVP.
-
-**FORMATO DA RESPOSTA:**
-Apresente o resultado final em um documento Markdown bem estruturado, com os seguintes tópicos:
-
----
-### Relatório de Progresso e Próximos Passos - Pharma.AI (MVP)
-
-**1. Análise de Aderência ao MVP**
-
-**(Módulo por Módulo, conforme o PRD)**
-
-* **M01-CADASTROS_ESSENCIAIS:**
-    * Gestão de Insumos: [Status e observações]
-    * Controle de Lotes: [Status e observações]
-    * Gestão de Embalagens: [Status e observações]
-    * Gestão de Fornecedores: [Status e observações]
-
-* **M09-USUARIOS_PERMISSOES:**
-    * Autenticação e Perfis: [Status e observações]
-
-* **M02-ATENDIMENTO_BASICO:**
-    * Entrada Manual de Receitas: [Status e observações]
-
-* **M04-ESTOQUE_BASICO:**
-    * Controle de Entrada/Saída: [Status e observações]
-
-* **M03-ORCAMENTACAO_SIMPLES:**
-    * Cálculo de Preços: [Status e observações]
-
-* **M06-FINANCEIRO_BASICO:**
-    * Contas a Pagar/Receber: [Status e observações]
-
-* **M05-MANIPULACAO_BASICA:**
-    * Ordens de Produção: [Status e observações]
-
-**2. Divergências e Pontos de Atenção**
-* [Liste aqui qualquer funcionalidade implementada que não pertence ao MVP ou que diverge da arquitetura proposta.]
-
-**3. Recomendações e Plano de Ação Priorizado**
-* **Foco Imediato (Itens críticos para fechar o fluxo principal):**
-    1.  [Tarefa 1]
-    2.  [Tarefa 2]
-* **Próximas Prioridades:**
-    1.  [Tarefa 3]
-    2.  [Tarefa 4]
----
+This XML file does not appear to have any style information associated with it. The document tree is shown below.
+<nfeProc xmlns="http://www.portalfiscal.inf.br/nfe" versao="4.00">
+<NFe xmlns="http://www.portalfiscal.inf.br/nfe">
+<infNFe versao="4.00" Id="NFe35250207850730000120550010001974051648373126">
+<ide>
+<cUF>35</cUF>
+<cNF>64837312</cNF>
+<natOp>Venda de producao do estabelecimento</natOp>
+<mod>55</mod>
+<serie>1</serie>
+<nNF>197405</nNF>
+<dhEmi>2025-02-10T08:31:00-03:00</dhEmi>
+<dhSaiEnt>2025-02-10T08:31:00-03:00</dhSaiEnt>
+<tpNF>1</tpNF>
+<idDest>2</idDest>
+<cMunFG>3540606</cMunFG>
+<tpImp>1</tpImp>
+<tpEmis>1</tpEmis>
+<cDV>6</cDV>
+<tpAmb>1</tpAmb>
+<finNFe>1</finNFe>
+<indFinal>0</indFinal>
+<indPres>3</indPres>
+<indIntermed>0</indIntermed>
+<procEmi>0</procEmi>
+<verProc>1211320271</verProc>
+</ide>
+<emit>
+<CNPJ>07850730000120</CNPJ>
+<xNome>EMPHASYS IMPORTADORA EXPORTADORA E DISTRIBUIDORA LTDA</xNome>
+<enderEmit>
+<xLgr>AVENIDA FLORENT DELEU</xLgr>
+<nro>640</nro>
+<xBairro>CHACARA DELEU</xBairro>
+<cMun>3540606</cMun>
+<xMun>Porto Feliz</xMun>
+<UF>SP</UF>
+<CEP>18540410</CEP>
+<cPais>1058</cPais>
+<xPais>Brasil</xPais>
+<fone>1532628430</fone>
+</enderEmit>
+<IE>554094346111</IE>
+<IM>011423995077</IM>
+<CNAE>2222600</CNAE>
+<CRT>3</CRT>
+</emit>
+<dest>
+<CNPJ>00632810000160</CNPJ>
+<xNome>Botica Laboratorio Farmacotecnico Ltda Epp</xNome>
+<enderDest>
+<xLgr>R Sds Bloco J</xLgr>
+<nro>S/N</nro>
+<xCpl>Loja 16</xCpl>
+<xBairro>Asa Sul</xBairro>
+<cMun>5300108</cMun>
+<xMun>Brasilia</xMun>
+<UF>DF</UF>
+<CEP>70391900</CEP>
+<cPais>1058</cPais>
+<xPais>Brasil</xPais>
+<fone>6132247716</fone>
+</enderDest>
+<indIEDest>1</indIEDest>
+<IE>0733275200141</IE>
+<email>boticabrasilia@gmail.com</email>
+</dest>
+<det nItem="1">
+<prod>
+<cProd>703000122</cProd>
+<cEAN>SEM GTIN</cEAN>
+<xProd>Slim Look 30ml Branco</xProd>
+<NCM>84249090</NCM>
+<CFOP>6101</CFOP>
+<uCom>UN</uCom>
+<qCom>200.0000</qCom>
+<vUnCom>6.4000000000</vUnCom>
+<vProd>1280.00</vProd>
+<cEANTrib>SEM GTIN</cEANTrib>
+<uTrib>UN</uTrib>
+<qTrib>200.0000</qTrib>
+<vUnTrib>6.4000000000</vUnTrib>
+<vFrete>90.00</vFrete>
+<indTot>1</indTot>
+<nFCI>AA0B9783-63E9-456B-98FA-A5E770E43C5D</nFCI>
+</prod>
+<imposto>
+<ICMS>
+<ICMS00>
+<orig>5</orig>
+<CST>00</CST>
+<modBC>3</modBC>
+<vBC>1370.00</vBC>
+<pICMS>7.0000</pICMS>
+<vICMS>95.90</vICMS>
+</ICMS00>
+</ICMS>
+<IPI>
+<cEnq>999</cEnq>
+<IPITrib>
+<CST>50</CST>
+<vBC>1370.00</vBC>
+<pIPI>3.2500</pIPI>
+<vIPI>44.53</vIPI>
+</IPITrib>
+</IPI>
+<PIS>
+<PISAliq>
+<CST>01</CST>
+<vBC>1274.10</vBC>
+<pPIS>1.6500</pPIS>
+<vPIS>21.02</vPIS>
+</PISAliq>
+</PIS>
+<COFINS>
+<COFINSAliq>
+<CST>01</CST>
+<vBC>1274.10</vBC>
+<pCOFINS>7.6000</pCOFINS>
+<vCOFINS>96.83</vCOFINS>
+</COFINSAliq>
+</COFINS>
+</imposto>
+<infAdProd>Lote 21997 Venc. 03/02/2030</infAdProd>
+</det>
+<total>
+<ICMSTot>
+<vBC>1370.00</vBC>
+<vICMS>95.90</vICMS>
+<vICMSDeson>0.00</vICMSDeson>
+<vFCP>0.00</vFCP>
+<vBCST>0.00</vBCST>
+<vST>0.00</vST>
+<vFCPST>0.00</vFCPST>
+<vFCPSTRet>0.00</vFCPSTRet>
+<vProd>1280.00</vProd>
+<vFrete>90.00</vFrete>
+<vSeg>0.00</vSeg>
+<vDesc>0.00</vDesc>
+<vII>0.00</vII>
+<vIPI>44.53</vIPI>
+<vIPIDevol>0.00</vIPIDevol>
+<vPIS>21.02</vPIS>
+<vCOFINS>96.83</vCOFINS>
+<vOutro>0.00</vOutro>
+<vNF>1414.53</vNF>
+</ICMSTot>
+</total>
+<transp>
+<modFrete>0</modFrete>
+<transporta>
+<CNPJ>06321409001320</CNPJ>
+<xNome>Quality Transportes e Entregas Rapidas Ltda.</xNome>
+<IE>122819217110</IE>
+<xEnder>ESTM Jose Sedano 854 Mod. 07/11/12 Techno Park 13069-335</xEnder>
+<xMun>Campinas</xMun>
+<UF>SP</UF>
+</transporta>
+<vol>
+<qVol>1</qVol>
+<esp>caixa</esp>
+<pesoL>5.000</pesoL>
+<pesoB>6.240</pesoB>
+</vol>
+</transp>
+<cobr>
+<fat>
+<nFat>197405</nFat>
+<vOrig>1414.53</vOrig>
+<vDesc>0.00</vDesc>
+<vLiq>1414.53</vLiq>
+</fat>
+<dup>
+<nDup>001</nDup>
+<dVenc>2025-02-24</dVenc>
+<vDup>707.27</vDup>
+</dup>
+<dup>
+<nDup>002</nDup>
+<dVenc>2025-03-10</dVenc>
+<vDup>707.26</vDup>
+</dup>
+</cobr>
+<pag>
+<detPag>
+<indPag>1</indPag>
+<tPag>15</tPag>
+<vPag>1414.53</vPag>
+</detPag>
+</pag>
+<infAdic>
+<infCpl>pedido 59065 1cx02- 6,240</infCpl>
+</infAdic>
+<infRespTec>
+<CNPJ>37878691000130</CNPJ>
+<xContato>Diretoria de Tecnologia da Informacao</xContato>
+<email>faleconosco@gruposkill.com.br</email>
+<fone>1155747770</fone>
+</infRespTec>
+</infNFe>
+<Signature xmlns="http://www.w3.org/2000/09/xmldsig#">
+<SignedInfo xmlns="http://www.w3.org/2000/09/xmldsig#">
+<CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/>
+<SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/>
+<Reference URI="#NFe35250207850730000120550010001974051648373126">
+<Transforms>
+<Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/>
+<Transform Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/>
+</Transforms>
+<DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>
+<DigestValue>PepZwAc2d6QqPZreB9hSKSjCBIY=</DigestValue>
+</Reference>
+</SignedInfo>
+<SignatureValue xmlns="http://www.w3.org/2000/09/xmldsig#">j9HkIfsCXJ7LchuTfUWxHQyvA74B9DI+WAR335/ELh++5yjZKbsdMXel43Pd8VqyGNQgrjjKcO0sJNNtQfL+nOh1LXbsOYdeZKOErt8u27sSGP13n4rggr0nFdxYy8y00xM8tffqUpwEMvhD0rl31HHR7krIQc2peWOFzIcMZmuJJUYVfH0HPn/7hVfGjr2+ZYtn+bCRy4T0gHJhdmQRDOTYD8mgrBisFglPChAKo5J0cPaJw/2v+S/sN3Hvu0OkOHbnDKZXal7nNd2QD04gLemo61TbV9291tVZ7I3iayWZtyQbIC2V4OdFsnkSEHWCju9smWfHwbl8QpXzAFAtuQ==</SignatureValue>
+<KeyInfo xmlns="http://www.w3.org/2000/09/xmldsig#">
+<X509Data>
+<X509Certificate>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</X509Certificate>
+</X509Data>
+</KeyInfo>
+</Signature>
+</NFe>
+<protNFe xmlns="http://www.portalfiscal.inf.br/nfe" versao="4.00">
+<infProt xmlns="http://www.portalfiscal.inf.br/nfe" Id="Id135250370619091">
+<tpAmb>1</tpAmb>
+<verAplic>SP_NFE_PL009_V4</verAplic>
+<chNFe>35250207850730000120550010001974051648373126</chNFe>
+<dhRecbto>2025-02-10T08:31:20-03:00</dhRecbto>
+<nProt>135250370619091</nProt>
+<digVal>PepZwAc2d6QqPZreB9hSKSjCBIY=</digVal>
+<cStat>100</cStat>
+<xMotivo>Autorizado o uso da NF-e</xMotivo>
+</infProt>
+</protNFe>
+</nfeProc>

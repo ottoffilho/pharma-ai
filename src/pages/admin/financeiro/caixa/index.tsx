@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, subDays, startOfMonth } from 'date-fns';
@@ -7,7 +6,29 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { MovimentacaoCaixaForm } from '@/components/financeiro/MovimentacaoCaixaForm';
-import { CalendarIcon, Plus, ArrowDown, ArrowUp, Edit, Trash2 } from 'lucide-react';
+import { 
+  CalendarIcon, 
+  Plus, 
+  ArrowDown, 
+  ArrowUp, 
+  Edit, 
+  Trash2,
+  DollarSign,
+  TrendingUp,
+  TrendingDown,
+  BarChart3,
+  Wallet,
+  Search,
+  Filter,
+  Download,
+  Upload,
+  MoreHorizontal,
+  Eye,
+  Calendar,
+  AlertCircle,
+  CheckCircle,
+  Clock
+} from 'lucide-react';
 
 import {
   Table,
@@ -18,6 +39,8 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
   DialogContent,
@@ -53,12 +76,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Calendar } from '@/components/ui/calendar';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 
 export default function FluxoCaixaPage() {
@@ -79,6 +109,7 @@ export default function FluxoCaixaPage() {
   const [tipoFiltro, setTipoFiltro] = useState<string>('todos');
   const [dataInicio, setDataInicio] = useState<Date>(startOfMonth(new Date()));
   const [dataFim, setDataFim] = useState<Date>(new Date());
+  const [searchTerm, setSearchTerm] = useState('');
 
   // Consultar movimentações de caixa
   const { data: movimentacoes, isLoading, isError, error } = useQuery({
@@ -117,7 +148,7 @@ export default function FluxoCaixaPage() {
       toast({
         title: "Movimentação excluída",
         description: "A movimentação foi excluída com sucesso.",
-        variant: "success",
+        variant: "default",
       });
       queryClient.invalidateQueries({ queryKey: ['movimentacoes-caixa'] });
     },
@@ -131,17 +162,24 @@ export default function FluxoCaixaPage() {
     },
   });
 
+  // Filtrar movimentações baseado na busca
+  const filteredMovimentacoes = movimentacoes?.filter(movimentacao => {
+    const matchesSearch = movimentacao.descricao.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (movimentacao.observacoes && movimentacao.observacoes.toLowerCase().includes(searchTerm.toLowerCase()));
+    return matchesSearch;
+  }) || [];
+
   // Calcular totais
   const calcularTotais = () => {
-    if (!movimentacoes || movimentacoes.length === 0) {
+    if (!filteredMovimentacoes || filteredMovimentacoes.length === 0) {
       return { totalEntradas: 0, totalSaidas: 0, saldo: 0 };
     }
     
-    const totalEntradas = movimentacoes
+    const totalEntradas = filteredMovimentacoes
       .filter((mov: { tipo_movimentacao: string }) => mov.tipo_movimentacao === 'entrada')
       .reduce((total: number, mov: { valor: string | number }) => total + parseFloat(String(mov.valor)), 0);
       
-    const totalSaidas = movimentacoes
+    const totalSaidas = filteredMovimentacoes
       .filter((mov: { tipo_movimentacao: string }) => mov.tipo_movimentacao === 'saida')
       .reduce((total: number, mov: { valor: string | number }) => total + parseFloat(String(mov.valor)), 0);
       
@@ -183,7 +221,7 @@ export default function FluxoCaixaPage() {
     toast({
       title: "Movimentação registrada",
       description: "A movimentação foi adicionada com sucesso.",
-      variant: "success",
+      variant: "default",
     });
   };
 
@@ -193,284 +231,370 @@ export default function FluxoCaixaPage() {
     toast({
       title: "Movimentação atualizada",
       description: "A movimentação foi atualizada com sucesso.",
-      variant: "success",
+      variant: "default",
     });
-  };
-
-  const renderContent = () => {
-    if (isLoading) {
-      return <div className="py-8 text-center">Carregando movimentações...</div>;
-    }
-
-    if (isError) {
-      return (
-        <div className="py-8 text-center text-red-500">
-          Erro ao carregar movimentações: {(error as Error).message}
-        </div>
-      );
-    }
-
-    if (!movimentacoes || movimentacoes.length === 0) {
-      return (
-        <div className="py-8 text-center text-gray-500">
-          Nenhuma movimentação encontrada no período selecionado.
-        </div>
-      );
-    }
-
-    return (
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Data</TableHead>
-            <TableHead>Descrição</TableHead>
-            <TableHead>Tipo</TableHead>
-            <TableHead>Categoria</TableHead>
-            <TableHead className="text-right">Valor</TableHead>
-            <TableHead className="text-right">Ações</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {movimentacoes.map((mov: Record<string, unknown>) => (
-            <TableRow key={mov.id}>
-              <TableCell>
-                {format(new Date(mov.data_movimentacao), 'dd/MM/yyyy')}
-              </TableCell>
-              <TableCell className="font-medium">{mov.descricao}</TableCell>
-              <TableCell>
-                <div className="flex items-center">
-                  {mov.tipo_movimentacao === 'entrada' ? (
-                    <div className="flex items-center text-green-600">
-                      <ArrowUp className="h-4 w-4 mr-1" />
-                      <span>Entrada</span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center text-red-600">
-                      <ArrowDown className="h-4 w-4 mr-1" />
-                      <span>Saída</span>
-                    </div>
-                  )}
-                </div>
-              </TableCell>
-              <TableCell>
-                {mov.categorias_financeiras?.nome ? (
-                  <span className="px-2 py-1 rounded text-xs font-medium bg-gray-100">
-                    {mov.categorias_financeiras.nome}
-                  </span>
-                ) : (
-                  '-'
-                )}
-              </TableCell>
-              <TableCell className={`text-right font-medium ${
-                mov.tipo_movimentacao === 'entrada' ? 'text-green-600' : 'text-red-600'
-              }`}>
-                {formatarValor(mov.valor)}
-              </TableCell>
-              <TableCell className="text-right">
-                <div className="flex justify-end space-x-2">
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => handleEditar(mov)}
-                  >
-                    <Edit className="h-4 w-4" />
-                    <span className="sr-only">Editar</span>
-                  </Button>
-                  
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="ghost" size="sm" className="text-red-600">
-                        <Trash2 className="h-4 w-4" />
-                        <span className="sr-only">Excluir</span>
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Tem certeza que deseja excluir esta movimentação? Esta ação não pode ser desfeita.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction 
-                          className="bg-red-600 hover:bg-red-700" 
-                          onClick={() => handleExcluir(mov.id)}
-                        >
-                          Excluir
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    );
   };
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold">Fluxo de Caixa</h1>
-          <Dialog open={isNovaMovimentacaoOpen} onOpenChange={setIsNovaMovimentacaoOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4 mr-1" />
-                Nova Movimentação
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px]">
-              <DialogHeader>
-                <DialogTitle>Registrar Movimentação</DialogTitle>
-              </DialogHeader>
-              <MovimentacaoCaixaForm onSuccess={handleNovaMovimentacaoSuccess} />
-              <DialogClose className="hidden" />
-            </DialogContent>
-          </Dialog>
-        </div>
+      <div className="space-y-8">
+        {/* Hero Section */}
+        <div className="relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 dark:from-green-950/20 dark:via-emerald-950/20 dark:to-teal-950/20" />
+          <div className="relative px-6 py-12">
+            <div className="flex items-center justify-between">
+              <div className="space-y-4 max-w-3xl">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 rounded-lg bg-gradient-to-br from-green-500 to-emerald-500 text-white">
+                    <Wallet className="h-8 w-8" />
+                  </div>
+                  <div>
+                    <h1 className="text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+                      Fluxo de Caixa
+                    </h1>
+                    <p className="text-xl text-muted-foreground mt-2">
+                      Controle completo das movimentações financeiras
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div className="hidden lg:block">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-400 blur-3xl opacity-20" />
+                  <DollarSign className="h-32 w-32 text-green-600/20" />
+                </div>
+              </div>
+            </div>
 
-        {/* Resumo financeiro */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg text-green-600">Total Entradas</CardTitle>
-              <CardDescription>No período selecionado</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold text-green-600">{formatarValor(totalEntradas)}</p>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg text-red-600">Total Saídas</CardTitle>
-              <CardDescription>No período selecionado</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold text-red-600">{formatarValor(totalSaidas)}</p>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className={`text-lg ${saldo >= 0 ? 'text-blue-600' : 'text-orange-600'}`}>
-                Saldo do Período
-              </CardTitle>
-              <CardDescription>Entradas - Saídas</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className={`text-2xl font-bold ${saldo >= 0 ? 'text-blue-600' : 'text-orange-600'}`}>
-                {formatarValor(saldo)}
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-        
-        {/* Filtros */}
-        <div className="bg-white shadow rounded-lg p-6">
-          <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Tipo de Movimentação
-              </label>
-              <Select value={tipoFiltro} onValueChange={setTipoFiltro}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Selecione o tipo" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos</SelectItem>
-                  <SelectItem value="entrada">Entradas</SelectItem>
-                  <SelectItem value="saida">Saídas</SelectItem>
-                </SelectContent>
-              </Select>
+            {/* Métricas Rápidas */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
+              <Card className="border-0 shadow-sm bg-white/60 backdrop-blur-sm">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Total de Entradas</p>
+                      <p className="text-2xl font-bold text-green-600">{formatarValor(totalEntradas)}</p>
+                    </div>
+                    <TrendingUp className="h-8 w-8 text-green-600" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-0 shadow-sm bg-white/60 backdrop-blur-sm">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Total de Saídas</p>
+                      <p className="text-2xl font-bold text-red-600">{formatarValor(totalSaidas)}</p>
+                    </div>
+                    <TrendingDown className="h-8 w-8 text-red-600" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-0 shadow-sm bg-white/60 backdrop-blur-sm">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Saldo do Período</p>
+                      <p className={`text-2xl font-bold ${saldo >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {formatarValor(saldo)}
+                      </p>
+                    </div>
+                    <BarChart3 className={`h-8 w-8 ${saldo >= 0 ? 'text-green-600' : 'text-red-600'}`} />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-0 shadow-sm bg-white/60 backdrop-blur-sm">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Movimentações</p>
+                      <p className="text-2xl font-bold">{filteredMovimentacoes.length}</p>
+                    </div>
+                    <Wallet className="h-8 w-8 text-blue-600" />
+                  </div>
+                </CardContent>
+              </Card>
             </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Data Início
-              </label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant={"outline"}
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !dataInicio && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {dataInicio ? format(dataInicio, 'PP', { locale: ptBR }) : <span>Selecione uma data</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={dataInicio}
-                    onSelect={(date) => date && setDataInicio(date)}
-                    initialFocus
-                    className={cn("p-3 pointer-events-auto")}
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Data Fim
-              </label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant={"outline"}
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !dataFim && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {dataFim ? format(dataFim, 'PP', { locale: ptBR }) : <span>Selecione uma data</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={dataFim}
-                    onSelect={(date) => date && setDataFim(date)}
-                    initialFocus
-                    className={cn("p-3 pointer-events-auto")}
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-          </div>
-          
-          {/* Tabela de movimentações */}
-          <div className="overflow-x-auto">
-            {renderContent()}
           </div>
         </div>
 
-        {/* Dialog para editar movimentação */}
-        {selectedMovimentacao && (
-          <Dialog open={isEditMovimentacaoOpen} onOpenChange={setIsEditMovimentacaoOpen}>
-            <DialogContent className="sm:max-w-[500px]">
-              <DialogHeader>
-                <DialogTitle>Editar Movimentação</DialogTitle>
-              </DialogHeader>
+        {/* Controles e Filtros */}
+        <div className="px-6">
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-6">
+              <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
+                <div className="flex flex-col sm:flex-row gap-4 flex-1">
+                  <div className="relative flex-1 max-w-md">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                    <Input
+                      placeholder="Buscar movimentações..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                  
+                  <Select value={tipoFiltro} onValueChange={setTipoFiltro}>
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todos">Todos os tipos</SelectItem>
+                      <SelectItem value="entrada">Entradas</SelectItem>
+                      <SelectItem value="saida">Saídas</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className="w-[240px] justify-start text-left font-normal">
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {dataInicio && dataFim ? (
+                          <>
+                            {format(dataInicio, "dd/MM/yyyy")} - {format(dataFim, "dd/MM/yyyy")}
+                          </>
+                        ) : (
+                          <span>Selecionar período</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <div className="p-4 space-y-4">
+                        <div>
+                          <label className="text-sm font-medium">Data Início</label>
+                          <CalendarComponent
+                            mode="single"
+                            selected={dataInicio}
+                            onSelect={(date) => date && setDataInicio(date)}
+                            initialFocus
+                          />
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium">Data Fim</label>
+                          <CalendarComponent
+                            mode="single"
+                            selected={dataFim}
+                            onSelect={(date) => date && setDataFim(date)}
+                          />
+                        </div>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm">
+                    <Download className="h-4 w-4 mr-2" />
+                    Exportar
+                  </Button>
+                  <Dialog open={isNovaMovimentacaoOpen} onOpenChange={setIsNovaMovimentacaoOpen}>
+                    <DialogTrigger asChild>
+                      <Button className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Nova Movimentação
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[600px]">
+                      <DialogHeader>
+                        <DialogTitle>Nova Movimentação</DialogTitle>
+                        <DialogDescription>
+                          Registre uma nova movimentação no fluxo de caixa
+                        </DialogDescription>
+                      </DialogHeader>
+                      <MovimentacaoCaixaForm onSuccess={handleNovaMovimentacaoSuccess} />
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Tabela de Movimentações */}
+        <div className="px-6">
+          <Card className="border-0 shadow-sm">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Wallet className="h-5 w-5 text-green-600" />
+                    Movimentações do Caixa
+                  </CardTitle>
+                  <CardDescription>
+                    {filteredMovimentacoes.length} movimentação(ões) encontrada(s)
+                  </CardDescription>
+                </div>
+                <Badge variant="outline" className="text-green-600 border-green-200">
+                  {filteredMovimentacoes.length} itens
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <div className="space-y-4">
+                  {Array(5).fill(null).map((_, index) => (
+                    <div key={index} className="flex items-center space-x-4">
+                      <Skeleton className="h-12 w-12 rounded-lg" />
+                      <div className="space-y-2 flex-1">
+                        <Skeleton className="h-4 w-[250px]" />
+                        <Skeleton className="h-4 w-[200px]" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : isError ? (
+                <div className="text-center py-12">
+                  <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">Erro ao carregar movimentações</h3>
+                  <p className="text-muted-foreground mb-4">
+                    {(error as Error)?.message || 'Tente novamente mais tarde'}
+                  </p>
+                  <Button variant="outline" onClick={() => window.location.reload()}>
+                    Tentar novamente
+                  </Button>
+                </div>
+              ) : filteredMovimentacoes.length === 0 ? (
+                <div className="text-center py-12">
+                  <Wallet className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">Nenhuma movimentação encontrada</h3>
+                  <p className="text-muted-foreground mb-4">
+                    {searchTerm || tipoFiltro !== 'todos' 
+                      ? 'Tente ajustar os filtros de busca'
+                      : 'Comece registrando sua primeira movimentação'
+                    }
+                  </p>
+                  <Button onClick={() => setIsNovaMovimentacaoOpen(true)} className="bg-gradient-to-r from-green-500 to-emerald-500">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Criar Primeira Movimentação
+                  </Button>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Data</TableHead>
+                        <TableHead>Descrição</TableHead>
+                        <TableHead>Categoria</TableHead>
+                        <TableHead>Tipo</TableHead>
+                        <TableHead>Valor</TableHead>
+                        <TableHead className="text-right">Ações</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredMovimentacoes.map((movimentacao) => (
+                        <TableRow key={movimentacao.id} className="hover:bg-muted/50">
+                          <TableCell>
+                            <div className="flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              {format(new Date(movimentacao.data_movimentacao), 'dd/MM/yyyy')}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-3">
+                              <div className={`p-2 rounded-lg ${
+                                movimentacao.tipo_movimentacao === 'entrada' 
+                                  ? 'bg-gradient-to-br from-green-100 to-emerald-100' 
+                                  : 'bg-gradient-to-br from-red-100 to-rose-100'
+                              }`}>
+                                {movimentacao.tipo_movimentacao === 'entrada' ? (
+                                  <TrendingUp className="h-4 w-4 text-green-600" />
+                                ) : (
+                                  <TrendingDown className="h-4 w-4 text-red-600" />
+                                )}
+                              </div>
+                              <div>
+                                <p className="font-medium">{movimentacao.descricao}</p>
+                                <p className="text-sm text-muted-foreground">
+                                  {movimentacao.observacoes || 'Sem observações'}
+                                </p>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-sm">
+                              {movimentacao.categorias_financeiras?.nome || 'Sem categoria'}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <Badge 
+                              variant="outline"
+                              className={
+                                movimentacao.tipo_movimentacao === 'entrada'
+                                  ? 'bg-green-100 text-green-800 border-green-200'
+                                  : 'bg-red-100 text-red-800 border-red-200'
+                              }
+                            >
+                              {movimentacao.tipo_movimentacao === 'entrada' ? (
+                                <>
+                                  <ArrowUp className="h-3 w-3 mr-1" />
+                                  Entrada
+                                </>
+                              ) : (
+                                <>
+                                  <ArrowDown className="h-3 w-3 mr-1" />
+                                  Saída
+                                </>
+                              )}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="font-medium">
+                            <span className={movimentacao.tipo_movimentacao === 'entrada' ? 'text-green-600' : 'text-red-600'}>
+                              {formatarValor(parseFloat(String(movimentacao.valor)))}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => handleEditar(movimentacao)}>
+                                  <Edit className="h-4 w-4 mr-2" />
+                                  Editar
+                                </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  onClick={() => handleExcluir(movimentacao.id)}
+                                  className="text-red-600"
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Excluir
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Dialog de Edição */}
+        <Dialog open={isEditMovimentacaoOpen} onOpenChange={setIsEditMovimentacaoOpen}>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle>Editar Movimentação</DialogTitle>
+              <DialogDescription>
+                Atualize os dados da movimentação selecionada
+              </DialogDescription>
+            </DialogHeader>
+            {selectedMovimentacao && (
               <MovimentacaoCaixaForm 
-                onSuccess={handleEditMovimentacaoSuccess}
-                initialData={selectedMovimentacao}
-                mode="edit"
-                id={selectedMovimentacao.id}
+                movimentacao={selectedMovimentacao} 
+                onSuccess={handleEditMovimentacaoSuccess} 
               />
-              <DialogClose className="hidden" />
-            </DialogContent>
-          </Dialog>
-        )}
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </AdminLayout>
   );

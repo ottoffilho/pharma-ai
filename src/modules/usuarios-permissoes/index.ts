@@ -28,5 +28,7 @@ export {
   usePermissionCheck
 } from './components/ProtectedComponent';
 export { DashboardAdministrativo } from './components/DashboardAdministrativo';
+export { DashboardOperacional } from './components/DashboardOperacional';
+export { DashboardProducao } from './components/DashboardProducao';
 export { DashboardAtendimento } from './components/DashboardAtendimento';
 export { DashboardRouter, useDashboardInfo } from './components/DashboardRouter'; 

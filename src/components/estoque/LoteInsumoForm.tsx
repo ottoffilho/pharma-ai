@@ -1,11 +1,10 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Loader2, ArrowLeft, Save } from 'lucide-react';
+import { Loader2, ArrowLeft, Save, AlertTriangle, CheckCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -40,24 +39,13 @@ import { supabase } from '@/integrations/supabase/client';
 
 // Zod schema for form validation
 const loteInsumoSchema = z.object({
-  insumo_id: z.string({
-    required_error: "Por favor, selecione um insumo",
-  }),
-  numero_lote: z.string({
-    required_error: "Número do lote é obrigatório",
-  }).min(1, "Número do lote é obrigatório"),
-  quantidade_inicial: z.number({
-    required_error: "Quantidade inicial é obrigatória",
-    invalid_type_error: "Quantidade inicial deve ser um número",
-  }).positive("Quantidade inicial deve ser maior que zero"),
-  quantidade_atual: z.number({
-    required_error: "Quantidade atual é obrigatória",
-    invalid_type_error: "Quantidade atual deve ser um número",
-  }).nonnegative("Quantidade atual não pode ser negativa"),
+  produto_id: z.string().min(1, "Insumo é obrigatório"),
+  numero_lote: z.string().min(1, "Número do lote é obrigatório"),
+  quantidade_inicial: z.number().min(0, "Quantidade inicial deve ser positiva"),
+  quantidade_atual: z.number().min(0, "Quantidade atual deve ser positiva"),
   data_validade: z.date().nullable(),
   fornecedor_id: z.string().nullable(),
   custo_unitario_lote: z.number().nullable(),
-  localizacao: z.string().nullable(),
   notas: z.string().nullable(),
   unidade_medida: z.string()
 });
@@ -69,39 +57,86 @@ interface LoteInsumoFormProps {
   isEditing?: boolean;
   loteId?: string;
   insumoId?: string;
+  xmlData?: {
+    produto_id?: string;
+    numero_lote?: string;
+    data_fabricacao?: string;
+    data_validade?: string;
+    quantidade?: number;
+    fornecedor_id?: string;
+    preco_unitario?: number;
+  };
 }
 
-const LoteInsumoForm = ({ initialData, isEditing = false, loteId, insumoId }: LoteInsumoFormProps) => {
+// ADICIONADO: Helper function para identificar se um produto é insumo
+const isLikelyInsumo = (nomeProduto: string): boolean => {
+  const insumoKeywords = [
+    // Matérias-primas químicas
+    'cloreto', 'sulfato', 'carbonato', 'óxido', 'ácido', 'álcool', 'glicerina', 
+    'vaselina', 'lanolina', 'parafina', 'cera', 'óleo mineral', 'silicone',
+    
+    // Ativos farmacêuticos
+    'vitamina', 'colágeno', 'proteína', 'extrato', 'essência', 'óleo essencial',
+    'hidrolisado', 'peptídeo', 'aminoácido', 'enzima', 'probiótico',
+    
+    // Conservantes e estabilizantes
+    'parabeno', 'fenoxietanol', 'benzoato', 'sorbato', 'tocoferol', 'bht', 'bha',
+    'edta', 'citrato', 'lactato', 'gluconato',
+    
+    // Bases e veículos
+    'base', 'veículo', 'excipiente', 'diluente', 'solvente', 'gel base',
+    'creme base', 'pomada base', 'loção base',
+    
+    // Materiais de embalagem primária
+    'papel indicador', 'teste', 'reagente', 'substrato'
+  ];
+  
+  const nomeNormalized = nomeProduto.toLowerCase();
+  return insumoKeywords.some(keyword => nomeNormalized.includes(keyword));
+};
+
+const LoteInsumoForm = ({ initialData, isEditing = false, loteId, insumoId, xmlData }: LoteInsumoFormProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedInsumoId, setSelectedInsumoId] = useState<string | null>(insumoId || null);
 
+  // State for real-time validation
+  const [loteValidation, setLoteValidation] = useState<{
+    isChecking: boolean;
+    isDuplicate: boolean;
+    message: string;
+  }>({
+    isChecking: false,
+    isDuplicate: false,
+    message: ''
+  });
+
   // Form initialization
   const form = useForm<LoteFormValues>({
     resolver: zodResolver(loteInsumoSchema),
     defaultValues: {
-      insumo_id: insumoId || "",
+      produto_id: insumoId || "",
       numero_lote: "",
       quantidade_inicial: 0,
       quantidade_atual: 0,
       data_validade: null,
       fornecedor_id: null,
       custo_unitario_lote: null,
-      localizacao: null,
       notas: null,
       unidade_medida: ""
     }
   });
 
-  // Fetch insumos data for select
+  // Fetch insumos data for select - ALTERADO: buscar produtos do tipo INSUMO
   const { data: insumos, isLoading: isLoadingInsumos } = useQuery({
-    queryKey: ['insumos'],
+    queryKey: ['produtos-insumos'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('insumos')
-        .select('id, nome, unidade_medida')
-        .eq('is_deleted', false)
+        .from('produtos')
+        .select('id, nome, unidade_medida, tipo')
+        .eq('tipo', 'INSUMO')
+        .eq('ativo', true)
         .order('nome');
       
       if (error) throw error;
@@ -123,15 +158,15 @@ const LoteInsumoForm = ({ initialData, isEditing = false, loteId, insumoId }: Lo
     }
   });
 
-  // Fetch specific insumo details when selected to get the unit of measure
+  // Fetch specific insumo details when selected to get the unit of measure - ALTERADO
   const { data: selectedInsumo, isLoading: isLoadingInsumoDetails } = useQuery({
-    queryKey: ['insumo', selectedInsumoId],
+    queryKey: ['produto-insumo', selectedInsumoId],
     queryFn: async () => {
       if (!selectedInsumoId) return null;
       
       const { data, error } = await supabase
-        .from('insumos')
-        .select('id, nome, unidade_medida')
+        .from('produtos')
+        .select('id, nome, unidade_medida, tipo')
         .eq('id', selectedInsumoId)
         .single();
       
@@ -141,26 +176,24 @@ const LoteInsumoForm = ({ initialData, isEditing = false, loteId, insumoId }: Lo
     enabled: !!selectedInsumoId,
   });
 
-  // Fetch lote data in edit mode
+  // Fetch lote data in edit mode - ALTERADO: usar tabela lote
   const { data: loteData, isLoading: isLoadingLote } = useQuery({
-    queryKey: ['lote', loteId],
+    queryKey: ['lote-insumo', loteId],
     queryFn: async () => {
       if (!loteId) return null;
       
       const { data, error } = await supabase
-        .from('lotes_insumos')
+        .from('lote')
         .select(`
           id,
-          insumo_id,
+          produto_id,
           numero_lote,
           data_validade,
           quantidade_inicial,
           quantidade_atual,
-          unidade_medida,
           fornecedor_id,
-          custo_unitario_lote,
-          localizacao,
-          notas
+          preco_custo_unitario,
+          observacoes
         `)
         .eq('id', loteId)
         .single();
@@ -171,21 +204,20 @@ const LoteInsumoForm = ({ initialData, isEditing = false, loteId, insumoId }: Lo
     enabled: !!loteId && isEditing,
   });
 
-  // Update form when lote data is loaded in edit mode
+  // Update form when lote data is loaded in edit mode - ALTERADO
   useEffect(() => {
     if (loteData) {
-      setSelectedInsumoId(loteData.insumo_id);
+      setSelectedInsumoId(loteData.produto_id);
       form.reset({
-        insumo_id: loteData.insumo_id,
+        produto_id: loteData.produto_id,
         numero_lote: loteData.numero_lote,
         quantidade_inicial: loteData.quantidade_inicial,
         quantidade_atual: loteData.quantidade_atual,
         data_validade: loteData.data_validade ? new Date(loteData.data_validade) : null,
         fornecedor_id: loteData.fornecedor_id,
-        custo_unitario_lote: loteData.custo_unitario_lote,
-        localizacao: loteData.localizacao,
-        notas: loteData.notas,
-        unidade_medida: loteData.unidade_medida
+        custo_unitario_lote: loteData.preco_custo_unitario,
+        notas: loteData.observacoes,
+        unidade_medida: ""
       });
     }
   }, [loteData, form]);
@@ -197,18 +229,132 @@ const LoteInsumoForm = ({ initialData, isEditing = false, loteId, insumoId }: Lo
     }
   }, [selectedInsumo, form]);
 
+  // ADICIONADO: Effect para pre-popular com dados do XML
+  useEffect(() => {
+    if (xmlData && !isEditing) {
+      if (xmlData.produto_id) {
+        setSelectedInsumoId(xmlData.produto_id);
+        form.setValue('produto_id', xmlData.produto_id);
+      }
+      if (xmlData.numero_lote) {
+        form.setValue('numero_lote', xmlData.numero_lote);
+      }
+      if (xmlData.data_validade) {
+        form.setValue('data_validade', new Date(xmlData.data_validade));
+      }
+      if (xmlData.quantidade) {
+        form.setValue('quantidade_inicial', xmlData.quantidade);
+        form.setValue('quantidade_atual', xmlData.quantidade);
+      }
+      if (xmlData.fornecedor_id) {
+        form.setValue('fornecedor_id', xmlData.fornecedor_id);
+      }
+      if (xmlData.preco_unitario) {
+        form.setValue('custo_unitario_lote', xmlData.preco_unitario);
+      }
+    }
+  }, [xmlData, form, isEditing]);
+
+  // ADICIONADO: Effect para sugerir insumos automaticamente do XML
+  useEffect(() => {
+    if (xmlData && !xmlData.produto_id && !isEditing && insumos && xmlData.numero_lote) {
+      // Se não veio produto_id no XML, tentar encontrar insumos similares
+      const insumosSugeridos = insumos.filter(insumo => 
+        isLikelyInsumo(insumo.nome)
+      ).slice(0, 3); // Limitar a 3 sugestões
+      
+      if (insumosSugeridos.length > 0) {
+        toast({
+          title: "Sugestão automática",
+          description: `Detectamos ${insumosSugeridos.length} possível(is) insumo(s) na base de dados. Verifique o campo "Insumo".`,
+          variant: "default",
+        });
+      }
+    }
+  }, [xmlData, insumos, isEditing, toast]);
+
   // Handling insumo selection
   const handleInsumoChange = (insumoId: string) => {
     setSelectedInsumoId(insumoId);
-    form.setValue('insumo_id', insumoId);
+    form.setValue('produto_id', insumoId);
   };
 
-  // Create/update mutation
+  // Custom validation for unique lote number - MOVED BEFORE validateLoteNumber
+  const checkLoteUniqueness = useCallback(async (numeroLote: string, produtoId: string) => {
+    if (!numeroLote || !produtoId) return true;
+    
+    const { data, error } = await supabase
+      .from('lote')
+      .select('id')
+      .eq('produto_id', produtoId)
+      .eq('numero_lote', numeroLote)
+      .maybeSingle();
+    
+    if (error) {
+      console.error('Erro ao verificar unicidade do lote:', error);
+      return true; // Allow validation to pass in case of error
+    }
+    
+    // If editing, check if the found lote is not the current one
+    if (isEditing && loteId && data) {
+      return data.id === loteId;
+    }
+    
+    // For new lotes, no existing lote should be found
+    return !data;
+  }, [isEditing, loteId]);
+
+  // Real-time validation function - NOW DEFINED AFTER checkLoteUniqueness
+  const validateLoteNumber = useCallback(
+    async (numeroLote: string, produtoId: string) => {
+      if (!numeroLote || !produtoId) {
+        setLoteValidation({ isChecking: false, isDuplicate: false, message: '' });
+        return;
+      }
+
+      setLoteValidation(prev => ({ ...prev, isChecking: true }));
+
+      try {
+        const isUnique = await checkLoteUniqueness(numeroLote, produtoId);
+        
+        setLoteValidation({
+          isChecking: false,
+          isDuplicate: !isUnique,
+          message: !isUnique ? 'Este número de lote já existe para este produto' : ''
+        });
+      } catch (error) {
+        console.error('Erro na validação:', error);
+        setLoteValidation({ isChecking: false, isDuplicate: false, message: '' });
+      }
+    },
+    [checkLoteUniqueness]
+  );
+
+  // Watch form values for real-time validation
+  const watchedValues = form.watch(['numero_lote', 'produto_id']);
+  
+  useEffect(() => {
+    const [numeroLote, produtoId] = watchedValues;
+    
+    if (!numeroLote || !produtoId) {
+      setLoteValidation({ isChecking: false, isDuplicate: false, message: '' });
+      return;
+    }
+
+    const timeoutId = setTimeout(() => {
+      validateLoteNumber(numeroLote, produtoId);
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [watchedValues, validateLoteNumber]);
+
+  // Create/update mutation - ALTERADO: usar tabela lote
   const mutation = useMutation({
     mutationFn: async (values: LoteFormValues) => {
-      // For creation, set quantidade_atual = quantidade_inicial
-      if (!isEditing) {
-        values.quantidade_atual = values.quantidade_inicial;
+      // Check for duplicate lote number
+      const isUnique = await checkLoteUniqueness(values.numero_lote, values.produto_id);
+      if (!isUnique) {
+        throw new Error('Este número de lote já existe para o produto selecionado. Por favor, use um número diferente.');
       }
       
       // Format the date to ISO string if it exists
@@ -216,19 +362,16 @@ const LoteInsumoForm = ({ initialData, isEditing = false, loteId, insumoId }: Lo
       
       if (isEditing && loteId) {
         const { data, error } = await supabase
-          .from('lotes_insumos')
+          .from('lote')
           .update({
-            insumo_id: values.insumo_id,
+            produto_id: values.produto_id,
             numero_lote: values.numero_lote,
             data_validade: formattedDate,
             quantidade_inicial: values.quantidade_inicial,
             quantidade_atual: values.quantidade_atual,
-            quantidade: values.quantidade_atual, // Set quantidade to match quantidade_atual
-            unidade_medida: values.unidade_medida,
             fornecedor_id: values.fornecedor_id || null,
-            custo_unitario_lote: values.custo_unitario_lote || null,
-            localizacao: values.localizacao || null,
-            notas: values.notas || null
+            preco_custo_unitario: values.custo_unitario_lote || null,
+            observacoes: values.notas || null
           })
           .eq('id', loteId);
         
@@ -236,19 +379,17 @@ const LoteInsumoForm = ({ initialData, isEditing = false, loteId, insumoId }: Lo
         return data;
       } else {
         const { data, error } = await supabase
-          .from('lotes_insumos')
+          .from('lote')
           .insert({
-            insumo_id: values.insumo_id,
+            produto_id: values.produto_id,
             numero_lote: values.numero_lote,
             data_validade: formattedDate,
             quantidade_inicial: values.quantidade_inicial,
             quantidade_atual: values.quantidade_atual,
-            quantidade: values.quantidade_atual, // Set quantidade to match quantidade_atual
-            unidade_medida: values.unidade_medida,
             fornecedor_id: values.fornecedor_id || null,
-            custo_unitario_lote: values.custo_unitario_lote || null,
-            localizacao: values.localizacao || null,
-            notas: values.notas || null
+            preco_custo_unitario: values.custo_unitario_lote || null,
+            observacoes: values.notas || null,
+            ativo: true
           })
           .select();
         
@@ -265,18 +406,32 @@ const LoteInsumoForm = ({ initialData, isEditing = false, loteId, insumoId }: Lo
         variant: "success",
       });
       
-      // Invalidate relevant queries
+      // Invalidate relevant queries - ALTERADO
       queryClient.invalidateQueries({ queryKey: ['lotes'] });
-      queryClient.invalidateQueries({ queryKey: ['lotes', form.getValues().insumo_id] });
+      queryClient.invalidateQueries({ queryKey: ['lotes', form.getValues().produto_id] });
+      queryClient.invalidateQueries({ queryKey: ['produtos-insumos'] });
+      queryClient.invalidateQueries({ queryKey: ['produtos'] });
       
       // Navigate back
       navigateBack();
     },
     onError: (error) => {
       console.error("Erro ao salvar lote:", error);
+      
+      let errorMessage = `Ocorreu um erro ao ${isEditing ? 'atualizar' : 'criar'} o lote. Por favor, tente novamente.`;
+      
+      // Check for specific error types
+      if (error.message.includes('número de lote já existe')) {
+        errorMessage = error.message;
+      } else if (error.message && error.message.includes('23505')) {
+        errorMessage = 'Este número de lote já existe para o produto selecionado. Por favor, use um número diferente.';
+      } else if (error.message && error.message.includes('duplicate key')) {
+        errorMessage = 'Este número de lote já existe para o produto selecionado. Por favor, use um número diferente.';
+      }
+      
       toast({
         title: "Erro",
-        description: `Ocorreu um erro ao ${isEditing ? 'atualizar' : 'criar'} o lote. Por favor, tente novamente.`,
+        description: errorMessage,
         variant: "destructive",
       });
     }
@@ -287,11 +442,7 @@ const LoteInsumoForm = ({ initialData, isEditing = false, loteId, insumoId }: Lo
   }
 
   function navigateBack() {
-    if (selectedInsumoId) {
-      navigate(`/admin/estoque/insumos/editar/${selectedInsumoId}`);
-    } else {
-      navigate('/admin/estoque/insumos');
-    }
+    navigate('/admin/estoque/lotes');
   }
 
   const isLoading = isLoadingLote || mutation.isPending;
@@ -306,6 +457,14 @@ const LoteInsumoForm = ({ initialData, isEditing = false, loteId, insumoId }: Lo
           <p className="text-muted-foreground">
             {isEditing ? 'Atualize as informações do lote' : 'Cadastre um novo lote para um insumo'}
           </p>
+          {/* ADICIONADO: Indicador de dados do XML */}
+          {xmlData && !isEditing && (
+            <div className="mt-2">
+              <span className="inline-flex items-center rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">
+                📄 Dados pré-carregados do XML
+              </span>
+            </div>
+          )}
         </div>
         <Button variant="outline" onClick={navigateBack}>
           <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
@@ -323,7 +482,7 @@ const LoteInsumoForm = ({ initialData, isEditing = false, loteId, insumoId }: Lo
               {/* Insumo Select */}
               <FormField
                 control={form.control}
-                name="insumo_id"
+                name="produto_id"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Insumo</FormLabel>
@@ -358,12 +517,36 @@ const LoteInsumoForm = ({ initialData, isEditing = false, loteId, insumoId }: Lo
                   <FormItem>
                     <FormLabel>Número do Lote</FormLabel>
                     <FormControl>
-                      <Input 
-                        placeholder="Ex: LOT123456" 
-                        {...field} 
-                        disabled={isLoading}
-                      />
+                      <div className="relative">
+                        <Input 
+                          placeholder="Ex: LOT123456" 
+                          {...field} 
+                          disabled={isLoading}
+                          className={cn(
+                            loteValidation.isDuplicate ? "border-red-500 focus-visible:ring-red-500" : "",
+                            loteValidation.isChecking ? "pr-8" : ""
+                          )}
+                        />
+                        {loteValidation.isChecking && (
+                          <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                            <div className="animate-spin h-4 w-4 border-2 border-gray-300 border-t-blue-600 rounded-full"></div>
+                          </div>
+                        )}
+                        {!loteValidation.isChecking && loteValidation.isDuplicate && (
+                          <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                            <AlertTriangle className="h-4 w-4 text-red-500" />
+                          </div>
+                        )}
+                        {!loteValidation.isChecking && !loteValidation.isDuplicate && field.value && form.getValues().produto_id && (
+                          <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                            <CheckCircle className="h-4 w-4 text-green-500" />
+                          </div>
+                        )}
+                      </div>
                     </FormControl>
+                    {loteValidation.message && (
+                      <p className="text-sm text-red-500 mt-1">{loteValidation.message}</p>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}
@@ -552,30 +735,6 @@ const LoteInsumoForm = ({ initialData, isEditing = false, loteId, insumoId }: Lo
                     </FormControl>
                     <FormDescription>
                       Custo unitário específico deste lote (opcional)
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* Localização */}
-              <FormField
-                control={form.control}
-                name="localizacao"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Localização</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="Ex: Prateleira A3, Gaveta B2" 
-                        {...field}
-                        value={field.value || ''}
-                        onChange={(e) => field.onChange(e.target.value === '' ? null : e.target.value)}
-                        disabled={isLoading}
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Local de armazenamento do lote (opcional)
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

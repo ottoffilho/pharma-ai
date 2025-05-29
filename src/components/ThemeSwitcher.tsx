@@ -7,9 +7,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useLocation } from "react-router-dom";
 
 export function ThemeSwitcher() {
   const { setTheme } = useTheme();
+  const location = useLocation();
+
+  // Só renderiza o ThemeSwitcher se estiver em rota /admin
+  if (!location.pathname.startsWith('/admin')) {
+    return null;
+  }
 
   return (
     <DropdownMenu>

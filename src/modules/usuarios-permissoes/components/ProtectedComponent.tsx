@@ -2,7 +2,7 @@
 // Módulo: M09-USUARIOS_PERMISSOES
 
 import React from 'react';
-import { useAuth } from '../hooks/useAuth';
+import { useAuthSimple } from '../hooks/useAuthSimple';
 import type { ProtecaoProps, ModuloSistema, AcaoPermissao, NivelAcesso } from '../types';
 
 /**
@@ -15,7 +15,7 @@ export const ProtectedComponent: React.FC<ProtecaoProps> = ({
   nivel,
   fallback = null
 }) => {
-  const { verificarPermissao, autenticado } = useAuth();
+  const { autenticado } = useAuthSimple();
 
   // Se não está autenticado, não mostra nada
   if (!autenticado) {
@@ -66,7 +66,7 @@ export const ProprietarioOnly: React.FC<{ children: React.ReactNode; fallback?: 
   children,
   fallback = null
 }) => {
-  const { usuario } = useAuth();
+  const { usuario } = useAuthSimple();
   
   if (usuario?.usuario.perfil?.tipo !== 'PROPRIETARIO') {
     return <>{fallback}</>;
@@ -82,7 +82,7 @@ export const FarmaceuticoOnly: React.FC<{ children: React.ReactNode; fallback?: 
   children,
   fallback = null
 }) => {
-  const { usuario } = useAuth();
+  const { usuario } = useAuthSimple();
   
   const isFarmaceuticoOuProprietario = 
     usuario?.usuario.perfil?.tipo === 'FARMACEUTICO' ||
@@ -109,7 +109,7 @@ export const PerfilBased: React.FC<PerfilBasedProps> = ({
   perfis,
   fallback = null
 }) => {
-  const { usuario } = useAuth();
+  const { usuario } = useAuthSimple();
   
   const temPerfil = perfis.includes(usuario?.usuario.perfil?.tipo || '');
   
@@ -163,7 +163,7 @@ export const usePermissionCheck = (
   acao: AcaoPermissao,
   nivel?: NivelAcesso
 ) => {
-  const { verificarPermissao, autenticado } = useAuth();
+  const { verificarPermissao, autenticado } = useAuthSimple();
   
   return {
     hasPermission: autenticado && verificarPermissao(modulo, acao, nivel),

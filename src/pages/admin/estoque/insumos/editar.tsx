@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -42,7 +41,7 @@ export default function EditarInsumoPage() {
   if (isLoading) {
     return (
       <AdminLayout>
-        <div className="container py-6 flex justify-center items-center min-h-[50vh]">
+        <div className="w-full py-6 flex justify-center items-center min-h-[50vh]">
           <div className="flex flex-col items-center gap-2">
             <Loader2 className="h-8 w-8 animate-spin text-homeo-green" />
             <p>Carregando dados do insumo...</p>
@@ -55,7 +54,7 @@ export default function EditarInsumoPage() {
   if (error) {
     return (
       <AdminLayout>
-        <div className="container py-6">
+        <div className="w-full py-6">
           <Alert variant="destructive">
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
@@ -74,7 +73,7 @@ export default function EditarInsumoPage() {
 
   return (
     <AdminLayout>
-      <div className="container py-6">
+      <div className="w-full py-6">
         <Tabs defaultValue="dados">
           <TabsList className="mb-6">
             <TabsTrigger value="dados">Dados do Insumo</TabsTrigger>

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -23,8 +22,16 @@ const EditarUsuarioPage: React.FC = () => {
       }
       
       const { data, error } = await supabase
-        .from('usuarios_internos')
-        .select('*')
+        .from('usuarios')
+        .select(`
+          id,
+          nome,
+          email,
+          perfil_id,
+          telefone,
+          ativo,
+          perfil:perfis_usuario(nome, tipo)
+        `)
         .eq('id', id)
         .single();
       
@@ -56,7 +63,7 @@ const EditarUsuarioPage: React.FC = () => {
 
   return (
     <AdminLayout>
-      <div className="container mx-auto p-4">
+      <div className="w-full p-4">
         <div className="mb-6">
           <h1 className="text-2xl font-bold">Editar Usuário</h1>
           <p className="text-muted-foreground">Edite as informações do usuário interno do sistema</p>
@@ -72,10 +79,10 @@ const EditarUsuarioPage: React.FC = () => {
               isEditing={true} 
               usuarioId={id} 
               usuarioData={{
-                nome_completo: usuario.nome_completo,
-                email_contato: usuario.email_contato,
-                cargo_perfil: usuario.cargo_perfil,
-                telefone_contato: usuario.telefone_contato || '',
+                nome_completo: usuario.nome,
+                email_contato: usuario.email,
+                cargo_perfil: usuario.perfil?.nome || '',
+                telefone_contato: usuario.telefone || '',
                 ativo: usuario.ativo
               }} 
             />

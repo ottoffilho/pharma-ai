@@ -21,24 +21,35 @@ import {
 import { ThemeSwitcher } from '@/components/ThemeSwitcher';
 import { useBreadcrumbs } from '@/hooks/useBreadcrumbs';
 import { Badge } from '@/components/ui/badge';
+import type { Usuario } from '@/modules/usuarios-permissoes/types';
 
 interface AdminHeaderProps {
-  user: {
-    email?: string;
-    id?: string;
-  } | null;
+  user: Usuario | null;
   onLogout: () => void;
+  onMenuClick?: () => void;
 }
 
-export function AdminHeader({ user, onLogout }: AdminHeaderProps) {
+export function AdminHeader({ user, onLogout, onMenuClick }: AdminHeaderProps) {
   const breadcrumbs = useBreadcrumbs();
 
   // Função para obter as iniciais do usuário
-  const getUserInitials = (email: string) => {
-    if (!email) return 'U';
+  const getUserInitials = (nome?: string, email?: string) => {
+    if (nome) {
+      const names = nome.split(' ');
+      if (names.length >= 2) {
+        return (names[0][0] + names[1][0]).toUpperCase();
+      }
+      return nome.substring(0, 2).toUpperCase();
+    }
+    if (email) {
     const namePart = email.split('@')[0];
     return namePart.substring(0, 2).toUpperCase();
+    }
+    return 'U';
   };
+
+  const displayName = user?.nome || user?.email || 'Usuário';
+  const userEmail = user?.email;
 
   return (
     <header className="h-16 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
@@ -88,13 +99,13 @@ export function AdminHeader({ user, onLogout }: AdminHeaderProps) {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-8 w-auto rounded-full px-3">
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src="" alt={user?.email} />
+                  <AvatarImage src="" alt={displayName} />
                   <AvatarFallback>
-                    {getUserInitials(user?.email)}
+                    {getUserInitials(user?.nome, userEmail)}
                   </AvatarFallback>
                 </Avatar>
                 <span className="ml-2 text-sm font-medium">
-                  {user?.email}
+                  {displayName}
                 </span>
               </Button>
             </DropdownMenuTrigger>

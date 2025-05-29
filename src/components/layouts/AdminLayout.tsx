@@ -32,6 +32,7 @@ import {
   X,
   AlertTriangle,
   RefreshCw,
+  ShoppingCart,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -126,8 +127,23 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   }, [usuario, carregando]);
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate('/login');
+    try {
+      await logout();
+      toast({
+        title: "Logout realizado",
+        description: "Você foi desconectado com sucesso.",
+        variant: "default",
+      });
+    } catch (error) {
+      console.error('Erro no logout:', error);
+      toast({
+        title: "Erro no logout",
+        description: "Ocorreu um erro ao fazer logout. Redirecionando...",
+        variant: "destructive",
+      });
+      // Forçar redirecionamento mesmo com erro
+      window.location.href = '/login';
+    }
   };
 
   // Navigation links
@@ -154,7 +170,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       href: '/admin/pedidos',
       icon: <FileText className="h-5 w-5 text-homeo-green" />,
       submenu: [
-        { title: 'Listar Pedidos', href: '/admin/pedidos' },
+        { title: 'Listar Pedidos', href: '/admin/pedidos/listar' },
         { title: 'Nova Receita', href: '/admin/pedidos/nova-receita' },
       ],
     },
@@ -163,10 +179,10 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       href: '/admin/estoque',
       icon: <Box className="h-5 w-5 text-orange-500" />,
       submenu: [
-        { title: 'Insumos', href: '/admin/estoque/insumos' },
-        { title: 'Embalagens', href: '/admin/estoque/embalagens' },
-        { title: 'Novo Lote', href: '/admin/estoque/lotes/novo' },
+        { title: 'Produtos', href: '/admin/estoque/produtos' },
+        { title: 'Lotes', href: '/admin/estoque/lotes' },
         { title: 'Importar NF-e', href: '/admin/estoque/importacao-nf' },
+        { title: 'Markup', href: '/admin/configuracoes/markup' },
       ],
     },
     {
@@ -176,6 +192,16 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       submenu: [
         { title: 'Ordens de Produção', href: '/admin/producao' },
         { title: 'Nova Ordem', href: '/admin/producao/nova' },
+      ],
+    },
+    {
+      title: 'Vendas',
+      href: '/admin/vendas',
+      icon: <ShoppingCart className="h-5 w-5 text-green-500" />,
+      submenu: [
+        { title: 'PDV - Ponto de Venda', href: '/admin/vendas/pdv' },
+        { title: 'Histórico de Vendas', href: '/admin/vendas/historico' },
+        { title: 'Controle de Caixa', href: '/admin/vendas/caixa' },
       ],
     },
     {
@@ -267,9 +293,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   return (
     <SidebarProvider defaultOpen={isSidebarOpen}>
       <div 
-        className="min-h-screen flex relative overflow-x-hidden"
+        className="min-h-screen flex relative w-full overflow-hidden"
         style={{ 
-          "--current-sidebar-width": isSidebarOpen ? "var(--sidebar-width)" : "var(--sidebar-collapsed-width)" 
+          "--current-sidebar-width": isSidebarOpen ? "16rem" : "6rem" 
         } as React.CSSProperties}
       >
         {/* Desktop Sidebar */}
@@ -476,7 +502,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         {/* Main Content */}
         <div 
           ref={mainContentRef}
-          className="flex-1 flex flex-col h-screen overflow-hidden transition-all duration-300"
+          className="flex-1 flex flex-col h-screen"
           style={{ 
             marginLeft: "var(--current-sidebar-width)",
             width: "calc(100% - var(--current-sidebar-width))"
@@ -489,11 +515,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             onLogout={handleLogout}
           />
           
-          {/* Main Content Area */}
-          <main className="flex-1 overflow-auto py-6 w-full px-4 md:px-6">
-            {/* Botão de emergência para logout foi removido daqui */}
-            
-            <div className="container-fluid w-full max-w-none m-0 p-0">
+          {/* Main Content Area - Única área com scroll */}
+          <main className="flex-1 w-full overflow-y-auto">
+            <div className="w-full max-w-none py-6 px-4 md:px-6 pb-16">
               {children}
             </div>
           </main>

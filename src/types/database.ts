@@ -120,16 +120,34 @@ export interface Produto {
 
 export interface Lote {
   id: UUID;
-  produto_id: UUID;
+  produto_id: UUID; // Referência para a tabela produtos
   numero_lote: string; // nLote do XML
   data_fabricacao?: string; // dFab do XML
   data_validade?: string; // dVal do XML
   quantidade_inicial: number;
   quantidade_atual: number;
   preco_custo_unitario?: number;
+  fornecedor_id?: UUID;
+  observacoes?: string;
   
   // Controle
   ativo: boolean;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+}
+
+export interface EstoqueMovimentacao {
+  id: UUID;
+  produto_id: UUID; // Referência para insumos ou produtos
+  tipo: 'entrada' | 'saida' | 'ajuste';
+  quantidade: number;
+  quantidade_anterior?: number;
+  quantidade_nova?: number;
+  motivo?: string;
+  documento_referencia?: string;
+  usuario_id?: UUID;
+  
+  // Controle
   created_at: Timestamp;
   updated_at: Timestamp;
 }
@@ -252,15 +270,17 @@ export type CreateCategoriasProduto = Omit<CategoriasProduto, 'id' | 'created_at
 export type CreateFormaFarmaceutica = Omit<FormaFarmaceutica, 'id' | 'created_at' | 'updated_at'>;
 export type CreateProduto = Omit<Produto, 'id' | 'created_at' | 'updated_at'>;
 export type CreateLote = Omit<Lote, 'id' | 'created_at' | 'updated_at'>;
+export type CreateEstoqueMovimentacao = Omit<EstoqueMovimentacao, 'id' | 'created_at' | 'updated_at'>;
 export type CreateNotaFiscal = Omit<NotaFiscal, 'id' | 'created_at' | 'updated_at'>;
 export type CreateItemNotaFiscal = Omit<ItemNotaFiscal, 'id' | 'created_at' | 'updated_at'>;
 
-// Tipos para atualização (todos os campos opcionais exceto id)
+// Tipos para atualização (todos os campos opcionais exceto ID)
 export type UpdateFornecedor = Partial<CreateFornecedor> & { id: UUID };
 export type UpdateCategoriasProduto = Partial<CreateCategoriasProduto> & { id: UUID };
 export type UpdateFormaFarmaceutica = Partial<CreateFormaFarmaceutica> & { id: UUID };
 export type UpdateProduto = Partial<CreateProduto> & { id: UUID };
 export type UpdateLote = Partial<CreateLote> & { id: UUID };
+export type UpdateEstoqueMovimentacao = Partial<CreateEstoqueMovimentacao> & { id: UUID };
 export type UpdateNotaFiscal = Partial<CreateNotaFiscal> & { id: UUID };
 export type UpdateItemNotaFiscal = Partial<CreateItemNotaFiscal> & { id: UUID };
 

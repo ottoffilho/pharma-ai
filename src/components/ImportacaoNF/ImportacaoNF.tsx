@@ -70,7 +70,7 @@ export const ImportacaoNF: React.FC<ImportacaoNFProps> = ({
     };
     
     checkAuth();
-  }, [toast]);
+  }, [showToast]);
 
   // Mutation para importação individual
   const importarMutation = useMutation({

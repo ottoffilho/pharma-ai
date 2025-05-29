@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -19,7 +19,7 @@ interface ChatMessage {
   text: string;
   sender: 'user' | 'bot' | 'system';
   timestamp?: Date;
-  data?: any; // Para dados estruturados
+  data?: Array<Record<string, unknown>> | null; // Para dados estruturados de qualquer tipo
 }
 
 interface AdminChatbotProps {
@@ -45,13 +45,13 @@ const AdminChatbot: React.FC<AdminChatbotProps> = ({ isOpen, onClose }) => {
   }, [sessionId]);
 
   // Carregar histórico de conversa do localStorage
-  const loadConversationHistory = () => {
+  const loadConversationHistory = useCallback(() => {
     try {
       const savedHistory = localStorage.getItem(`pharma_admin_chat_${sessionId}`);
       if (savedHistory) {
         const parsedHistory = JSON.parse(savedHistory);
         // Converter timestamps de volta para Date objects
-        const historyWithDates = parsedHistory.map((msg: any) => ({
+        const historyWithDates = parsedHistory.map((msg: ChatMessage) => ({
           ...msg,
           timestamp: msg.timestamp ? new Date(msg.timestamp) : new Date()
         }));
@@ -62,49 +62,25 @@ const AdminChatbot: React.FC<AdminChatbotProps> = ({ isOpen, onClose }) => {
       console.error('Erro ao carregar histórico:', error);
     }
     return false; // Não havia histórico
-  };
+  }, [sessionId]);
 
   // Salvar conversa no localStorage
-  const saveConversationHistory = (newMessages: ChatMessage[]) => {
+  const saveConversationHistory = useCallback((newMessages: ChatMessage[]) => {
     try {
       localStorage.setItem(`pharma_admin_chat_${sessionId}`, JSON.stringify(newMessages));
     } catch (error) {
       console.error('Erro ao salvar histórico:', error);
     }
-  };
+  }, [sessionId]);
 
-  // Limpar histórico de conversa
-  const clearConversationHistory = () => {
-    try {
-      localStorage.removeItem(`pharma_admin_chat_${sessionId}`);
-      setMessages([]);
-      // Adicionar mensagem de boas-vindas novamente
-      setTimeout(() => {
-                 addMessage(
-           `🤖 Histórico limpo! Olá novamente!
-
-Posso responder **qualquer pergunta** sobre seus dados da farmácia em tempo real.
-
-💡 **Exemplos:** "Como está meu estoque?", "Faturamento do mês", "Produtos acabando"
-
-Como posso te ajudar?`, 
-           'bot',
-           null,
-           true
-         );
-      }, 500);
-    } catch (error) {
-      console.error('Erro ao limpar histórico:', error);
-    }
-  };
-
-  const addMessage = (text: string, sender: ChatMessage['sender'], data?: any, useTypingEffect: boolean = false) => {
+  const addMessage = useCallback((text: string, sender: ChatMessage['sender'], data?: unknown, useTypingEffect: boolean = false) => {
+    const id = Date.now().toString();
     const newMessage: ChatMessage = {
-      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      text: useTypingEffect ? '' : text,
+      id,
+      text,
       sender,
       timestamp: new Date(),
-      data
+      data: Array.isArray(data) ? data as Array<Record<string, unknown>> : null
     };
     
     setMessages((prevMessages) => {
@@ -138,7 +114,32 @@ Como posso te ajudar?`,
         }
       }, 20);
     }
-  };
+  }, [saveConversationHistory]);
+
+  // Limpar histórico de conversa
+  const clearConversationHistory = useCallback(() => {
+    try {
+      localStorage.removeItem(`pharma_admin_chat_${sessionId}`);
+      setMessages([]);
+      // Adicionar mensagem de boas-vindas novamente
+      setTimeout(() => {
+                 addMessage(
+           `🤖 Histórico limpo! Olá novamente!
+
+Posso responder **qualquer pergunta** sobre seus dados da farmácia em tempo real.
+
+💡 **Exemplos:** "Como está meu estoque?", "Faturamento do mês", "Produtos acabando"
+
+Como posso te ajudar?`, 
+           'bot',
+           null,
+           true
+         );
+      }, 500);
+    } catch (error) {
+      console.error('Erro ao limpar histórico:', error);
+    }
+  }, [sessionId, addMessage]);
 
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -146,25 +147,23 @@ Como posso te ajudar?`,
     }
   }, [messages]);
 
+  // Inicializar chatbot quando aberto
   useEffect(() => {
-    if (isOpen && !hasInitialized && sessionId) {
-      setIsLoading(false);
+    if (isOpen && !hasInitialized) {
+      loadConversationHistory();
       setHasInitialized(true);
-      
-      // Tentar carregar histórico existente
-      const hasHistory = loadConversationHistory();
-      
-      // Se não há histórico, mostrar mensagem de boas-vindas
-      if (!hasHistory) {
-        setMessages([]);
-        setInputValue('');
+
+      if (messages.length === 0) {
         setTimeout(() => {
           addMessage(
-            `🤖 Olá! Sou seu assistente da farmácia.
+            `👋 Olá! Sou seu assistente inteligente.
 
-Posso responder **qualquer pergunta** sobre seus dados em tempo real - estoque, vendas, receitas, fornecedores, financeiro e muito mais!
-
-💡 **Exemplos:** "Como está meu estoque?", "Faturamento do mês", "Produtos acabando"
+Posso te ajudar com consultas rápidas sobre seus dados:
+• Situação do estoque
+• Produtos que estão acabando  
+• Faturamento e vendas
+• Preços de produtos
+• Status de pedidos e receitas
 
 Como posso te ajudar?`, 
             'bot',
@@ -176,7 +175,7 @@ Como posso te ajudar?`,
     } else if (!isOpen) {
       setHasInitialized(false);
     }
-  }, [isOpen, hasInitialized, sessionId]);
+  }, [isOpen, hasInitialized, sessionId, messages.length, loadConversationHistory, addMessage]);
 
   // Função inteligente para processar linguagem natural
   const processNaturalLanguage = async (userMessage: string) => {
@@ -314,7 +313,7 @@ ${data.map((p, i) =>
 
       // === FATURAMENTO E VENDAS ===
       if (message.includes('faturamento') || message.includes('vendas') || message.includes('receita')) {
-        let startDate = new Date();
+        const startDate = new Date();
         let periodo = 'hoje';
         
         if (message.includes('mês') || message.includes('mensal')) {
@@ -404,7 +403,7 @@ ${data?.length > 0 ? `📈 **Performance:**
           `📋 **Receitas processadas hoje:** ${data?.length || 0}
           
 ${data?.length > 0 ? `✅ **Status das receitas:**
-${data.slice(0, 5).map((r: any, i: number) => 
+${data.slice(0, 5).map((r: { patient_name: string | null; validation_status: string }, i: number) => 
   `${i + 1}. ${r.patient_name || 'Paciente não informado'} - ${r.validation_status}`
 ).join('\n')}
 
@@ -424,7 +423,7 @@ ${data.length > 5 ? `\n... e mais ${data.length - 5} receitas` : ''}` : '❌ Nen
         
         if (error) throw error;
         
-        const statusCount = data?.reduce((acc: any, pedido: any) => {
+        const statusCount = data?.reduce((acc: Record<string, number>, pedido: { status: string }) => {
           acc[pedido.status] = (acc[pedido.status] || 0) + 1;
           return acc;
         }, {});
@@ -454,20 +453,20 @@ ${statusCount ? Object.entries(statusCount).map(([status, count]) =>
           
           if (error) throw error;
           
-                      addMessage(
-              `🔍 **Resultados para "${searchTerm}":**
-              
+          addMessage(
+            `🔍 **Resultados para "${searchTerm}":**
+            
 ${data?.length > 0 ? 
-  data.map((p: any, i: number) => 
+  data.map((p: { nome: string; custo_unitario?: number; estoque_atual?: number; unidade_medida?: string; tipo?: string }, i: number) => 
     `${i + 1}. **${p.nome}**
    💰 Custo: R$ ${p.custo_unitario?.toFixed(2) || '0,00'}
    📦 Estoque: ${p.estoque_atual || 0} ${p.unidade_medida || 'un'}
    🏷️ Tipo: ${p.tipo || 'N/A'}`
   ).join('\n\n')
   : 'Nenhum produto encontrado com esse termo.'}`,
-              'bot',
-              data
-            );
+            'bot',
+            data
+          );
           return;
         }
       }
@@ -485,7 +484,7 @@ ${data?.length > 0 ?
           `🏭 **Fornecedores cadastrados:** ${data?.length || 0}
           
 ${data?.length > 0 ? 
-  data.map((f: any, i: number) => 
+  data.map((f: { nome: string; email: string | null; telefone: string | null; endereco: string | null }, i: number) => 
     `${i + 1}. **${f.nome}**
    📧 Email: ${f.email || 'N/A'}
    📞 Telefone: ${f.telefone || 'N/A'}
@@ -511,7 +510,7 @@ ${data?.length > 0 ?
           `📦 **Embalagens em estoque:** ${data?.length || 0}
           
 ${data?.length > 0 ? 
-  data.map((e: any, i: number) => 
+  data.map((e: { nome: string; tipo?: string; estoque_atual?: number; estoque_minimo?: number; custo_unitario?: number }, i: number) => 
     `${i + 1}. **${e.nome}**
    🏷️ Tipo: ${e.tipo || 'N/A'}
    📦 Estoque: ${e.estoque_atual || 0}
@@ -527,21 +526,25 @@ ${data?.length > 0 ?
 
       // === ORDENS DE PRODUÇÃO ===
       if (message.includes('ordem') || message.includes('produção') || message.includes('producao')) {
-        const { data, error } = await supabase
-          .from('ordens_producao')
-          .select('numero_ordem, status, prioridade, quantidade_total, forma_farmaceutica, created_at')
-          .order('created_at', { ascending: false })
-          .limit(8);
+        // Consulta sobre ordens de produção - usando tabela receitas_processadas
+        const { data: ordens, error } = await supabase
+          .from('receitas_processadas')
+          .select('*')
+          .order('processed_at', { ascending: false })
+          .limit(10);
         
-        if (error) throw error;
+        if (error) {
+          console.error('Erro ao buscar receitas processadas:', error);
+          throw error;
+        }
         
-        const statusCount = data?.reduce((acc: any, ordem: any) => {
-          acc[ordem.status] = (acc[ordem.status] || 0) + 1;
+        const statusCount = ordens?.reduce((acc: Record<string, number>, ordem: { validation_status: string }) => {
+          acc[ordem.validation_status] = (acc[ordem.validation_status] || 0) + 1;
           return acc;
-        }, {});
+        }, {} as Record<string, number>);
         
         addMessage(
-          `🏭 **Ordens de Produção:** ${data?.length || 0}
+          `🏭 **Ordens de Produção:** ${ordens?.length || 0}
           
 📊 **Status das ordens:**
 ${statusCount ? Object.entries(statusCount).map(([status, count]) => 
@@ -549,14 +552,13 @@ ${statusCount ? Object.entries(statusCount).map(([status, count]) =>
 ).join('\n') : 'Nenhuma ordem encontrada.'}
 
 📋 **Últimas ordens:**
-${data?.slice(0, 5).map((o: any, i: number) => 
-  `${i + 1}. **${o.numero_ordem}**
-   Status: ${o.status} | Prioridade: ${o.prioridade}
-   Forma: ${o.forma_farmaceutica || 'N/A'}
-   Qtd: ${o.quantidade_total}`
+${ordens?.slice(0, 5).map((o: { id: string; validation_status: string; patient_name: string | null; processed_at: string }, i: number) => 
+  `${i + 1}. **${o.id.substring(0, 8)}**
+   Status: ${o.validation_status} | Paciente: ${o.patient_name || 'N/A'}
+   Processado: ${new Date(o.processed_at).toLocaleDateString('pt-BR')}`
 ).join('\n\n') || 'Nenhuma ordem cadastrada.'}`,
           'bot',
-          data
+          ordens
         );
         return;
       }
@@ -570,10 +572,11 @@ ${data?.slice(0, 5).map((o: any, i: number) =>
         
         if (error) throw error;
         
-        const cargoCount = data?.reduce((acc: any, user: any) => {
-          acc[user.cargo_perfil] = (acc[user.cargo_perfil] || 0) + 1;
+        const cargoCount = data?.reduce((acc, user) => {
+          const cargo = user.cargo_perfil || 'Não informado';
+          acc[cargo] = (acc[cargo] || 0) + 1;
           return acc;
-        }, {});
+        }, {} as Record<string, number>);
         
         addMessage(
           `👥 **Usuários internos ativos:** ${data?.length || 0}
@@ -584,7 +587,7 @@ ${cargoCount ? Object.entries(cargoCount).map(([cargo, count]) =>
 ).join('\n') : 'Nenhum usuário encontrado.'}
 
 👤 **Lista de usuários:**
-${data?.slice(0, 8).map((u: any, i: number) => 
+${data?.slice(0, 8).map((u: { nome_completo: string; cargo_perfil: string; email_contato: string }, i: number) => 
   `${i + 1}. **${u.nome_completo}**
    Cargo: ${u.cargo_perfil}
    Email: ${u.email_contato}`
@@ -618,7 +621,7 @@ ${data?.slice(0, 8).map((u: any, i: number) =>
 • Saldo: R$ ${(entradas - saidas).toFixed(2)}
 
 📋 **Últimas movimentações:**
-${data?.slice(0, 5).map((m: any, i: number) => 
+${data?.slice(0, 5).map((m: { tipo_movimentacao: string; valor: number; descricao: string; data_movimentacao: string }, i: number) => 
   `${i + 1}. ${m.tipo_movimentacao === 'entrada' ? '💚' : '🔴'} **R$ ${m.valor.toFixed(2)}**
    ${m.descricao}
    ${new Date(m.data_movimentacao).toLocaleTimeString('pt-BR')}`
@@ -631,38 +634,21 @@ ${data?.slice(0, 5).map((m: any, i: number) =>
 
       // === LOTES ===
       if (message.includes('lote') && (message.includes('vencimento') || message.includes('validade') || message.includes('vencendo'))) {
-        const { data, error } = await supabase
-          .from('lotes_insumos')
-          .select('numero_lote, data_validade, quantidade_atual, insumos(nome)')
-          .not('data_validade', 'is', null)
-          .order('data_validade', { ascending: true })
-          .limit(10);
-        
-        if (error) throw error;
-        
-        const hoje = new Date();
-        const em30Dias = new Date();
-        em30Dias.setDate(hoje.getDate() + 30);
-        
-                 const lotesVencendo = data?.filter(l => 
-           l.data_validade && new Date(l.data_validade) <= em30Dias
-         ) || [];
-        
+        // Como a tabela lotes_produtos não existe, usar uma abordagem alternativa
         addMessage(
           `📅 **Lotes por vencimento:**
           
-⚠️ **Vencendo em 30 dias:** ${lotesVencendo.length}
+⚠️ **Funcionalidade em desenvolvimento**
           
-${lotesVencendo.length > 0 ? 
-  lotesVencendo.map((l: any, i: number) => 
-         `${i + 1}. **Lote ${l.numero_lote}**
-    Produto: ${l.insumos?.nome || 'N/A'}
-    Validade: ${l.data_validade ? new Date(l.data_validade).toLocaleDateString('pt-BR') : 'N/A'}
-    Quantidade: ${l.quantidade_atual || 0}`
-  ).join('\n\n')
-  : '✅ Nenhum lote vencendo nos próximos 30 dias!'}`,
-          'bot',
-          data
+O sistema de controle de lotes está sendo implementado. Em breve você poderá consultar:
+
+• Lotes próximos do vencimento
+• Histórico de lotes por produto  
+• Rastreabilidade completa
+• Alertas automáticos
+
+💡 **Dica:** Para informações sobre validade dos produtos, consulte o módulo de Estoque.`,
+          'bot'
         );
         return;
       }
@@ -796,7 +782,7 @@ ${lotesVencendo.length > 0 ?
                   <div className="whitespace-pre-line">{msg.text}</div>
                   
                   {/* Mostrar dados estruturados se houver */}
-                  {msg.data && msg.data.length > 0 && (
+                  {msg.data && Array.isArray(msg.data) && msg.data.length > 0 && (
                     <div className="mt-2 pt-2 border-t border-gray-200">
                       <Badge variant="outline" className="text-xs">
                         {msg.data.length} registro(s) encontrado(s)

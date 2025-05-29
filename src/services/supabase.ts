@@ -3,8 +3,10 @@
 // Cliente e configurações para integração com banco
 // =====================================================
 
-import { supabase } from '@/integrations/supabase/client';
-import type { Database } from '@/types/supabase';
+import { supabase as supabaseClient } from '@/integrations/supabase/client';
+
+// Re-exportar o cliente supabase
+export { supabase } from '@/integrations/supabase/client';
 
 // Configurações do ambiente
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -26,7 +28,9 @@ export const TABLES = {
   FORNECEDOR: 'fornecedores',
   CATEGORIA_PRODUTO: 'categoria_produto',
   FORMA_FARMACEUTICA: 'forma_farmaceutica',
-  PRODUTO: 'insumos', // Tabela real no banco
+  PRODUTO: 'produtos', // Nova tabela unificada
+  INSUMO: 'produtos', // Alias para compatibilidade
+  EMBALAGEM: 'produtos', // Alias para compatibilidade  
   
   // Módulo M04 - Gestão de Estoque
   LOTE: 'lote',
@@ -56,7 +60,7 @@ export const RLS_POLICIES = {
  * Verifica se o usuário está autenticado
  */
 export const isAuthenticated = async (): Promise<boolean> => {
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { session } } = await supabaseClient.auth.getSession();
   return !!session;
 };
 
@@ -64,7 +68,7 @@ export const isAuthenticated = async (): Promise<boolean> => {
  * Obtém o usuário atual
  */
 export const getCurrentUser = async () => {
-  const { data: { user }, error } = await supabase.auth.getUser();
+  const { data: { user }, error } = await supabaseClient.auth.getUser();
   if (error) {
     console.error('Erro ao obter usuário:', error);
     return null;
@@ -76,7 +80,7 @@ export const getCurrentUser = async () => {
  * Obtém a sessão atual
  */
 export const getCurrentSession = async () => {
-  const { data: { session }, error } = await supabase.auth.getSession();
+  const { data: { session }, error } = await supabaseClient.auth.getSession();
   if (error) {
     console.error('Erro ao obter sessão:', error);
     return null;
@@ -88,7 +92,7 @@ export const getCurrentSession = async () => {
  * Faz logout do usuário
  */
 export const signOut = async () => {
-  const { error } = await supabase.auth.signOut();
+  const { error } = await supabaseClient.auth.signOut();
   if (error) {
     console.error('Erro ao fazer logout:', error);
     throw error;
@@ -117,7 +121,7 @@ export const uploadFile = async (
 ) => {
   try {
     // Tentar upload diretamente - se o bucket não existir, o Supabase retornará erro específico
-    const { data, error } = await supabase.storage
+    const { data, error } = await supabaseClient.storage
       .from(bucket)
       .upload(path, file, options);
 
@@ -144,7 +148,7 @@ export const uploadFile = async (
  * Obtém URL pública de um arquivo
  */
 export const getPublicUrl = (bucket: string, path: string) => {
-  const { data } = supabase.storage
+  const { data } = supabaseClient.storage
     .from(bucket)
     .getPublicUrl(path);
   
@@ -163,7 +167,7 @@ export const subscribeToTable = (
   callback: (payload: unknown) => void,
   filter?: string
 ) => {
-  const channel = supabase
+  const channel = supabaseClient
     .channel(`${table}_changes`)
     .on(
       'postgres_changes',
@@ -184,7 +188,7 @@ export const subscribeToTable = (
  * Remove subscrição
  */
 export const unsubscribeFromTable = (channel: ReturnType<typeof subscribeToTable>) => {
-  return supabase.removeChannel(channel);
+  return supabaseClient.removeChannel(channel);
 };
 
 // =====================================================
@@ -279,7 +283,7 @@ export const applyDefaultConfig = (query: unknown, limit?: number) => {
  */
 export const healthCheck = async (): Promise<boolean> => {
   try {
-    const { error } = await supabase
+    const { error } = await supabaseClient
       .from('fornecedores')
       .select('id')
       .limit(1);
@@ -297,7 +301,7 @@ export const healthCheck = async (): Promise<boolean> => {
 export const testBucketAccess = async (bucketName: string): Promise<boolean> => {
   try {
     // Tentar listar arquivos do bucket (mesmo que vazio)
-    const { data, error } = await supabase.storage
+    const { data, error } = await supabaseClient.storage
       .from(bucketName)
       .list('', { limit: 1 });
     
@@ -318,4 +322,4 @@ export const testBucketAccess = async (bucketName: string): Promise<boolean> => 
 // EXPORT DEFAULT
 // =====================================================
 
-export default supabase; 
+export default supabaseClient; 

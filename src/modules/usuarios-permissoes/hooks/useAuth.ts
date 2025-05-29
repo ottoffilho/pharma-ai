@@ -2,14 +2,19 @@
 // Módulo: M09-USUARIOS_PERMISSOES
 
 import { useState, useEffect, useCallback, createContext, useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AuthService } from '../services/authService';
+import { supabase } from '@/integrations/supabase/client';
 import type {
   SessaoUsuario,
   RespostaAuth,
+  VerificarPermissao
+} from '../types';
+
+import {
   ModuloSistema,
   AcaoPermissao,
-  NivelAcesso,
-  VerificarPermissao
+  NivelAcesso
 } from '../types';
 
 /**
@@ -29,18 +34,16 @@ interface AuthContextType {
 /**
  * Contexto de autenticação
  */
-export const AuthContext = createContext<AuthContextType | null>(null);
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 /**
- * Hook principal de autenticação
+ * Hook para acessar contexto de autenticação
  */
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  
-  if (!context) {
+  if (context === undefined) {
     throw new Error('useAuth deve ser usado dentro de um AuthProvider');
   }
-  
   return context;
 };
 
@@ -56,13 +59,18 @@ export const useAuthState = () => {
    */
   const carregarUsuario = useCallback(async () => {
     try {
+      console.log('🔄 useAuth - Iniciando carregamento do usuário...');
       setCarregando(true);
+      
       const usuarioAtual = await AuthService.obterUsuarioAtual();
+      console.log('👤 useAuth - Usuário obtido:', usuarioAtual ? 'Encontrado' : 'Não encontrado');
+      
       setUsuario(usuarioAtual);
     } catch (error) {
-      console.error('Erro ao carregar usuário:', error);
+      console.error('❌ useAuth - Erro ao carregar usuário:', error);
       setUsuario(null);
     } finally {
+      console.log('✅ useAuth - Finalizando carregamento (carregando = false)');
       setCarregando(false);
     }
   }, []);
@@ -99,8 +107,14 @@ export const useAuthState = () => {
       setCarregando(true);
       await AuthService.logout();
       setUsuario(null);
+      
+      // Força redirecionamento para login
+      window.location.href = '/login';
     } catch (error) {
       console.error('Erro no logout:', error);
+      // Mesmo com erro, limpa o estado e redireciona
+      setUsuario(null);
+      window.location.href = '/login';
     } finally {
       setCarregando(false);
     }
@@ -144,9 +158,27 @@ export const useAuthState = () => {
     await carregarUsuario();
   }, [carregarUsuario]);
 
-  // Carregar usuário na inicialização
+  // Carregar usuário na inicialização e configurar listener
   useEffect(() => {
     carregarUsuario();
+
+    // Listener para mudanças de estado de autenticação
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (event === 'SIGNED_OUT' || !session) {
+          setUsuario(null);
+          setCarregando(false);
+        } else if (event === 'SIGNED_IN' && session) {
+          await carregarUsuario();
+        } else if (event === 'TOKEN_REFRESHED' && session) {
+          await carregarUsuario();
+        }
+      }
+    );
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, [carregarUsuario]);
 
   return {
@@ -257,9 +289,9 @@ export const usePermissoes = () => {
  */
 export const useUsuarios = () => {
   const { verificarPermissao } = useAuth();
-  const [usuarios, setUsuarios] = useState<any[]>([]);
+  const [usuarios, setUsuarios] = useState<SessaoUsuario[]>([]);
   const [carregando, setCarregando] = useState(false);
-  const [estatisticas, setEstatisticas] = useState<any>(null);
+  const [estatisticas, setEstatisticas] = useState<Record<string, unknown> | null>(null);
 
   /**
    * Verifica se pode gerenciar usuários
@@ -293,7 +325,7 @@ export const useUsuarios = () => {
   /**
    * Cria usuário
    */
-  const criarUsuario = useCallback(async (dados: any) => {
+  const criarUsuario = useCallback(async (dados: Partial<SessaoUsuario>) => {
     if (!podeGerenciar) {
       throw new Error('Sem permissão para criar usuários');
     }
@@ -316,7 +348,7 @@ export const useUsuarios = () => {
   /**
    * Atualiza usuário
    */
-  const atualizarUsuario = useCallback(async (id: string, dados: any) => {
+  const atualizarUsuario = useCallback(async (id: string, dados: Partial<SessaoUsuario>) => {
     if (!podeGerenciar) {
       throw new Error('Sem permissão para atualizar usuários');
     }

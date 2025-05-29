@@ -27,6 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { CampoMarkup } from "@/components/markup/CampoMarkup";
 
 // Tipos de insumos homeopáticos
 const tiposInsumo = [
@@ -49,6 +50,11 @@ const insumoSchema = z.object({
     .string()
     .min(1, "Custo unitário é obrigatório")
     .transform((val) => parseFloat(val.replace(",", "."))),
+  markup: z
+    .number()
+    .min(0, "Markup deve ser maior ou igual a zero")
+    .default(6.00),
+  markup_personalizado: z.boolean().default(false),
   fornecedor_id: z.string().nullable().optional(),
   descricao: z.string().optional(),
   estoque_atual: z
@@ -104,6 +110,8 @@ export default function InsumoForm({
       tipo: initialData?.tipo || "",
       unidade_medida: initialData?.unidade_medida || "",
       custo_unitario: initialData?.custo_unitario?.toString() || "",
+      markup: initialData?.markup || 6.00,
+      markup_personalizado: initialData?.markup_personalizado || false,
       fornecedor_id: initialData?.fornecedor_id || null,
       descricao: initialData?.descricao || "",
       estoque_atual: initialData?.estoque_atual?.toString() || "0",
@@ -128,6 +136,8 @@ export default function InsumoForm({
         tipo: values.tipo,
         unidade_medida: values.unidade_medida,
         custo_unitario: values.custo_unitario,
+        markup: values.markup,
+        markup_personalizado: values.markup !== 6.00,
         fornecedor_id: values.fornecedor_id || null,
         descricao: values.descricao || null,
         estoque_atual: values.estoque_atual || 0,
@@ -298,6 +308,30 @@ export default function InsumoForm({
                 </FormItem>
               )}
             />
+
+            {/* Campo de Markup integrado */}
+            <div className="md:col-span-2">
+              <FormField
+                control={form.control}
+                name="markup"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <CampoMarkup
+                        value={field.value}
+                        onChange={field.onChange}
+                        precoCusto={parseFloat(form.watch("custo_unitario")?.replace(",", ".") || "0")}
+                        categoria="medicamentos"
+                        label="Markup de Venda"
+                        showCalculation={true}
+                        showCategoryDefault={true}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <FormField
               control={form.control}

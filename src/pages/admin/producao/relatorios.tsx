@@ -260,7 +260,7 @@ export default function RelatoriosProducaoPage() {
 
   return (
     <AdminLayout>
-      <div className="container mx-auto py-6 space-y-6">
+      <div className="w-full py-6 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -271,7 +271,7 @@ export default function RelatoriosProducaoPage() {
             <div>
               <h1 className="text-3xl font-bold">Relatórios de Produção</h1>
               <p className="text-muted-foreground">
-                Análise de performance e métricas de produção
+                Estatísticas e análises da produção
               </p>
             </div>
           </div>

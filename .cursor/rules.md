@@ -204,7 +204,108 @@ Este documento estabelece as diretrizes específicas e técnicas para o desenvol
 - Busca por diferenciais competitivos
 - Refinamento baseado em métricas de uso
 
+## 9. Padrões Específicos Implementados
+
+### 9.1. Sistema de Autenticação
+- **Fluxo obrigatório:**
+  1. Login via Supabase Auth
+  2. Verificação de perfil na tabela `usuarios`
+  3. Carregamento de permissões
+  4. Redirecionamento para dashboard específico
+  5. Proteção de rotas por permissões
+
+### 9.2. Estrutura de Permissões
+```typescript
+// Sempre usar esta estrutura para permissões
+interface Permissao {
+  modulo: ModuloSistema;
+  acao: AcaoPermissao;
+  nivel: NivelAcesso;
+}
+
+// Componente de proteção obrigatório
+<ProtectedComponent
+  modulo={ModuloSistema.USUARIOS_PERMISSOES}
+  acao={AcaoPermissao.CRIAR}
+  fallback={<Navigate to="/admin" replace />}
+>
+  {/* Conteúdo protegido */}
+</ProtectedComponent>
+```
+
+### 9.3. Padrão de Rotas
+- **Rotas públicas:** `/`, `/login`, `/esqueci-senha`
+- **Rotas protegidas:** `/admin/*`
+- **Proteção obrigatória:** Usar `PrivateRoute` para todas as rotas admin
+- **Redirecionamento:** Baseado no perfil do usuário
+
+### 9.4. Estrutura de Componentes
+```
+src/
+├── components/
+│   ├── ui/              # shadcn/ui components
+│   ├── layouts/         # Layout components
+│   ├── Auth/           # Authentication components
+│   └── [modulo]/       # Module-specific components
+├── modules/
+│   └── usuarios-permissoes/  # Complete module structure
+├── pages/
+│   ├── admin/          # Protected admin pages
+│   └── [public]/       # Public pages
+```
+
+### 9.5. Padrão de Banco de Dados
+- **MCP:** Supabase com MCP, sempre use para fazer interactividade com o banco de dados	
+- **RLS obrigatório:** Todas as tabelas devem ter RLS habilitado
+- **Triggers automáticos:** Para updated_at, histórico, etc.
+- **Nomenclatura:** snake_case para tabelas e colunas
+- **Relacionamentos:** Sempre com ON DELETE CASCADE ou RESTRICT apropriado
+
+### 9.6. Padrão de Edge Functions
+```typescript
+// Estrutura padrão para Edge Functions
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+
+serve(async (req) => {
+  try {
+    // Validação de autenticação
+    // Lógica de negócio
+    // Resposta padronizada
+  } catch (error) {
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    )
+  }
+})
+```
+
+## 10. Checklist de Qualidade
+
+### 10.1. Antes de Commit
+- [ ] Código TypeScript sem erros
+- [ ] Componentes tipados corretamente
+- [ ] RLS implementado para novas tabelas
+- [ ] Permissões verificadas para novas rotas
+- [ ] Responsividade testada
+- [ ] Acessibilidade básica verificada
+
+### 10.2. Antes de Deploy
+- [ ] Build sem erros
+- [ ] Testes funcionais básicos
+- [ ] Migrações de banco testadas
+- [ ] Variáveis de ambiente configuradas
+- [ ] Performance básica verificada
+
+### 10.3. Code Review
+- [ ] Padrões de código seguidos
+- [ ] Segurança verificada
+- [ ] Performance considerada
+- [ ] Documentação atualizada
+- [ ] Testes adequados
+
 ---
 
-*Última atualização: 2024-05-21*
-*Versão: 1.0.0* 
+*Última atualização: 2024-12-26*
+*Versão: 2.0.0* 

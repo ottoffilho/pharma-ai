@@ -26,29 +26,33 @@ export enum TipoDashboard {
  * Módulos do sistema
  */
 export enum ModuloSistema {
-  CADASTROS_ESSENCIAIS = 'cadastros_essenciais',
-  ATENDIMENTO = 'atendimento',
-  ORCAMENTACAO = 'orcamentacao', 
-  ESTOQUE = 'estoque',
-  MANIPULACAO = 'manipulacao',
-  FINANCEIRO = 'financeiro',
-  FISCAL = 'fiscal',
-  PDV = 'pdv',
-  USUARIOS_PERMISSOES = 'usuarios_permissoes',
-  RELATORIOS = 'relatorios',
-  CONFIGURACOES = 'configuracoes'
+  CADASTROS_ESSENCIAIS = 'CADASTROS_ESSENCIAIS',
+  ATENDIMENTO = 'ATENDIMENTO',
+  ORCAMENTACAO = 'ORCAMENTACAO', 
+  ESTOQUE = 'ESTOQUE',
+  MANIPULACAO = 'MANIPULACAO',
+  FINANCEIRO = 'FINANCEIRO',
+  FISCAL = 'FISCAL',
+  PDV = 'PDV',
+  USUARIOS_PERMISSOES = 'USUARIOS_PERMISSOES',
+  RELATORIOS = 'RELATORIOS',
+  CONFIGURACOES = 'CONFIGURACOES',
+  PRODUCAO = 'PRODUCAO',
+  IA = 'IA'
 }
 
 /**
  * Ações possíveis em cada módulo
  */
 export enum AcaoPermissao {
-  CRIAR = 'criar',
-  LER = 'ler', 
-  EDITAR = 'editar',
-  EXCLUIR = 'excluir',
-  APROVAR = 'aprovar',
-  EXPORTAR = 'exportar'
+  CRIAR = 'CRIAR',
+  LER = 'LER', 
+  EDITAR = 'EDITAR',
+  DELETAR = 'DELETAR',
+  EXCLUIR = 'EXCLUIR',
+  APROVAR = 'APROVAR',
+  EXPORTAR = 'EXPORTAR',
+  ADMINISTRAR = 'ADMINISTRAR'
 }
 
 /**
@@ -68,7 +72,7 @@ export interface Permissao {
   modulo: ModuloSistema;
   acao: AcaoPermissao;
   nivel: NivelAcesso;
-  condicoes?: Record<string, any>; // Condições específicas (ex: horário, IP)
+  condicoes?: Record<string, unknown>; // Condições específicas (ex: horário, IP)
 }
 
 /**
@@ -127,8 +131,8 @@ export interface LogAuditoria {
   acao: string;
   modulo: ModuloSistema;
   recurso: string;
-  dados_anteriores?: Record<string, any>;
-  dados_novos?: Record<string, any>;
+  dados_anteriores?: Record<string, unknown>;
+  dados_novos?: Record<string, unknown>;
   ip_address?: string;
   user_agent?: string;
   created_at: string;
@@ -158,9 +162,9 @@ export interface ConfiguracaoSeguranca {
  */
 export interface RespostaAuth {
   sucesso: boolean;
-  usuario?: SessaoUsuario;
   erro?: string;
-  requer_2fa?: boolean;
+  usuario?: SessaoUsuario | null;
+  dados?: Record<string, unknown>;
 }
 
 /**
@@ -228,4 +232,10 @@ export interface ProtecaoProps {
 export interface DashboardProps {
   usuario: Usuario;
   permissoes: Permissao[];
+}
+
+export interface RespostaOperacao {
+  sucesso: boolean;
+  erro?: string;
+  dados?: Record<string, unknown>;
 } 

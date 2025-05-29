@@ -19,7 +19,7 @@ const FileUploadDropzone: React.FC<FileUploadDropzoneProps> = ({
   const [isValidating, setIsValidating] = useState(false);
 
   // Função para validar o conteúdo real do arquivo
-  const validateFileContent = (file: File): Promise<boolean> => {
+  const validateFileContent = useCallback((file: File): Promise<boolean> => {
     return new Promise((resolve) => {
       // Verificar tamanho máximo
       if (file.size > maxSize) {
@@ -79,7 +79,7 @@ const FileUploadDropzone: React.FC<FileUploadDropzoneProps> = ({
         resolve(false);
       }
     });
-  };
+  }, [maxSize]);
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     setIsValidating(true);
@@ -103,7 +103,7 @@ const FileUploadDropzone: React.FC<FileUploadDropzoneProps> = ({
     } finally {
       setIsValidating(false);
     }
-  }, [onFilesChange, maxSize]);
+  }, [onFilesChange, validateFileContent]);
 
   const { getRootProps, getInputProps, isDragReject } = useDropzone({
     onDrop,
@@ -122,30 +122,30 @@ const FileUploadDropzone: React.FC<FileUploadDropzoneProps> = ({
       className={`
         border-2 border-dashed rounded-lg p-8 transition-all
         flex flex-col items-center justify-center cursor-pointer
-        ${isDragActive ? 'border-homeo-green bg-homeo-green/10' : 'border-muted'}
-        ${isDragReject ? 'border-destructive bg-destructive/10' : ''}
-        hover:border-homeo-green/50 hover:bg-homeo-green/5
+        ${isDragActive ? 'border-emerald-500 bg-emerald-50' : 'border-gray-300'}
+        ${isDragReject ? 'border-red-500 bg-red-50' : ''}
+        hover:border-emerald-400 hover:bg-emerald-25
       `}
     >
       <input {...getInputProps()} />
       {isValidating ? (
         <div className="flex flex-col items-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-homeo-green mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500 mb-4"></div>
           <p className="text-center font-medium">Validando arquivos...</p>
         </div>
       ) : (
         <>
-          <UploadCloud className={`h-12 w-12 mb-4 ${isDragActive ? 'text-homeo-green' : 'text-muted-foreground'}`} />
+          <UploadCloud className={`h-12 w-12 mb-4 ${isDragActive ? 'text-emerald-500' : 'text-gray-400'}`} />
           <p className="text-center mb-1 font-medium">
             {isDragActive ? 'Solte os arquivos aqui' : 'Arraste e solte arquivos aqui ou clique para selecionar'}
           </p>
-          <p className="text-center text-sm text-muted-foreground">
+          <p className="text-center text-sm text-gray-500">
             Arquivos suportados: JPG, PNG, PDF, DOCX (máximo {maxFiles} arquivos, {Math.round(maxSize / (1024 * 1024))}MB cada)
           </p>
         </>
       )}
       {isDragReject && (
-        <p className="text-center text-destructive text-sm mt-2">
+        <p className="text-center text-red-600 text-sm mt-2">
           Algum arquivo não é permitido. Verifique o formato e tamanho.
         </p>
       )}

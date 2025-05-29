@@ -77,7 +77,12 @@ const UsuarioInternoForm: React.FC<UsuarioInternoFormProps> = ({
   const navigate = useNavigate();
   const [isSaving, setIsSaving] = React.useState(false);
   const [showPasswordFields, setShowPasswordFields] = React.useState(!isEditing);
-  const [perfisDisponiveis, setPerfisDisponiveis] = React.useState<any[]>([]);
+  const [perfisDisponiveis, setPerfisDisponiveis] = React.useState<Array<{
+    id: string;
+    nome: string;
+    descricao?: string;
+    ativo: boolean;
+  }>>([]);
 
   // Carregar perfis disponíveis
   React.useEffect(() => {
@@ -162,18 +167,19 @@ const UsuarioInternoForm: React.FC<UsuarioInternoFormProps> = ({
 
         toast({
           title: "Usuário criado",
-          description: "O novo usuário foi criado com sucesso e pode fazer login no sistema.",
+          description: "O usuário foi criado com sucesso e já pode fazer login no sistema.",
+          duration: 4000,
         });
       }
 
       // Retornar para a página de listagem após sucesso
       navigate("/admin/usuarios");
-    } catch (error: unknown) {
-      console.error("Erro ao salvar usuário:", error);
+    } catch (error) {
+      console.error('Erro ao salvar usuário interno:', error);
       toast({
-        title: "Erro ao salvar",
-        description: (error instanceof Error ? error.message : 'Erro desconhecido') || "Ocorreu um erro ao salvar o usuário.",
-        variant: "destructive",
+        title: "Erro",
+        description: error instanceof Error ? error.message : "Erro desconhecido ao salvar usuário",
+        variant: "destructive"
       });
     } finally {
       setIsSaving(false);

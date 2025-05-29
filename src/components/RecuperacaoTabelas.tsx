@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './ui/card';
@@ -15,56 +15,70 @@ export function RecuperacaoTabelas() {
   const [tabelasFaltantes, setTabelasFaltantes] = useState<string[]>([]);
   const [sqlParaCriar, setSqlParaCriar] = useState<string | null>(null);
   
-  // Lista de tabelas essenciais
-  const tabelasEssenciais = [
-    'ordens_producao',
-    // Adicione outras tabelas que podem estar faltando
-  ];
-
-  // Verificar se as tabelas existem
-  const verificarTabelas = async () => {
+  const verificarTabelas = useCallback(async () => {
     setStatus('verificando');
     setMensagem('Verificando tabelas no banco de dados...');
-    setProgresso(10);
+    setProgresso(0);
     
     try {
-      const faltantes: string[] = [];
+      // Lista de tabelas essenciais que devem existir
+      const tabelasEssenciais = [
+        'usuarios',
+        'perfis',
+        'permissoes',
+        'perfil_permissoes',
+        'fornecedores',
+        'produtos',
+        'insumos',
+        'lotes_insumo',
+        'embalagens',
+        'receitas',
+        'itens_receita',
+        'ordens_producao',
+        'etapas_producao',
+        'categorias_financeiras',
+        'contas_a_pagar',
+        'movimentacoes_caixa'
+      ];
       
-      // Verificar cada tabela
-      for (const tabela of tabelasEssenciais) {
+      const tabelasFaltando = [];
+      
+      for (let i = 0; i < tabelasEssenciais.length; i++) {
+        const tabela = tabelasEssenciais[i];
+        
         try {
-          // Tentar acessar a tabela
-          const { count, error } = await supabase
+          const { data, error } = await supabase
             .from(tabela)
-            .select('*', { count: 'exact', head: true });
-            
-          if (error) {
-            console.log(`Tabela ${tabela} não encontrada:`, error);
-            faltantes.push(tabela);
+            .select('*')
+            .limit(1);
+          
+          if (error && error.code === 'PGRST116') {
+            // Tabela não existe
+            tabelasFaltando.push(tabela);
           }
-        } catch (error) {
-          console.log(`Erro ao verificar tabela ${tabela}:`, error);
-          faltantes.push(tabela);
+        } catch (err) {
+          console.error(`Erro ao verificar tabela ${tabela}:`, err);
+          tabelasFaltando.push(tabela);
         }
         
-        setProgresso(prev => prev + (80 / tabelasEssenciais.length));
+        setProgresso(Math.round((i + 1) / tabelasEssenciais.length * 100));
       }
       
-      setTabelasFaltantes(faltantes);
-      setProgresso(100);
+      setTabelasFaltantes(tabelasFaltando);
       
-      if (faltantes.length > 0) {
-        setMensagem(`${faltantes.length} tabela(s) precisam ser criadas.`);
-      } else {
-        setMensagem('Todas as tabelas estão presentes no banco de dados.');
+      if (tabelasFaltando.length === 0) {
+        setMensagem('Todas as tabelas estão presentes no banco de dados!');
         setStatus('completo');
+      } else {
+        setMensagem(`Encontradas ${tabelasFaltando.length} tabelas faltantes. Clique em "Criar Tabelas Faltantes" para criá-las.`);
+        setStatus('erro');
       }
     } catch (error) {
       console.error('Erro ao verificar tabelas:', error);
-      setMensagem('Erro ao verificar tabelas no banco de dados.');
+      setMensagem('Erro ao verificar tabelas no banco de dados');
       setStatus('erro');
     }
-  };
+  }, []);
   
   // Criar tabelas faltantes
   const criarTabelas = async () => {
@@ -212,7 +226,7 @@ export function RecuperacaoTabelas() {
   // Iniciar verificação ao montar o componente
   useEffect(() => {
     verificarTabelas();
-  }, []);
+  }, [verificarTabelas]);
   
   return (
     <Card className="w-[600px] max-w-full shadow-lg">

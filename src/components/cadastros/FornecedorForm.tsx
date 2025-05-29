@@ -181,7 +181,7 @@ export default function FornecedorForm({
   // Limpar documento quando mudar o tipo de pessoa
   useEffect(() => {
     form.setValue("documento", "");
-  }, [tipoPessoa]);
+  }, [tipoPessoa, form]);
 
   // Buscar tipos de fornecedor (vou criar uma lista mock por enquanto)
   const tiposFornecedor: TipoFornecedor[] = [

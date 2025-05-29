@@ -12,7 +12,23 @@ import {
   Loader2,
   FilterX,
   Receipt,
-  CreditCard
+  CreditCard,
+  DollarSign,
+  AlertTriangle,
+  CheckCircle,
+  Clock,
+  TrendingUp,
+  TrendingDown,
+  BarChart3,
+  Download,
+  Upload,
+  Filter,
+  MoreHorizontal,
+  Eye,
+  Calendar,
+  Building2,
+  Banknote,
+  AlertCircle
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -20,17 +36,24 @@ import AdminLayout from '@/components/layouts/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { RegistrarPagamentoContaDialog } from '@/components/financeiro/RegistrarPagamentoContaDialog';
 import { DateRange } from 'react-day-picker';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 // Status badge variant mapping
 const getStatusVariant = (status: string) => {
@@ -41,6 +64,14 @@ const getStatusVariant = (status: string) => {
     case 'cancelada': return 'secondary';
     default: return 'outline';
   }
+};
+
+// Status configuration
+const statusConfig = {
+  pendente: { label: 'Pendente', color: 'bg-yellow-100 text-yellow-800', icon: Clock },
+  pago: { label: 'Pago', color: 'bg-green-100 text-green-800', icon: CheckCircle },
+  vencido: { label: 'Vencido', color: 'bg-red-100 text-red-800', icon: AlertTriangle },
+  cancelada: { label: 'Cancelada', color: 'bg-gray-100 text-gray-800', icon: AlertCircle },
 };
 
 // Format currency values
@@ -58,12 +89,12 @@ export default function ContasAPagarPage() {
   const queryClient = useQueryClient();
   
   // State for filters
-  const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
+  const [statusFilter, setStatusFilter] = useState<string>('todos');
   const [dateRange, setDateRange] = useState<DateRange>({
     from: subDays(new Date(), 30),
     to: addDays(new Date(), 30)
   });
-  const [fornecedorFilter, setFornecedorFilter] = useState<string | undefined>(undefined);
+  const [fornecedorFilter, setFornecedorFilter] = useState<string>('todos');
   const [searchTerm, setSearchTerm] = useState('');
   
   // State for account to delete
@@ -97,7 +128,7 @@ export default function ContasAPagarPage() {
         .eq('is_deleted', false);
       
       // Apply filters if they exist
-      if (statusFilter) {
+      if (statusFilter && statusFilter !== 'todos') {
         query = query.eq('status_conta', statusFilter);
       }
       
@@ -109,7 +140,7 @@ export default function ContasAPagarPage() {
         query = query.lte('data_vencimento', format(dateRange.to, 'yyyy-MM-dd'));
       }
       
-      if (fornecedorFilter) {
+      if (fornecedorFilter && fornecedorFilter !== 'todos') {
         query = query.eq('fornecedor_id', fornecedorFilter);
       }
       
@@ -167,7 +198,7 @@ export default function ContasAPagarPage() {
       toast({
         title: "Conta removida",
         description: "A conta a pagar foi removida com sucesso.",
-        variant: "success",
+        variant: "default",
       });
       setIsDeleteAlertOpen(false);
       setContaToDelete(null);
@@ -193,18 +224,22 @@ export default function ContasAPagarPage() {
   const totalVencido = contas
     ?.filter(conta => conta.status_conta === 'vencido')
     .reduce((acc, conta) => acc + Number(conta.valor_previsto), 0) || 0;
+
+  const totalContas = contas?.length || 0;
+  const contasPendentes = contas?.filter(conta => conta.status_conta === 'pendente').length || 0;
+  const contasPagas = contas?.filter(conta => conta.status_conta === 'pago').length || 0;
   
   // Handle navigation to new account page
   const handleNewConta = () => {
     navigate('/admin/financeiro/contas-a-pagar/novo');
   };
-  
-  // Handle navigation to edit account page
+
+  // Handle edit
   const handleEdit = (id: string) => {
     navigate(`/admin/financeiro/contas-a-pagar/editar/${id}`);
   };
-  
-  // Open delete confirmation dialog
+
+  // Handle delete
   const handleDelete = (conta: Record<string, unknown>) => {
     setContaToDelete({
       id: conta.id as string,
@@ -212,334 +247,442 @@ export default function ContasAPagarPage() {
     });
     setIsDeleteAlertOpen(true);
   };
-  
-  // Open payment registration dialog
+
+  // Handle register payment
   const handleRegisterPayment = (conta: Record<string, unknown>) => {
     setSelectedConta({
       id: conta.id as string,
       descricao: conta.descricao as string,
       valor_previsto: conta.valor_previsto as number,
       categoria_id: conta.categoria_id as string,
-      fornecedor_nome: (conta.fornecedores as { nome: string })?.nome,
+      fornecedor_nome: (conta.fornecedores as { nome: string } | null)?.nome,
     });
     setIsPaymentDialogOpen(true);
   };
-  
+
   // Reset filters
   const resetFilters = () => {
-    setStatusFilter(undefined);
+    setStatusFilter('todos');
     setDateRange({
       from: subDays(new Date(), 30),
       to: addDays(new Date(), 30)
     });
-    setFornecedorFilter(undefined);
+    setFornecedorFilter('todos');
     setSearchTerm('');
   };
-  
-  // Check status and render appropriate badge
+
+  // Update overdue status on component mount
   useEffect(() => {
-    // Auto-update overdue status
     const updateOverdueStatus = async () => {
-      const today = new Date().toISOString().split('T')[0];
-      const { error } = await supabase
+      const today = new Date();
+      const { data: overdueAccounts } = await supabase
         .from('contas_a_pagar')
-        .update({ status_conta: 'vencido' })
+        .select('id')
         .eq('status_conta', 'pendente')
-        .lt('data_vencimento', today);
-      
-      if (error) {
-        console.error('Erro ao atualizar contas vencidas:', error);
-      } else {
+        .lt('data_vencimento', format(today, 'yyyy-MM-dd'));
+
+      if (overdueAccounts && overdueAccounts.length > 0) {
+        await supabase
+          .from('contas_a_pagar')
+          .update({ status_conta: 'vencido' })
+          .in('id', overdueAccounts.map(acc => acc.id));
+        
         refetch();
       }
     };
-    
+
     updateOverdueStatus();
   }, [refetch]);
-  
+
   return (
-    <AdminLayout>
-      <div className="container py-6 max-w-7xl">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-bold">Contas a Pagar</h1>
-            <p className="text-gray-500">Gerencie as contas e despesas a pagar</p>
-          </div>
-          <Button onClick={handleNewConta}>
-            <Plus className="mr-2 h-4 w-4" /> Nova Conta
-          </Button>
-        </div>
-        
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Total Pendente</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold">{formatCurrency(totalPendente)}</p>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Total Pago</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold">{formatCurrency(totalPago)}</p>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground text-red-500">Total Vencido</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold text-red-500">{formatCurrency(totalVencido)}</p>
-            </CardContent>
-          </Card>
-        </div>
-        
-        {/* Filters */}
-        <Card className="mb-6">
-          <CardContent className="pt-6">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              {/* Search filter */}
-              <div>
-                <div className="relative">
-                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Buscar conta..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-8"
-                  />
+    <>
+      <AdminLayout>
+        <div className="space-y-8">
+          {/* Hero Section */}
+          <div className="relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-red-50 via-orange-50 to-yellow-50 dark:from-red-950/20 dark:via-orange-950/20 dark:to-yellow-950/20" />
+            <div className="relative px-6 py-12">
+              <div className="flex items-center justify-between">
+                <div className="space-y-4 max-w-3xl">
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 rounded-lg bg-gradient-to-br from-red-500 to-orange-500 text-white">
+                      <Receipt className="h-8 w-8" />
+                    </div>
+                    <div>
+                      <h1 className="text-4xl font-bold bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent">
+                        Contas a Pagar
+                      </h1>
+                      <p className="text-xl text-muted-foreground mt-2">
+                        Controle completo das suas obrigações financeiras
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div className="hidden lg:block">
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-gradient-to-r from-red-400 to-orange-400 blur-3xl opacity-20" />
+                    <CreditCard className="h-32 w-32 text-red-600/20" />
+                  </div>
                 </div>
               </div>
-              
-              {/* Status filter */}
-              <div>
-                <Select
-                  value={statusFilter}
-                  onValueChange={setStatusFilter}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="pendente">Pendente</SelectItem>
-                    <SelectItem value="pago">Pago</SelectItem>
-                    <SelectItem value="vencido">Vencido</SelectItem>
-                    <SelectItem value="cancelada">Cancelada</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              {/* Date range filter */}
-              <div>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="w-full justify-start text-left"
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {dateRange?.from ? (
-                        dateRange.to ? (
-                          <>
-                            {format(dateRange.from, "dd/MM/yyyy", { locale: ptBR })} -{" "}
-                            {format(dateRange.to, "dd/MM/yyyy", { locale: ptBR })}
-                          </>
-                        ) : (
-                          format(dateRange.from, "dd/MM/yyyy", { locale: ptBR })
-                        )
-                      ) : (
-                        <span>Selecione datas</span>
-                      )}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 pointer-events-auto" align="center">
-                    <Calendar
-                      mode="range"
-                      selected={dateRange}
-                      onSelect={(range) => setDateRange(range || { from: undefined, to: undefined })}
-                      locale={ptBR}
-                      className="pointer-events-auto"
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-              
-              {/* Supplier filter */}
-              <div>
-                <Select
-                  value={fornecedorFilter}
-                  onValueChange={setFornecedorFilter}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Fornecedor" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {fornecedores?.map((fornecedor) => (
-                      <SelectItem key={fornecedor.id} value={fornecedor.id}>
-                        {fornecedor.nome}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+
+              {/* Métricas Rápidas */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
+                <Card className="border-0 shadow-sm bg-white/60 backdrop-blur-sm">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Total de Contas</p>
+                        <p className="text-2xl font-bold">{totalContas}</p>
+                      </div>
+                      <Receipt className="h-8 w-8 text-red-600" />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-0 shadow-sm bg-white/60 backdrop-blur-sm">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Pendentes</p>
+                        <p className="text-2xl font-bold text-yellow-600">{contasPendentes}</p>
+                        <p className="text-xs text-muted-foreground">{formatCurrency(totalPendente)}</p>
+                      </div>
+                      <Clock className="h-8 w-8 text-yellow-600" />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-0 shadow-sm bg-white/60 backdrop-blur-sm">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Vencidas</p>
+                        <p className="text-2xl font-bold text-red-600">{contas?.filter(c => c.status_conta === 'vencido').length || 0}</p>
+                        <p className="text-xs text-muted-foreground">{formatCurrency(totalVencido)}</p>
+                      </div>
+                      <AlertTriangle className="h-8 w-8 text-red-600" />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-0 shadow-sm bg-white/60 backdrop-blur-sm">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Pagas</p>
+                        <p className="text-2xl font-bold text-green-600">{contasPagas}</p>
+                        <p className="text-xs text-muted-foreground">{formatCurrency(totalPago)}</p>
+                      </div>
+                      <CheckCircle className="h-8 w-8 text-green-600" />
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
             </div>
-            
-            <div className="flex justify-end mt-4">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={resetFilters}
-              >
-                <FilterX className="mr-2 h-4 w-4" />
-                Limpar Filtros
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-        
-        {/* Accounts Table */}
-        <Card>
-          <CardContent className="pt-6">
-            {isLoading ? (
-              <div className="flex justify-center items-center py-8">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              </div>
-            ) : isError ? (
-              <div className="bg-red-50 text-red-700 p-4 rounded-md">
-                <p>Erro ao carregar contas: {(error as Error).message}</p>
-              </div>
-            ) : contas && contas.length > 0 ? (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Descrição</TableHead>
-                    <TableHead>Fornecedor</TableHead>
-                    <TableHead>Categoria</TableHead>
-                    <TableHead>Data Venc.</TableHead>
-                    <TableHead>Valor Prev.</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Data Pag.</TableHead>
-                    <TableHead>Valor Pago</TableHead>
-                    <TableHead>Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {contas.map((conta) => (
-                    <TableRow key={conta.id}>
-                      <TableCell>{conta.descricao}</TableCell>
-                      <TableCell>{conta.fornecedores?.nome || '—'}</TableCell>
-                      <TableCell>{conta.categorias?.nome || '—'}</TableCell>
-                      <TableCell>{format(new Date(conta.data_vencimento), 'dd/MM/yyyy')}</TableCell>
-                      <TableCell>{formatCurrency(conta.valor_previsto)}</TableCell>
-                      <TableCell>
-                        <Badge variant={getStatusVariant(conta.status_conta)}>
-                          {conta.status_conta.charAt(0).toUpperCase() + conta.status_conta.slice(1)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {conta.data_pagamento 
-                          ? format(new Date(conta.data_pagamento), 'dd/MM/yyyy')
-                          : '—'}
-                      </TableCell>
-                      <TableCell>{conta.valor_pago ? formatCurrency(conta.valor_pago) : '—'}</TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
-                          {conta.status_conta === 'pendente' && (
-                            <Button
-                              size="icon"
-                              variant="outline"
-                              onClick={() => handleRegisterPayment(conta)}
-                              title="Registrar Pagamento"
-                            >
-                              <CreditCard className="h-4 w-4" />
-                            </Button>
+          </div>
+
+          {/* Controles e Filtros */}
+          <div className="px-6">
+            <Card className="border-0 shadow-sm">
+              <CardContent className="p-6">
+                <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
+                  <div className="flex flex-col sm:flex-row gap-4 flex-1">
+                    <div className="relative flex-1 max-w-md">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                      <Input
+                        placeholder="Buscar contas..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                    
+                    <Select value={statusFilter} onValueChange={setStatusFilter}>
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="todos">Todos os status</SelectItem>
+                        <SelectItem value="pendente">Pendente</SelectItem>
+                        <SelectItem value="pago">Pago</SelectItem>
+                        <SelectItem value="vencido">Vencido</SelectItem>
+                        <SelectItem value="cancelado">Cancelado</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    <Select value={fornecedorFilter} onValueChange={setFornecedorFilter}>
+                      <SelectTrigger className="w-[200px]">
+                        <SelectValue placeholder="Fornecedor" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="todos">Todos os fornecedores</SelectItem>
+                        {fornecedores?.map((fornecedor) => (
+                          <SelectItem key={fornecedor.id} value={fornecedor.id}>
+                            {fornecedor.nome}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" className="w-[240px] justify-start text-left font-normal">
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {dateRange?.from ? (
+                            dateRange.to ? (
+                              <>
+                                {format(dateRange.from, "dd/MM/yyyy")} -{" "}
+                                {format(dateRange.to, "dd/MM/yyyy")}
+                              </>
+                            ) : (
+                              format(dateRange.from, "dd/MM/yyyy")
+                            )
+                          ) : (
+                            <span>Período</span>
                           )}
-                          <Button
-                            size="icon"
-                            variant="outline"
-                            onClick={() => handleEdit(conta.id)}
-                            title="Editar"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="icon"
-                            variant="outline"
-                            className="text-red-500 hover:text-red-700"
-                            onClick={() => handleDelete(conta)}
-                            title="Excluir"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <CalendarComponent
+                          initialFocus
+                          mode="range"
+                          defaultMonth={dateRange?.from}
+                          selected={dateRange}
+                          onSelect={setDateRange}
+                          numberOfMonths={2}
+                        />
+                      </PopoverContent>
+                    </Popover>
+
+                    <Button variant="outline" onClick={resetFilters}>
+                      <FilterX className="h-4 w-4 mr-2" />
+                      Limpar
+                    </Button>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm">
+                      <Download className="h-4 w-4 mr-2" />
+                      Exportar
+                    </Button>
+                    <Button onClick={handleNewConta} className="bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Nova Conta
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Tabela de Contas */}
+          <div className="px-6">
+            <Card className="border-0 shadow-sm">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <Receipt className="h-5 w-5 text-red-600" />
+                      Lista de Contas a Pagar
+                    </CardTitle>
+                    <CardDescription>
+                      {contas?.length || 0} conta(s) encontrada(s)
+                    </CardDescription>
+                  </div>
+                  <Badge variant="outline" className="text-red-600 border-red-200">
+                    {contas?.length || 0} itens
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {isLoading ? (
+                  <div className="space-y-4">
+                    {Array(5).fill(null).map((_, index) => (
+                      <div key={index} className="flex items-center space-x-4">
+                        <Skeleton className="h-12 w-12 rounded-lg" />
+                        <div className="space-y-2 flex-1">
+                          <Skeleton className="h-4 w-[250px]" />
+                          <Skeleton className="h-4 w-[200px]" />
                         </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            ) : (
-              <div className="text-center py-8">
-                <Receipt className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium">Nenhuma conta encontrada</h3>
-                <p className="text-gray-500 mb-4">
-                  Não há contas a pagar registradas ou que correspondam aos filtros aplicados.
-                </p>
-                <Button onClick={handleNewConta}>
-                  <Plus className="mr-2 h-4 w-4" /> Adicionar Conta
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-        
-        {/* Delete Confirmation Dialog */}
-        <AlertDialog 
-          open={isDeleteAlertOpen} 
-          onOpenChange={setIsDeleteAlertOpen}
-        >
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-              <AlertDialogDescription>
-                Tem certeza que deseja excluir a conta "{contaToDelete?.descricao}"? Esta ação não pode ser desfeita.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={() => deleteMutation.mutate(contaToDelete?.id)}
-                className="bg-red-500 hover:bg-red-600"
-                disabled={deleteMutation.isPending}
-              >
-                {deleteMutation.isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Excluindo...
-                  </>
+                      </div>
+                    ))}
+                  </div>
+                ) : isError ? (
+                  <div className="text-center py-12">
+                    <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">Erro ao carregar contas</h3>
+                    <p className="text-muted-foreground mb-4">
+                      {(error as Error)?.message || 'Tente novamente mais tarde'}
+                    </p>
+                    <Button variant="outline" onClick={() => refetch()}>
+                      Tentar novamente
+                    </Button>
+                  </div>
+                ) : !contas || contas.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Receipt className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">Nenhuma conta encontrada</h3>
+                    <p className="text-muted-foreground mb-4">
+                      {searchTerm || statusFilter || fornecedorFilter
+                        ? 'Tente ajustar os filtros de busca'
+                        : 'Comece criando sua primeira conta a pagar'
+                      }
+                    </p>
+                    <Button onClick={handleNewConta} className="bg-gradient-to-r from-red-500 to-orange-500">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Criar Primeira Conta
+                    </Button>
+                  </div>
                 ) : (
-                  "Confirmar"
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Descrição</TableHead>
+                          <TableHead>Fornecedor</TableHead>
+                          <TableHead>Vencimento</TableHead>
+                          <TableHead>Valor</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead className="text-right">Ações</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {contas.map((conta) => {
+                          const StatusIcon = statusConfig[conta.status_conta as keyof typeof statusConfig]?.icon || Clock;
+                          return (
+                            <TableRow key={conta.id} className="hover:bg-muted/50">
+                              <TableCell>
+                                <div className="flex items-center gap-3">
+                                  <div className="p-2 rounded-lg bg-gradient-to-br from-red-100 to-orange-100">
+                                    <Receipt className="h-4 w-4 text-red-600" />
+                                  </div>
+                                  <div>
+                                    <p className="font-medium">{conta.descricao}</p>
+                                    <p className="text-sm text-muted-foreground">
+                                      {conta.categorias?.nome || 'Sem categoria'}
+                                    </p>
+                                  </div>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-1">
+                                  <Building2 className="h-3 w-3" />
+                                  {conta.fornecedores?.nome || 'Não informado'}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-1">
+                                  <Calendar className="h-3 w-3" />
+                                  {format(parseISO(conta.data_vencimento), 'dd/MM/yyyy')}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="font-medium">
+                                  {formatCurrency(conta.valor_previsto)}
+                                  {conta.valor_pago && conta.status_conta === 'pago' && (
+                                    <div className="text-xs text-green-600">
+                                      Pago: {formatCurrency(conta.valor_pago)}
+                                    </div>
+                                  )}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge 
+                                  variant="outline" 
+                                  className={statusConfig[conta.status_conta as keyof typeof statusConfig]?.color}
+                                >
+                                  <StatusIcon className="h-3 w-3 mr-1" />
+                                  {statusConfig[conta.status_conta as keyof typeof statusConfig]?.label || conta.status_conta}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="sm">
+                                      <MoreHorizontal className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onClick={() => handleEdit(conta.id)}>
+                                      <Edit className="h-4 w-4 mr-2" />
+                                      Editar
+                                    </DropdownMenuItem>
+                                    {(conta.status_conta === 'pendente' || conta.status_conta === 'vencido') && (
+                                      <DropdownMenuItem onClick={() => handleRegisterPayment(conta)}>
+                                        <CreditCard className="h-4 w-4 mr-2" />
+                                        Registrar Pagamento
+                                      </DropdownMenuItem>
+                                    )}
+                                    <DropdownMenuItem 
+                                      onClick={() => handleDelete(conta)}
+                                      className="text-red-600"
+                                    >
+                                      <Trash2 className="h-4 w-4 mr-2" />
+                                      Excluir
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
                 )}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-        
-        {/* Payment Registration Dialog */}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </AdminLayout>
+
+      {/* Dialog de Registro de Pagamento */}
+      {selectedConta && (
         <RegistrarPagamentoContaDialog
-          open={isPaymentDialogOpen}
-          onOpenChange={setIsPaymentDialogOpen}
+          isOpen={isPaymentDialogOpen}
+          onClose={() => {
+            setIsPaymentDialogOpen(false);
+            setSelectedConta(null);
+          }}
           conta={selectedConta}
           onSuccess={() => {
-            queryClient.invalidateQueries({ queryKey: ['contas_a_pagar'] });
+            refetch();
+            setIsPaymentDialogOpen(false);
+            setSelectedConta(null);
           }}
         />
-      </div>
-    </AdminLayout>
+      )}
+
+      {/* Dialog de Confirmação de Exclusão */}
+      <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir a conta "{contaToDelete?.descricao}"?
+              Esta ação não poderá ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => contaToDelete && deleteMutation.mutate(contaToDelete.id)}
+              className="bg-red-600 hover:bg-red-700"
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Excluindo...
+                </>
+              ) : (
+                'Excluir'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

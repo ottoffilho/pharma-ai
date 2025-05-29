@@ -2,14 +2,16 @@
 // Módulo: M09-USUARIOS_PERMISSOES
 
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../hooks/useAuth';
+import { useAuthSimple } from '../hooks/useAuthSimple';
 import type { DashboardProps } from '../types';
+import { useNavigate } from 'react-router-dom';
 
 /**
  * Dashboard de Atendimento - Para Atendentes e Balconistas
  */
 export const DashboardAtendimento: React.FC<DashboardProps> = ({ usuario, permissoes }) => {
-  const { logout } = useAuth();
+  const { logout } = useAuthSimple();
+  const navigate = useNavigate();
   const [pedidosHoje, setPedidosHoje] = useState(0);
   const [metaDiaria, setMetaDiaria] = useState(15);
   const [carregando, setCarregando] = useState(true);
@@ -33,6 +35,11 @@ export const DashboardAtendimento: React.FC<DashboardProps> = ({ usuario, permis
 
   const progressoMeta = (pedidosHoje / metaDiaria) * 100;
 
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login');
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -53,7 +60,7 @@ export const DashboardAtendimento: React.FC<DashboardProps> = ({ usuario, permis
                 Olá, {usuario.nome}
               </span>
               <button
-                onClick={logout}
+                onClick={handleLogout}
                 className="text-sm text-gray-500 hover:text-gray-700"
               >
                 Sair
@@ -173,7 +180,7 @@ export const DashboardAtendimento: React.FC<DashboardProps> = ({ usuario, permis
 
                 {/* PDV */}
                 <a
-                  href="/admin/pdv"
+                  href="/admin/vendas/pdv"
                   className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-center"
                 >
                   <div className="w-8 h-8 bg-green-100 rounded-md flex items-center justify-center mx-auto mb-2">

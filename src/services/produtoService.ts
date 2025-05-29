@@ -39,12 +39,11 @@ export const buscarProdutos = async (
 
     // Query base com relacionamentos
     let query = supabase
-      .from<'insumos', Tables<'insumos'>>('insumos')
+      .from<'produtos', Tables<'produtos'>>('produtos')
       .select(`
         *,
         categoria_produto:categoria_produto_id(id, nome, codigo),
-        forma_farmaceutica:forma_farmaceutica_id(id, nome, sigla),
-        fornecedor:fornecedor_id(id, razao_social, nome_fantasia),
+        fornecedor:fornecedor_id(id, nome, nome_fantasia),
         lotes:lote(id, numero_lote, data_validade, quantidade_atual)
       `);
 
@@ -55,10 +54,6 @@ export const buscarProdutos = async (
 
     if (filtros.categoria_produto_id) {
       query = query.eq('categoria_produto_id', filtros.categoria_produto_id);
-    }
-
-    if (filtros.forma_farmaceutica_id) {
-      query = query.eq('forma_farmaceutica_id', filtros.forma_farmaceutica_id);
     }
 
     if (filtros.fornecedor_id) {
@@ -79,7 +74,7 @@ export const buscarProdutos = async (
 
     // Contar total de registros
     const { count } = await supabase
-      .from<'insumos', Tables<'insumos'>>('insumos')
+      .from<'produtos', Tables<'produtos'>>('produtos')
       .select('*', { count: 'exact', head: true });
 
     // Aplicar ordenação e paginação
@@ -118,12 +113,11 @@ export const buscarProdutos = async (
 export const buscarProdutoPorId = async (id: UUID): Promise<ProdutoCompleto | null> => {
   try {
     const { data, error } = await supabase
-      .from<'insumos', Tables<'insumos'>>('insumos')
+      .from<'produtos', Tables<'produtos'>>('produtos')
       .select(`
         *,
         categoria_produto:categoria_produto_id(id, nome, codigo),
-        forma_farmaceutica:forma_farmaceutica_id(id, nome, sigla),
-        fornecedor:fornecedor_id(id, razao_social, nome_fantasia, cnpj),
+        fornecedor:fornecedor_id(id, nome, nome_fantasia, documento),
         lotes:lote(
           id, 
           numero_lote, 
@@ -157,41 +151,31 @@ export const buscarProdutoPorId = async (id: UUID): Promise<ProdutoCompleto | nu
  */
 export const buscarProdutoPorCodigo = async (codigoInterno: string): Promise<Produto | null> => {
   try {
-    // Verificar se o usuário está autenticado antes de fazer a consulta
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      console.warn('Usuário não autenticado para buscar produto');
+    console.log('🔍 Buscando produto por código:', codigoInterno);
+
+    const { data, error } = await supabase
+      .from<'produtos', Tables<'produtos'>>('produtos')
+      .select('*')
+      .eq('codigo_interno', codigoInterno)
+      .maybeSingle();
+
+    if (error) {
+      console.error('❌ Erro ao buscar produto por código:', error);
+      // Em caso de erro, retornar null para permitir continuar
       return null;
     }
 
-    const { data, error } = await supabase
-      .from<'insumos', Tables<'insumos'>>('insumos')
-      .select('*')
-      .eq('codigo_interno', codigoInterno)
-      .single();
-
-    if (error) {
-      if (error.code === 'PGRST116') {
-        return null; // Produto não encontrado
-      }
-      
-      // Se for erro de RLS/autenticação, retornar null em vez de erro
-      if (error.message?.includes('406') || error.message?.includes('Not Acceptable')) {
-        // Log silencioso para não poluir o console
-        return null;
-      }
-      
-      throw new Error(formatSupabaseError(error));
+    if (data) {
+      console.log('✅ Produto encontrado:', data.nome);
+    } else {
+      console.log('ℹ️ Produto não encontrado');
     }
 
     return data;
   } catch (error) {
-    console.error('Erro ao buscar produto por código:', error);
-    // Em caso de erro de rede ou autenticação, retornar null para permitir continuar
-    if (error instanceof Error && error.message.includes('406')) {
-      return null;
-    }
-    throw error;
+    console.error('❌ Erro no serviço de busca por código:', error);
+    // Em caso de erro, retornar null para permitir continuar
+    return null;
   }
 };
 
@@ -199,26 +183,34 @@ export const buscarProdutoPorCodigo = async (codigoInterno: string): Promise<Pro
  * Cria um novo produto
  */
 export const criarProduto = async (produto: CreateProduto): Promise<Produto> => {
+  console.log('💾 Criando novo produto:', produto.nome);
+  
   try {
     // Validar se código interno já existe
+    console.log('🔍 Verificando se código interno já existe...');
     const produtoExistente = await buscarProdutoPorCodigo(produto.codigo_interno);
     if (produtoExistente) {
+      console.error('❌ Produto já existe com este código');
       throw new Error(`Produto com código interno "${produto.codigo_interno}" já existe`);
     }
+    console.log('✅ Código interno disponível');
 
+    console.log('💾 Inserindo produto no banco...');
     const { data, error } = await supabase
-      .from<'insumos', TablesInsert<'insumos'>>('insumos')
+      .from<'produtos', TablesInsert<'produtos'>>('produtos')
       .insert(produto)
       .select()
       .single();
 
     if (error) {
+      console.error('❌ Erro ao inserir produto:', error);
       throw new Error(formatSupabaseError(error));
     }
 
+    console.log('✅ Produto criado com sucesso:', data.id);
     return data;
   } catch (error) {
-    console.error('Erro ao criar produto:', error);
+    console.error('❌ Erro ao criar produto:', error);
     throw error;
   }
 };
@@ -229,7 +221,7 @@ export const criarProduto = async (produto: CreateProduto): Promise<Produto> => 
 export const atualizarProduto = async (produto: UpdateProduto): Promise<Produto> => {
   try {
     const { data, error } = await supabase
-      .from<'insumos', Tables<'insumos'>>('insumos')
+      .from<'produtos', Tables<'produtos'>>('produtos')
       .update(produto)
       .eq('id', produto.id)
       .select()
@@ -252,7 +244,7 @@ export const atualizarProduto = async (produto: UpdateProduto): Promise<Produto>
 export const excluirProduto = async (id: UUID): Promise<void> => {
   try {
     const { error } = await supabase
-      .from<'insumos', Tables<'insumos'>>('insumos')
+      .from<'produtos', Tables<'produtos'>>('produtos')
       .update({ ativo: false })
       .eq('id', id);
 
@@ -275,11 +267,11 @@ export const excluirProduto = async (id: UUID): Promise<void> => {
 export const buscarProdutosEstoqueBaixo = async (): Promise<ProdutoCompleto[]> => {
   try {
     const { data, error } = await supabase
-      .from<'insumos', Tables<'insumos'>>('insumos')
+      .from<'produtos', Tables<'produtos'>>('produtos')
       .select(`
         *,
         categoria_produto:categoria_produto_id(id, nome),
-        fornecedor:fornecedor_id(id, razao_social)
+        fornecedor:fornecedor_id(id, nome)
       `)
       .filter('estoque_atual', 'lte', 'estoque_minimo')
       .eq('ativo', true)
@@ -302,11 +294,11 @@ export const buscarProdutosEstoqueBaixo = async (): Promise<ProdutoCompleto[]> =
 export const buscarProdutosControlados = async (): Promise<ProdutoCompleto[]> => {
   try {
     const { data, error } = await supabase
-      .from<'insumos', Tables<'insumos'>>('insumos')
+      .from<'produtos', Tables<'produtos'>>('produtos')
       .select(`
         *,
         categoria_produto:categoria_produto_id(id, nome),
-        fornecedor:fornecedor_id(id, razao_social),
+        fornecedor:fornecedor_id(id, nome),
         lotes:lote(id, numero_lote, data_validade, quantidade_atual)
       `)
       .eq('controlado', true)
@@ -383,7 +375,7 @@ export const calcularMargemLucro = (precoCusto: number, precoVenda: number): num
 export const buscarProdutosAutocomplete = async (termo: string, limit = 10): Promise<Produto[]> => {
   try {
     const { data, error } = await supabase
-      .from<'insumos', Tables<'insumos'>>('insumos')
+      .from<'produtos', Tables<'produtos'>>('produtos')
       .select('id, codigo_interno, nome, unidade_comercial, estoque_atual')
       .or(`nome.ilike.%${termo}%,codigo_interno.ilike.%${termo}%`)
       .eq('ativo', true)
@@ -407,12 +399,11 @@ export const buscarProdutosAutocomplete = async (termo: string, limit = 10): Pro
 export const buscarProdutosPorCategoria = async (categoriaId: UUID): Promise<ProdutoCompleto[]> => {
   try {
     const { data, error } = await supabase
-      .from<'insumos', Tables<'insumos'>>('insumos')
+      .from<'produtos', Tables<'produtos'>>('produtos')
       .select(`
         *,
         categoria_produto:categoria_produto_id(id, nome),
-        forma_farmaceutica:forma_farmaceutica_id(id, nome, sigla),
-        fornecedor:fornecedor_id(id, razao_social)
+        fornecedor:fornecedor_id(id, nome)
       `)
       .eq('categoria_produto_id', categoriaId)
       .eq('ativo', true)

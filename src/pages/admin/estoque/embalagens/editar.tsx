@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -30,20 +29,20 @@ const EditarEmbalagemPage: React.FC = () => {
   if (isLoading) {
     return (
       <AdminLayout>
-        <div className="container mx-auto p-6 flex justify-center">
-          <div className="flex items-center space-x-2">
-            <Loader2 className="h-6 w-6 animate-spin" />
-            <span>Carregando dados da embalagem...</span>
+        <div className="w-full p-6 flex justify-center">
+          <div className="flex flex-col items-center gap-2">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p>Carregando dados da embalagem...</p>
           </div>
         </div>
       </AdminLayout>
     );
   }
 
-  if (error) {
+  if (error || !embalagem) {
     return (
       <AdminLayout>
-        <div className="container mx-auto p-6">
+        <div className="w-full p-6">
           <div className="bg-red-100 text-red-700 p-4 rounded-md">
             <h3 className="font-bold">Erro ao carregar dados</h3>
             <p>{(error as Error).message}</p>
@@ -55,7 +54,7 @@ const EditarEmbalagemPage: React.FC = () => {
 
   return (
     <AdminLayout>
-      <div className="container mx-auto p-6">
+      <div className="w-full p-6">
         <h1 className="text-2xl font-bold mb-6">Editar Embalagem</h1>
         <div className="bg-white p-6 rounded-lg shadow">
           {embalagem ? (

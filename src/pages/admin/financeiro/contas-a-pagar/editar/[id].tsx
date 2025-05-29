@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Loader2 } from 'lucide-react';
@@ -48,7 +47,7 @@ export default function EditarContaPagarPage() {
 
   return (
     <AdminLayout>
-      <div className="container py-8">
+      <div className="w-full py-8">
         <div className="flex items-center gap-4 mb-6">
           <Button variant="outline" size="icon" onClick={() => navigate('/admin/financeiro/contas-a-pagar')}>
             <ArrowLeft className="h-4 w-4" />

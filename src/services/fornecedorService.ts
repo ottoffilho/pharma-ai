@@ -119,18 +119,18 @@ export class FornecedorService {
    * Verifica se um fornecedor está sendo usado em outros registros
    */
   static async isFornecedorInUse(id: string): Promise<boolean> {
-    // Verificar se o fornecedor está sendo usado em insumos
-    const { data: insumos, error: insumosError } = await supabase
-      .from('insumos')
+    // Verificar se o fornecedor está sendo usado em produtos
+    const { data: produtos, error: produtosError } = await supabase
+      .from('produtos')
       .select('id')
       .eq('fornecedor_id', id)
       .limit(1);
 
-    if (insumosError) {
-      throw new Error(`Erro ao verificar uso do fornecedor: ${insumosError.message}`);
+    if (produtosError) {
+      throw new Error(`Erro ao verificar uso do fornecedor: ${produtosError.message}`);
     }
 
-    if (insumos && insumos.length > 0) {
+    if (produtos && produtos.length > 0) {
       return true;
     }
 
@@ -233,35 +233,33 @@ export class FornecedorService {
    * Busca fornecedor por CNPJ/documento
    */
   static async getFornecedorByCNPJ(cnpj: string): Promise<Fornecedor | null> {
-    const { data, error } = await supabase
-      .from('fornecedores')
-      .select('*')
-      .eq('documento', cnpj)
-      .single();
+    try {
+      console.log('🔍 Buscando fornecedor por CNPJ:', cnpj);
 
-    if (error) {
-      if (error.code === 'PGRST116') {
-        return null; // Fornecedor não encontrado
-      }
-      
-      // Log detalhado para debug
-      console.error('Erro detalhado na busca por CNPJ:', {
-        code: error.code,
-        message: error.message,
-        details: error.details,
-        hint: error.hint
-      });
-      
-      // Se for erro de RLS/autenticação, retornar null em vez de erro
-      if (error.message?.includes('406') || error.message?.includes('Not Acceptable')) {
-        console.warn('Possível problema de RLS/autenticação na busca por CNPJ');
+      const { data, error } = await supabase
+        .from('fornecedores')
+        .select('*')
+        .eq('documento', cnpj)
+        .maybeSingle();
+
+      if (error) {
+        console.error('❌ Erro ao buscar fornecedor por CNPJ:', error);
+        // Em caso de erro, retornar null para permitir continuar
         return null;
       }
-      
-      throw new Error(`Erro ao buscar fornecedor por CNPJ: ${error.message}`);
-    }
 
-    return data;
+      if (data) {
+        console.log('✅ Fornecedor encontrado:', data.nome);
+      } else {
+        console.log('ℹ️ Fornecedor não encontrado');
+      }
+
+      return data;
+    } catch (error) {
+      console.error('❌ Erro no serviço de busca por CNPJ:', error);
+      // Em caso de erro, retornar null para permitir continuar
+      return null;
+    }
   }
 
   /**

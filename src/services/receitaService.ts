@@ -218,7 +218,12 @@ export const extractTextFromPDF = async (file: File): Promise<OCRResult> => {
       const page = await pdf.getPage(pageNum);
       const textContent = await page.getTextContent();
       
-      textContent.items.forEach((item: any) => {
+      textContent.items.forEach((item: {
+        str?: string;
+        transform: number[];
+        width: number;
+        height: number;
+      }) => {
         if (item.str) {
           fullText += item.str + ' ';
           blocks.push({
@@ -387,7 +392,7 @@ export const processRecipe = async (file: File): Promise<ProcessingResult> => {
         processing_status: 'processed',
         ocr_text: ocrResult.text,
         ocr_confidence: ocrResult.confidence,
-        ai_extracted_data: extractedData as any
+        ai_extracted_data: extractedData as Record<string, unknown>
       })
       .eq('id', rawRecipeId);
 
@@ -451,69 +456,48 @@ export const saveProcessedRecipe = async (
   validationNotes?: string
 ): Promise<string> => {
   try {
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    
-    if (userError || !user) {
+    // Verificar se já existe uma receita processada para este raw_recipe_id
+    const { data: existing } = await supabase
+      .from('receitas_processadas')
+      .select('id')
+      .eq('raw_recipe_id', rawRecipeId)
+      .single();
+
+    if (existing) {
+      throw new Error('Esta receita já foi processada anteriormente');
+    }
+
+    // Obter ID do usuário atual
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
       throw new Error('Usuário não autenticado');
     }
 
-    // Validar dados
-    validatePrescriptionData(extractedData);
-
-    // Preparar dados para inserção
-    const processedRecipeData = {
+    const processedRecipe = {
       raw_recipe_id: rawRecipeId,
       processed_by_user_id: user.id,
-      medications: extractedData.medications as any,
+      medications: extractedData.medications as Record<string, unknown>[], // Garantir que é um array
       patient_name: extractedData.patient_name || null,
       patient_dob: extractedData.patient_dob || null,
       prescriber_name: extractedData.prescriber_name || null,
       prescriber_identifier: extractedData.prescriber_identifier || null,
-      validation_status: 'validated',
-      validation_notes: validationNotes || null
+      validation_status: 'pending' as const,
+      validation_notes: validationNotes || null,
+      raw_ia_output: extractedData as Record<string, unknown> // Dados brutos da IA para auditoria
     };
 
-    // Verificar se já existe receita processada para este raw_recipe_id
-    const { data: existing, error: fetchError } = await supabase
+    // Criar nova receita
+    const { data: newRecipe, error: insertError } = await supabase
       .from('receitas_processadas')
+      .insert(processedRecipe)
       .select('id')
-      .eq('raw_recipe_id', rawRecipeId)
-      .maybeSingle();
+      .single();
 
-    if (fetchError) {
-      throw new Error(`Erro ao verificar receita existente: ${fetchError.message}`);
+    if (insertError) {
+      throw new Error(`Erro ao salvar receita: ${insertError.message}`);
     }
 
-    let processedRecipeId: string;
-
-    if (existing) {
-      // Atualizar existente
-      const { error: updateError } = await supabase
-        .from('receitas_processadas')
-        .update(processedRecipeData)
-        .eq('id', existing.id);
-
-      if (updateError) {
-        throw new Error(`Erro ao atualizar receita: ${updateError.message}`);
-      }
-      
-      processedRecipeId = existing.id;
-    } else {
-      // Criar nova
-      const { data: newRecipe, error: insertError } = await supabase
-        .from('receitas_processadas')
-        .insert(processedRecipeData)
-        .select('id')
-        .single();
-
-      if (insertError) {
-        throw new Error(`Erro ao salvar receita: ${insertError.message}`);
-      }
-      
-      processedRecipeId = newRecipe.id;
-    }
-
-    return processedRecipeId;
+    return newRecipe.id;
   } catch (error) {
     console.error('Erro ao salvar receita processada:', error);
     throw error;
@@ -538,10 +522,6 @@ export const getProcessedRecipes = async (limit = 50, offset = 0) => {
           file_path,
           upload_status,
           processing_status
-        ),
-        usuarios_internos (
-          nome,
-          email
         )
       `)
       .order('created_at', { ascending: false })
@@ -576,10 +556,6 @@ export const getProcessedRecipeById = async (id: string) => {
           processing_status,
           ocr_text,
           ocr_confidence
-        ),
-        usuarios_internos (
-          nome,
-          email
         )
       `)
       .eq('id', id)

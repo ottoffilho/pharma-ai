@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Funções Edge</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #2c5aa0;
+        }
+        .card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            background-color: #f9f9f9;
+        }
+        button {
+            background-color: #2c5aa0;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+            background-color: #f0f0f0;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .error {
+            background-color: #ffe6e6;
+            border-left: 4px solid #cc0000;
+        }
+        .success {
+            background-color: #e6ffe6;
+            border-left: 4px solid #00cc00;
+        }
+    </style>
+</head>
+<body>
+    <h1>Teste de Funções Edge do Supabase</h1>
+    
+    <div class="card">
+        <h2>Diagnóstico do Resend</h2>
+        <button id="btn-diagnostico">Executar Diagnóstico</button>
+        <div id="result-diagnostico" class="result"></div>
+    </div>
+    
+    <div class="card">
+        <h2>Função de Teste (Email Simples)</h2>
+        <button id="btn-teste-email">Enviar Email de Teste</button>
+        <div id="result-teste-email" class="result"></div>
+    </div>
+    
+    <div class="card">
+        <h2>Recuperação de Senha</h2>
+        <div>
+            <label for="nome">Nome:</label>
+            <input type="text" id="nome" value="Usuário Teste">
+        </div>
+        <div>
+            <label for="email">Email:</label>
+            <input type="email" id="email" value="ottof6@gmail.com">
+        </div>
+        <div>
+            <label for="token">Token:</label>
+            <input type="text" id="token" value="token123456789">
+        </div>
+        <div>
+            <label for="reset-url">Reset URL:</label>
+            <input type="text" id="reset-url" value="https://pharma-ai.vercel.app/redefinir-senha?token=token123456789&email=ottof6@gmail.com">
+        </div>
+        <button id="btn-recuperacao">Enviar Email de Recuperação</button>
+        <div id="result-recuperacao" class="result"></div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://hjwebmpvaaeogbfqxwub.supabase.co';
+        
+        // Diagnóstico Resend
+        document.getElementById('btn-diagnostico').addEventListener('click', async () => {
+            const resultElement = document.getElementById('result-diagnostico');
+            resultElement.textContent = 'Executando diagnóstico...';
+            resultElement.className = 'result';
+            
+            try {
+                const response = await fetch(`${SUPABASE_URL}/functions/v1/debug-resend`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: document.getElementById('email').value || 'ottof6@gmail.com'
+                    })
+                });
+                
+                const data = await response.json();
+                resultElement.textContent = JSON.stringify(data, null, 2);
+                
+                if (response.ok) {
+                    resultElement.classList.add('success');
+                } else {
+                    resultElement.classList.add('error');
+                }
+            } catch (error) {
+                resultElement.textContent = `Erro: ${error.message}`;
+                resultElement.classList.add('error');
+            }
+        });
+        
+        // Teste Email Simples
+        document.getElementById('btn-teste-email').addEventListener('click', async () => {
+            const resultElement = document.getElementById('result-teste-email');
+            resultElement.textContent = 'Enviando...';
+            resultElement.className = 'result';
+            
+            try {
+                const response = await fetch(`${SUPABASE_URL}/functions/v1/teste-email`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                resultElement.textContent = JSON.stringify(data, null, 2);
+                
+                if (response.ok) {
+                    resultElement.classList.add('success');
+                } else {
+                    resultElement.classList.add('error');
+                }
+            } catch (error) {
+                resultElement.textContent = `Erro: ${error.message}`;
+                resultElement.classList.add('error');
+            }
+        });
+        
+        // Recuperação de Senha
+        document.getElementById('btn-recuperacao').addEventListener('click', async () => {
+            const resultElement = document.getElementById('result-recuperacao');
+            resultElement.textContent = 'Enviando...';
+            resultElement.className = 'result';
+            
+            const email = document.getElementById('email').value;
+            const nome = document.getElementById('nome').value;
+            const token = document.getElementById('token').value;
+            const resetUrl = document.getElementById('reset-url').value;
+            
+            try {
+                const response = await fetch(`${SUPABASE_URL}/functions/v1/enviar-email-recuperacao`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email,
+                        nome,
+                        token,
+                        resetUrl
+                    })
+                });
+                
+                let data;
+                try {
+                    data = await response.json();
+                } catch (e) {
+                    data = { error: 'Erro ao fazer parse da resposta' };
+                }
+                
+                resultElement.textContent = JSON.stringify(data, null, 2);
+                
+                if (response.ok) {
+                    resultElement.classList.add('success');
+                } else {
+                    resultElement.classList.add('error');
+                }
+            } catch (error) {
+                resultElement.textContent = `Erro: ${error.message}`;
+                resultElement.classList.add('error');
+            }
+        });
+    </script>
+</body>
+</html> 

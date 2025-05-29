@@ -1,387 +1,678 @@
 // Dashboard Administrativo - Pharma.AI
 // Módulo: M09-USUARIOS_PERMISSOES
 
-import React, { useState, useEffect } from 'react';
-import { useAuth, useUsuarios } from '../hooks/useAuth';
+import React, { useMemo } from 'react';
+import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { 
+  FileText, 
+  ShoppingCart, 
+  FlaskConical, 
+  Box, 
+  AlertCircle, 
+  TrendingUp, 
+  DollarSign, 
+  Calculator, 
+  Info, 
+  Brain, 
+  Sparkles, 
+  Lightbulb, 
+  BarChart,
+  Users,
+  Activity,
+  Clock,
+  CheckCircle,
+  XCircle,
+  ArrowUpRight,
+  ArrowDownRight,
+  Target,
+  Zap,
+  Calendar,
+  PieChart,
+  LineChart
+} from 'lucide-react';
+import AdminLayout from '@/components/layouts/AdminLayout';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { 
+  BarChart as RechartsBarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  ResponsiveContainer, 
+  Tooltip as RechartsTooltip,
+  PieChart as RechartsPieChart,
+  Cell,
+  Pie,
+  LineChart as RechartsLineChart,
+  Line,
+  Area,
+  AreaChart
+} from 'recharts';
 import type { DashboardProps } from '../types';
 
 /**
  * Dashboard Administrativo - Acesso Completo para Proprietários
+ * Otimizado com React.memo para evitar re-renders desnecessários
  */
-export const DashboardAdministrativo: React.FC<DashboardProps> = ({ usuario, permissoes }) => {
-  const { logout } = useAuth();
-  const { estatisticas, carregarEstatisticas } = useUsuarios();
-  const [carregandoStats, setCarregandoStats] = useState(true);
+const DashboardAdministrativoComponent: React.FC<DashboardProps> = ({ usuario, permissoes }) => {
+  // Query to get count of processed recipes
+  const { data: receitasCount, isLoading: receitasLoading } = useQuery({
+    queryKey: ['receitasCount'],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('receitas_processadas')
+        .select('*', { count: 'exact', head: true });
+      
+      if (error) throw new Error(error.message);
+      return count || 0;
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutos
+    refetchOnWindowFocus: false
+  });
 
-  useEffect(() => {
-    const carregarDados = async () => {
-      try {
-        await carregarEstatisticas();
-      } catch (error) {
-        console.error('Erro ao carregar estatísticas:', error);
-      } finally {
-        setCarregandoStats(false);
-      }
-    };
+  // Query to get count of orders
+  const { data: pedidosCount, isLoading: pedidosLoading } = useQuery({
+    queryKey: ['pedidosCount'],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('pedidos')
+        .select('*', { count: 'exact', head: true });
+      
+      if (error) throw new Error(error.message);
+      return count || 0;
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutos
+    refetchOnWindowFocus: false
+  });
 
-    carregarDados();
-  }, [carregarEstatisticas]);
+  // Query to get count of inputs
+  const { data: insumosCount, isLoading: insumosLoading } = useQuery({
+    queryKey: ['insumosCount'],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('insumos')
+        .select('*', { count: 'exact', head: true });
+      
+      if (error) throw new Error(error.message);
+      return count || 0;
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutos
+    refetchOnWindowFocus: false
+  });
+
+  // Query to get count of packages
+  const { data: embalagensCount, isLoading: embalagensLoading } = useQuery({
+    queryKey: ['embalagensCount'],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('embalagens')
+        .select('*', { count: 'exact', head: true });
+      
+      if (error) throw new Error(error.message);
+      return count || 0;
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutos
+    refetchOnWindowFocus: false
+  });
+
+  // Query to get users count
+  const { data: usuariosCount, isLoading: usuariosLoading } = useQuery({
+    queryKey: ['usuariosCount'],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('usuarios')
+        .select('*', { count: 'exact', head: true });
+      
+      if (error) throw new Error(error.message);
+      return count || 0;
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutos
+    refetchOnWindowFocus: false
+  });
+
+  // Memoizar cálculos para evitar re-renders
+  const isLoading = useMemo(() => {
+    return receitasLoading || pedidosLoading || insumosLoading || embalagensLoading || usuariosLoading;
+  }, [receitasLoading, pedidosLoading, insumosLoading, embalagensLoading, usuariosLoading]);
+
+  // Helper function to format numbers
+  const formatNumber = useMemo(() => (num: number): string => {
+    if (num >= 1000000) {
+      return (num / 1000000).toFixed(1) + 'M';
+    } else if (num >= 1000) {
+      return (num / 1000).toFixed(1) + 'k';
+    }
+    return num.toString();
+  }, []);
+
+  // Memoizar dados dos gráficos
+  const metricsData = useMemo(() => [
+    {
+      name: 'Receitas',
+      value: receitasCount || 0,
+      color: '#10b981',
+      icon: FileText,
+      trend: '+12%',
+      trendUp: true
+    },
+    {
+      name: 'Pedidos',
+      value: pedidosCount || 0,
+      color: '#3b82f6',
+      icon: ShoppingCart,
+      trend: '+8%',
+      trendUp: true
+    },
+    {
+      name: 'Insumos',
+      value: insumosCount || 0,
+      color: '#f59e0b',
+      icon: FlaskConical,
+      trend: '+5%',
+      trendUp: true
+    },
+    {
+      name: 'Embalagens',
+      value: embalagensCount || 0,
+      color: '#8b5cf6',
+      icon: Box,
+      trend: '+3%',
+      trendUp: true
+    }
+  ], [receitasCount, pedidosCount, insumosCount, embalagensCount]);
+
+  const pieChartData = useMemo(() => [
+    { name: 'Receitas Processadas', value: receitasCount || 0, color: '#10b981' },
+    { name: 'Pedidos Ativos', value: pedidosCount || 0, color: '#3b82f6' },
+    { name: 'Insumos Disponíveis', value: insumosCount || 0, color: '#f59e0b' },
+    { name: 'Tipos de Embalagem', value: embalagensCount || 0, color: '#8b5cf6' }
+  ], [receitasCount, pedidosCount, insumosCount, embalagensCount]);
+
+  // Simulated time series data for trends (memoizado)
+  const trendData = useMemo(() => [
+    { month: 'Jan', receitas: 12, pedidos: 8, insumos: 45 },
+    { month: 'Fev', receitas: 19, pedidos: 12, insumos: 52 },
+    { month: 'Mar', receitas: 25, pedidos: 18, insumos: 48 },
+    { month: 'Abr', receitas: 32, pedidos: 24, insumos: 61 },
+    { month: 'Mai', receitas: 28, pedidos: 20, insumos: 55 },
+    { month: 'Jun', receitas: 35, pedidos: 28, insumos: 67 }
+  ], []);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <h1 className="text-xl font-semibold text-gray-900">
-                Dashboard Administrativo
+    <AdminLayout>
+      <TooltipProvider>
+        <div className="container-section py-8 space-y-8">
+          {/* Header Section */}
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-homeo-blue to-homeo-accent bg-clip-text text-transparent">
+                Dashboard Pharma.AI
               </h1>
-              <span className="ml-3 px-2 py-1 text-xs font-medium bg-purple-100 text-purple-800 rounded-full">
+              <p className="text-muted-foreground text-lg mt-2">
+                Painel inteligente com insights em tempo real da sua farmácia
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                <Activity className="h-3 w-3 mr-1" />
+                Sistema Online
+              </Badge>
+              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                <Brain className="h-3 w-3 mr-1" />
+                IA Ativa
+              </Badge>
+              <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
                 Proprietário
-              </span>
+              </Badge>
+            </div>
+          </div>
+
+          {/* Quick Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {metricsData.map((metric, index) => {
+              const IconComponent = metric.icon;
+              return (
+                <Card key={index} className="relative overflow-hidden group hover:shadow-lg transition-all duration-300 border-0 bg-gradient-to-br from-white to-gray-50">
+                  <div className="absolute inset-0 bg-gradient-to-br opacity-5" style={{ backgroundColor: metric.color }} />
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center justify-between">
+                      <div className="p-2 rounded-lg" style={{ backgroundColor: `${metric.color}15` }}>
+                        <IconComponent className="h-5 w-5" style={{ color: metric.color }} />
+        </div>
+                      <div className="flex items-center gap-1">
+                        {metric.trendUp ? (
+                          <ArrowUpRight className="h-4 w-4 text-green-500" />
+                        ) : (
+                          <ArrowDownRight className="h-4 w-4 text-red-500" />
+                        )}
+                        <span className={`text-sm font-medium ${metric.trendUp ? 'text-green-600' : 'text-red-600'}`}>
+                          {metric.trend}
+                        </span>
+                </div>
+              </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      <p className="text-2xl font-bold" style={{ color: metric.color }}>
+                        {isLoading ? '...' : formatNumber(metric.value)}
+                      </p>
+                      <p className="text-sm text-muted-foreground font-medium">
+                        {metric.name}
+                      </p>
+                      <Progress 
+                        value={metric.value > 0 ? Math.min((metric.value / 100) * 100, 100) : 0} 
+                        className="h-2"
+                        style={{ 
+                          backgroundColor: `${metric.color}20`,
+                        }}
+                      />
+              </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+
+          {/* Charts Section */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Bar Chart */}
+            <Card className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h3 className="text-xl font-semibold flex items-center gap-2">
+                    <BarChart className="h-5 w-5 text-homeo-blue" />
+                    Visão Geral dos Dados
+                  </h3>
+                  <p className="text-sm text-muted-foreground">Distribuição atual dos recursos</p>
+                </div>
+                <Button variant="outline" size="sm">
+                  <Calendar className="h-4 w-4 mr-2" />
+                  Este Mês
+                </Button>
+              </div>
+              
+              {!isLoading ? (
+                <div className="h-80">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <RechartsBarChart data={metricsData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                      <XAxis 
+                        dataKey="name" 
+                        tick={{ fontSize: 12 }}
+                        stroke="#64748b"
+                      />
+                      <YAxis 
+                        tick={{ fontSize: 12 }}
+                        stroke="#64748b"
+                      />
+                      <RechartsTooltip 
+                        contentStyle={{ 
+                          backgroundColor: 'white', 
+                          border: '1px solid #e2e8f0', 
+                          borderRadius: '12px',
+                          boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)'
+                        }}
+                      />
+                      <Bar 
+                        dataKey="value" 
+                        fill="#3b82f6" 
+                        radius={[8, 8, 0, 0]}
+                        stroke="#2563eb"
+                        strokeWidth={1}
+                      />
+                    </RechartsBarChart>
+                  </ResponsiveContainer>
+              </div>
+              ) : (
+                <div className="h-80 flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-homeo-blue mx-auto mb-4"></div>
+                    <p className="text-gray-500">Carregando dados...</p>
+            </div>
+          </div>
+              )}
+            </Card>
+
+            {/* Pie Chart */}
+            <Card className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h3 className="text-xl font-semibold flex items-center gap-2">
+                    <PieChart className="h-5 w-5 text-homeo-accent" />
+                    Distribuição por Categoria
+                  </h3>
+                  <p className="text-sm text-muted-foreground">Proporção dos recursos cadastrados</p>
+                </div>
+              </div>
+              
+              {!isLoading ? (
+                <div className="h-80">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <RechartsPieChart>
+                      <Pie
+                        data={pieChartData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={120}
+                        paddingAngle={5}
+                        dataKey="value"
+                      >
+                        {pieChartData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <RechartsTooltip 
+                        contentStyle={{ 
+                          backgroundColor: 'white', 
+                          border: '1px solid #e2e8f0', 
+                          borderRadius: '12px',
+                          boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)'
+                        }}
+                      />
+                    </RechartsPieChart>
+                  </ResponsiveContainer>
+                  <div className="grid grid-cols-2 gap-2 mt-4">
+                    {pieChartData.map((item, index) => (
+                      <div key={index} className="flex items-center gap-2">
+                        <div 
+                          className="w-3 h-3 rounded-full" 
+                          style={{ backgroundColor: item.color }}
+                        />
+                        <span className="text-xs text-muted-foreground">{item.name}</span>
+                      </div>
+                    ))}
+              </div>
+            </div>
+              ) : (
+                <div className="h-80 flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-homeo-accent mx-auto mb-4"></div>
+                    <p className="text-gray-500">Carregando dados...</p>
+          </div>
+                </div>
+              )}
+            </Card>
+              </div>
+
+          {/* Trend Analysis */}
+          <Card className="p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="text-xl font-semibold flex items-center gap-2">
+                  <LineChart className="h-5 w-5 text-green-500" />
+                  Tendências dos Últimos 6 Meses
+                </h3>
+                <p className="text-sm text-muted-foreground">Evolução dos principais indicadores</p>
+              </div>
+              <div className="flex gap-2">
+                <Badge variant="outline" className="bg-green-50 text-green-700">
+                  <TrendingUp className="h-3 w-3 mr-1" />
+                  Crescimento
+                </Badge>
+          </div>
+        </div>
+
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={trendData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                  <defs>
+                    <linearGradient id="colorReceitas" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                    </linearGradient>
+                    <linearGradient id="colorPedidos" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                    </linearGradient>
+                    <linearGradient id="colorInsumos" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#f59e0b" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <XAxis 
+                    dataKey="month" 
+                    tick={{ fontSize: 12 }}
+                    stroke="#64748b"
+                  />
+                  <YAxis 
+                    tick={{ fontSize: 12 }}
+                    stroke="#64748b"
+                  />
+                  <RechartsTooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'white', 
+                      border: '1px solid #e2e8f0', 
+                      borderRadius: '12px',
+                      boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)'
+                    }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="receitas"
+                    stroke="#10b981"
+                    strokeWidth={3}
+                    fillOpacity={1}
+                    fill="url(#colorReceitas)"
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="pedidos"
+                    stroke="#3b82f6"
+                    strokeWidth={3}
+                    fillOpacity={1}
+                    fill="url(#colorPedidos)"
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="insumos"
+                    stroke="#f59e0b"
+                    strokeWidth={3}
+                    fillOpacity={1}
+                    fill="url(#colorInsumos)"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </Card>
+
+          {/* AI Insights Section */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <Card className="bg-gradient-to-br from-homeo-accent/10 to-white border-homeo-accent/30 hover:shadow-lg transition-all hover:scale-105">
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <Brain className="h-5 w-5 text-homeo-accent" />
+                  <CardTitle className="text-lg">IA Processamento</CardTitle>
+                  <Sparkles className="h-4 w-4 text-yellow-500" />
+                    </div>
+                <CardDescription>
+                  Sistema inteligente para análise de receitas
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Precisão da IA</span>
+                    <span className="text-sm font-medium text-green-600">98.5%</span>
+                  </div>
+                  <Progress value={98.5} className="h-2" />
+                  <p className="text-xs text-muted-foreground">
+                    Nossa IA está pronta para processar receitas com alta precisão
+                  </p>
+                    </div>
+              </CardContent>
+              <CardFooter>
+                <Link to="/admin/ia/processamento-receitas" className="w-full">
+                  <Button className="w-full bg-homeo-accent hover:bg-homeo-accent/90">
+                    <Zap className="h-4 w-4 mr-2" />
+                    Testar IA
+                  </Button>
+                </Link>
+              </CardFooter>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-blue-500/10 to-white border-blue-500/30 hover:shadow-lg transition-all">
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <Target className="h-5 w-5 text-blue-500" />
+                  <CardTitle className="text-lg">Previsões Inteligentes</CardTitle>
+                    </div>
+                <CardDescription>
+                  Análise preditiva para otimização
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Módulo</span>
+                    <Badge variant="outline" className="text-xs">Em Breve</Badge>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4 text-green-500" />
+                      <span className="text-xs">Previsão de demanda</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4 text-green-500" />
+                      <span className="text-xs">Otimização de compras</span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Link to="/admin/ia/previsao-demanda" className="w-full">
+                  <Button variant="outline" className="w-full border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white">
+                    Conhecer Módulo
+                  </Button>
+                </Link>
+              </CardFooter>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-yellow-500/10 to-white border-yellow-500/30 hover:shadow-lg transition-all">
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <Lightbulb className="h-5 w-5 text-yellow-600" />
+                  <CardTitle className="text-lg">Insights Avançados</CardTitle>
+                    </div>
+                <CardDescription>
+                  Análises detalhadas do seu negócio
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Info className="h-4 w-4 text-yellow-600" />
+                      <span className="text-sm font-medium text-yellow-800">Dica do Sistema</span>
+                    </div>
+                    <p className="text-xs text-yellow-700">
+                      Cadastre mais insumos para ampliar sua capacidade de atendimento
+                    </p>
+                  </div>
+              </div>
+              </CardContent>
+              <CardFooter>
+                <Link to="/admin/estoque/insumos" className="w-full">
+                  <Button variant="outline" className="w-full border-yellow-600 text-yellow-600 hover:bg-yellow-600 hover:text-white">
+                    Ver Sugestões
+                  </Button>
+                </Link>
+              </CardFooter>
+            </Card>
+          </div>
+
+          {/* Quick Actions */}
+          <Card className="p-6">
+            <div className="flex items-center gap-2 mb-6">
+              <h3 className="text-xl font-semibold">Ações Rápidas</h3>
+              <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                Acesso Direto
+              </Badge>
             </div>
             
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-700">
-                Olá, {usuario.nome}
-              </span>
-              <button
-                onClick={logout}
-                className="text-sm text-gray-500 hover:text-gray-700"
-              >
-                Sair
-              </button>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <Link to="/admin/pedidos/nova-receita">
+                <Button variant="outline" className="w-full h-20 flex flex-col gap-2 hover:bg-homeo-green/10 hover:border-homeo-green">
+                  <FileText className="h-6 w-6 text-homeo-green" />
+                  <span className="text-sm">Nova Receita</span>
+                </Button>
+              </Link>
+              
+              <Link to="/admin/estoque/insumos">
+                <Button variant="outline" className="w-full h-20 flex flex-col gap-2 hover:bg-orange-500/10 hover:border-orange-500">
+                  <FlaskConical className="h-6 w-6 text-orange-500" />
+                  <span className="text-sm">Gerenciar Insumos</span>
+                </Button>
+              </Link>
+              
+              <Link to="/admin/usuarios">
+                <Button variant="outline" className="w-full h-20 flex flex-col gap-2 hover:bg-purple-500/10 hover:border-purple-500">
+                  <Users className="h-6 w-6 text-purple-500" />
+                  <span className="text-sm">Usuários</span>
+                </Button>
+              </Link>
+              
+              <Link to="/admin/ia/processamento-receitas">
+                <Button variant="outline" className="w-full h-20 flex flex-col gap-2 hover:bg-homeo-accent/10 hover:border-homeo-accent">
+                  <Brain className="h-6 w-6 text-homeo-accent" />
+                  <span className="text-sm">Módulos IA</span>
+                </Button>
+              </Link>
             </div>
-          </div>
-        </div>
-      </header>
+          </Card>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        
-        {/* Estatísticas Gerais */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          
-          {/* Usuários Ativos */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-blue-500 rounded-md flex items-center justify-center">
-                  <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
-                  </svg>
-                </div>
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
-                    Usuários Ativos
-                  </dt>
-                  <dd className="text-lg font-medium text-gray-900">
-                    {carregandoStats ? '...' : estatisticas?.ativos || 0}
-                  </dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-
-          {/* Vendas do Mês */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-green-500 rounded-md flex items-center justify-center">
-                  <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-                  </svg>
-                </div>
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
-                    Vendas do Mês
-                  </dt>
-                  <dd className="text-lg font-medium text-gray-900">
-                    R$ 45.230,00
-                  </dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-
-          {/* Pedidos Pendentes */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-yellow-500 rounded-md flex items-center justify-center">
-                  <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
-                  </svg>
-                </div>
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
-                    Pedidos Pendentes
-                  </dt>
-                  <dd className="text-lg font-medium text-gray-900">
-                    12
-                  </dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-
-          {/* Estoque Crítico */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-red-500 rounded-md flex items-center justify-center">
-                  <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                  </svg>
-                </div>
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
-                    Estoque Crítico
-                  </dt>
-                  <dd className="text-lg font-medium text-gray-900">
-                    8 itens
-                  </dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Seções Principais */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          
-          {/* Módulos do Sistema */}
-          <div className="bg-white rounded-lg shadow">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h3 className="text-lg font-medium text-gray-900">
-                Módulos do Sistema
-              </h3>
-            </div>
-            <div className="p-6">
-              <div className="grid grid-cols-2 gap-4">
-                
-                {/* Cadastros */}
-                <a
-                  href="/admin/cadastros"
-                  className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  <div className="flex items-center">
-                    <div className="w-8 h-8 bg-blue-100 rounded-md flex items-center justify-center">
-                      <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
-                        <path fillRule="evenodd" d="M4 5a2 2 0 012-2v1a1 1 0 001 1h6a1 1 0 001-1V3a2 2 0 012 2v6a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3z" clipRule="evenodd" />
-                      </svg>
-                    </div>
-                    <div className="ml-3">
-                      <p className="text-sm font-medium text-gray-900">Cadastros</p>
-                      <p className="text-xs text-gray-500">Insumos, Fornecedores</p>
-                    </div>
-                  </div>
-                </a>
-
-                {/* Atendimento */}
-                <a
-                  href="/admin/atendimento"
-                  className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  <div className="flex items-center">
-                    <div className="w-8 h-8 bg-green-100 rounded-md flex items-center justify-center">
-                      <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z" clipRule="evenodd" />
-                      </svg>
-                    </div>
-                    <div className="ml-3">
-                      <p className="text-sm font-medium text-gray-900">Atendimento</p>
-                      <p className="text-xs text-gray-500">Receitas, Pedidos</p>
-                    </div>
-                  </div>
-                </a>
-
-                {/* Estoque */}
-                <a
-                  href="/admin/estoque"
-                  className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  <div className="flex items-center">
-                    <div className="w-8 h-8 bg-purple-100 rounded-md flex items-center justify-center">
-                      <svg className="w-5 h-5 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M5 2a2 2 0 00-2 2v14l3.5-2 3.5 2 3.5-2 3.5 2V4a2 2 0 00-2-2H5zm2.5 3a1.5 1.5 0 100 3 1.5 1.5 0 000-3zm6.207.293a1 1 0 00-1.414 1.414l.707.707a1 1 0 001.414-1.414l-.707-.707z" clipRule="evenodd" />
-                      </svg>
-                    </div>
-                    <div className="ml-3">
-                      <p className="text-sm font-medium text-gray-900">Estoque</p>
-                      <p className="text-xs text-gray-500">Controle, Lotes</p>
-                    </div>
-                  </div>
-                </a>
-
-                {/* Financeiro */}
-                <a
-                  href="/admin/financeiro"
-                  className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  <div className="flex items-center">
-                    <div className="w-8 h-8 bg-yellow-100 rounded-md flex items-center justify-center">
-                      <svg className="w-5 h-5 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z" />
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clipRule="evenodd" />
-                      </svg>
-                    </div>
-                    <div className="ml-3">
-                      <p className="text-sm font-medium text-gray-900">Financeiro</p>
-                      <p className="text-xs text-gray-500">Vendas, Relatórios</p>
-                    </div>
-                  </div>
-                </a>
-
-              </div>
-            </div>
-          </div>
-
-          {/* Atividades Recentes */}
-          <div className="bg-white rounded-lg shadow">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h3 className="text-lg font-medium text-gray-900">
-                Atividades Recentes
-              </h3>
-            </div>
-            <div className="p-6">
-              <div className="flow-root">
-                <ul className="-mb-8">
-                  <li>
-                    <div className="relative pb-8">
-                      <span className="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200" aria-hidden="true"></span>
-                      <div className="relative flex space-x-3">
-                        <div>
-                          <span className="h-8 w-8 rounded-full bg-green-500 flex items-center justify-center ring-8 ring-white">
-                            <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                            </svg>
-                          </span>
-                        </div>
-                        <div className="min-w-0 flex-1 pt-1.5 flex justify-between space-x-4">
-                          <div>
-                            <p className="text-sm text-gray-500">
-                              Pedido #1234 foi <span className="font-medium text-gray-900">finalizado</span>
-                            </p>
-                          </div>
-                          <div className="text-right text-sm whitespace-nowrap text-gray-500">
-                            <time>2h atrás</time>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </li>
-
-                  <li>
-                    <div className="relative pb-8">
-                      <span className="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200" aria-hidden="true"></span>
-                      <div className="relative flex space-x-3">
-                        <div>
-                          <span className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center ring-8 ring-white">
-                            <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                              <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
-                            </svg>
-                          </span>
-                        </div>
-                        <div className="min-w-0 flex-1 pt-1.5 flex justify-between space-x-4">
-                          <div>
-                            <p className="text-sm text-gray-500">
-                              Novo usuário <span className="font-medium text-gray-900">Maria Silva</span> foi criado
-                            </p>
-                          </div>
-                          <div className="text-right text-sm whitespace-nowrap text-gray-500">
-                            <time>4h atrás</time>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </li>
-
-                  <li>
-                    <div className="relative">
-                      <div className="relative flex space-x-3">
-                        <div>
-                          <span className="h-8 w-8 rounded-full bg-yellow-500 flex items-center justify-center ring-8 ring-white">
-                            <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                            </svg>
-                          </span>
-                        </div>
-                        <div className="min-w-0 flex-1 pt-1.5 flex justify-between space-x-4">
-                          <div>
-                            <p className="text-sm text-gray-500">
-                              Estoque de <span className="font-medium text-gray-900">Paracetamol</span> está baixo
-                            </p>
-                          </div>
-                          <div className="text-right text-sm whitespace-nowrap text-gray-500">
-                            <time>6h atrás</time>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </div>
-
-        </div>
-
-        {/* Seção de Gestão de Usuários */}
-        <div className="mt-8 bg-white rounded-lg shadow">
-          <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-            <h3 className="text-lg font-medium text-gray-900">
+          {/* Gestão de Usuários */}
+          <Card className="p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="text-xl font-semibold flex items-center gap-2">
+                  <Users className="h-5 w-5 text-purple-500" />
               Gestão de Usuários
             </h3>
-            <a
-              href="/admin/usuarios"
-              className="text-sm text-blue-600 hover:text-blue-500"
-            >
-              Ver todos
-            </a>
-          </div>
-          <div className="p-6">
-            {carregandoStats ? (
-              <div className="text-center py-4">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                <p className="text-sm text-gray-500 mt-2">Carregando estatísticas...</p>
+                <p className="text-sm text-muted-foreground">Controle de acesso e permissões</p>
               </div>
-            ) : (
+              <Link to="/admin/usuarios">
+                <Button variant="outline">
+                  Ver Todos
+                </Button>
+              </Link>
+            </div>
+            
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-gray-900">
-                    {estatisticas?.total || 0}
-                  </div>
-                  <div className="text-sm text-gray-500">Total de Usuários</div>
+              <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-white rounded-lg border border-blue-200">
+                <div className="text-2xl font-bold text-blue-600">
+                  {usuariosCount || 0}
                 </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600">
-                    {estatisticas?.ativos || 0}
-                  </div>
-                  <div className="text-sm text-gray-500">Usuários Ativos</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">
-                    {estatisticas?.ultimos_acessos?.hoje || 0}
-                  </div>
-                  <div className="text-sm text-gray-500">Acessos Hoje</div>
-                </div>
+                <div className="text-sm text-blue-700">Total de Usuários</div>
               </div>
-            )}
+              <div className="text-center p-4 bg-gradient-to-br from-green-50 to-white rounded-lg border border-green-200">
+                  <div className="text-2xl font-bold text-green-600">
+                  {usuariosCount || 0}
+                </div>
+                <div className="text-sm text-green-700">Usuários Ativos</div>
+                  </div>
+              <div className="text-center p-4 bg-gradient-to-br from-purple-50 to-white rounded-lg border border-purple-200">
+                <div className="text-2xl font-bold text-purple-600">
+                  1
+                </div>
+                <div className="text-sm text-purple-700">Proprietários</div>
+              </div>
           </div>
+          </Card>
         </div>
-
-      </main>
-    </div>
+      </TooltipProvider>
+    </AdminLayout>
   );
-}; 
+};
+
+// Exportar com React.memo para otimização
+export const DashboardAdministrativo = React.memo(DashboardAdministrativoComponent);
+export default DashboardAdministrativo; 

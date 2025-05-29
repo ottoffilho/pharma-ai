@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -27,6 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { CampoMarkup } from '@/components/markup/CampoMarkup';
 
 // Schema de validação Zod para o formulário de embalagens
 const embalagemSchema = z.object({
@@ -34,6 +34,8 @@ const embalagemSchema = z.object({
   tipo: z.string().min(1, 'Tipo é obrigatório'),
   volume_capacidade: z.string().optional(),
   custo_unitario: z.coerce.number().positive('Custo deve ser positivo'),
+  markup: z.number().min(0, "Markup deve ser maior ou igual a zero").default(5.00),
+  markup_personalizado: z.boolean().default(false),
   fornecedor_id: z.string().optional().nullable(),
   descricao: z.string().optional(),
   estoque_atual: z.coerce.number().int().default(0),
@@ -66,6 +68,8 @@ const EmbalagemForm: React.FC<EmbalagemFormProps> = ({
       tipo: '',
       volume_capacidade: '',
       custo_unitario: 0,
+      markup: 5.00,
+      markup_personalizado: false,
       fornecedor_id: null,
       descricao: '',
       estoque_atual: 0,
@@ -96,9 +100,14 @@ const EmbalagemForm: React.FC<EmbalagemFormProps> = ({
       
       if (isEditing && embalagemId) {
         // Atualizar embalagem existente
+        const updateData = {
+          ...data,
+          markup_personalizado: data.markup !== 5.00 // Marcar como personalizado se diferente do padrão
+        };
+        
         const { error } = await supabase
           .from('embalagens')
-          .update(data)
+          .update(updateData)
           .eq('id', embalagemId);
 
         if (error) throw error;
@@ -114,6 +123,8 @@ const EmbalagemForm: React.FC<EmbalagemFormProps> = ({
           tipo: data.tipo,
           custo_unitario: data.custo_unitario,
           volume_capacidade: data.volume_capacidade || null,
+          markup: data.markup,
+          markup_personalizado: data.markup !== 5.00, // Marcar como personalizado se diferente do padrão para embalagens
           fornecedor_id: data.fornecedor_id || null,
           descricao: data.descricao || null,
           estoque_atual: data.estoque_atual || 0,
@@ -223,6 +234,30 @@ const EmbalagemForm: React.FC<EmbalagemFormProps> = ({
               </FormItem>
             )}
           />
+
+          {/* Campo de Markup integrado */}
+          <div className="md:col-span-2">
+            <FormField
+              control={form.control}
+              name="markup"
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <CampoMarkup
+                      value={field.value}
+                      onChange={field.onChange}
+                      precoCusto={form.watch("custo_unitario") || 0}
+                      categoria="embalagens"
+                      label="Markup de Venda"
+                      showCalculation={true}
+                      showCategoryDefault={true}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
 
           {/* Fornecedor */}
           <FormField

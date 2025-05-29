@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -52,25 +52,26 @@ const LeadCaptureChatbot: React.FC<LeadCaptureChatbotProps> = ({ isOpen, onClose
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Função para garantir foco no input
-  const ensureInputFocus = () => {
+  const ensureInputFocus = useCallback(() => {
     setTimeout(() => {
-      if (inputRef.current && isOpen && conversationStep !== 'finished' && conversationStep !== 'conversation_ended') {
+      if (inputRef.current && !inputRef.current.disabled) {
         inputRef.current.focus();
       }
     }, 100);
-  };
+  }, []);
 
-  const addMessage = (text: string, sender: ChatMessage['sender'], useTypingEffect: boolean = false) => {
+  const addMessage = useCallback((text: string, sender: ChatMessage['sender'], useTypingEffect: boolean = false) => {
+    const id = Date.now().toString();
     const newMessage: ChatMessage = {
-      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`, // Unique ID generation
-      text: useTypingEffect ? '' : text,
+      id,
+      text,
       sender,
-      timestamp: new Date(),
+      timestamp: new Date()
     };
-    setMessages((prevMessages) => [...prevMessages, newMessage]);
+    
+    setMessages(prevMessages => [...prevMessages, newMessage]);
 
-    // Efeito de digitação apenas para mensagens do bot
+    // Efeito de digitação para mensagens do bot
     if (useTypingEffect && sender === 'bot') {
       let currentText = '';
       let charIndex = 0;
@@ -78,7 +79,7 @@ const LeadCaptureChatbot: React.FC<LeadCaptureChatbotProps> = ({ isOpen, onClose
       const typeInterval = setInterval(() => {
         if (charIndex < text.length) {
           currentText += text[charIndex];
-          setMessages((prevMessages) => 
+          setMessages(prevMessages => 
             prevMessages.map(msg => 
               msg.id === newMessage.id 
                 ? { ...msg, text: currentText }
@@ -88,12 +89,10 @@ const LeadCaptureChatbot: React.FC<LeadCaptureChatbotProps> = ({ isOpen, onClose
           charIndex++;
         } else {
           clearInterval(typeInterval);
-          // Garantir foco após terminar de digitar
-          ensureInputFocus();
         }
-      }, 23); // 30ms entre cada caractere para efeito suave -> Alterado para 15ms
+      }, 20);
     }
-  };
+  }, []);
 
   useEffect(() => {
     // Scroll to bottom when new messages are added
@@ -107,7 +106,7 @@ const LeadCaptureChatbot: React.FC<LeadCaptureChatbotProps> = ({ isOpen, onClose
     if (isOpen && conversationStep !== 'finished' && conversationStep !== 'conversation_ended') {
       ensureInputFocus();
     }
-  }, [isOpen, isLoading, messages, conversationStep]);
+  }, [isOpen, isLoading, messages, conversationStep, ensureInputFocus]);
 
   useEffect(() => {
     if (isOpen && !hasInitialized) {
@@ -132,7 +131,7 @@ const LeadCaptureChatbot: React.FC<LeadCaptureChatbotProps> = ({ isOpen, onClose
     } else if (!isOpen) {
       setHasInitialized(false);
     }
-  }, [isOpen, hasInitialized]);
+  }, [isOpen, hasInitialized, addMessage]);
 
   const handleLlmResponse = (botResponseText: string, nextStep?: string, extractedData?: Partial<LeadData>) => {
     addMessage(botResponseText, 'bot', true); // Sempre usar efeito de digitação para mensagens do bot

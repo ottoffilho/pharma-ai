@@ -299,7 +299,7 @@ export default function ControleQualidadePage() {
 
   return (
     <AdminLayout>
-      <div className="container mx-auto py-6 space-y-6">
+      <div className="w-full py-6 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -310,7 +310,7 @@ export default function ControleQualidadePage() {
             <div>
               <h1 className="text-3xl font-bold">Controle de Qualidade</h1>
               <p className="text-muted-foreground">
-                Ordem {ordem.numero_ordem} - {ordem.receitas_processadas?.patient_name || 'N/A'}
+                Ordem: {ordem?.numero_ordem || id}
               </p>
             </div>
           </div>
