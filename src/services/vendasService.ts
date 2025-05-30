@@ -22,7 +22,7 @@ import {
   FechamentoCaixa
 } from '@/types/vendas';
 import { UUID } from '@/types/database';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 
 // =====================================================
 // INTERFACE DO SERVIÇO
@@ -77,90 +77,76 @@ class VendasService implements VendasServiceInterface {
   
   async listarVendas(filtros?: FiltrosVenda): Promise<VendaCompleta[]> {
     try {
-      let query = `
-        SELECT 
-          v.*,
-          c.nome as cliente_nome_completo,
-          u.nome as usuario_nome,
-          json_agg(
-            DISTINCT jsonb_build_object(
-              'id', iv.id,
-              'produto_id', iv.produto_id,
-              'produto_nome', iv.produto_nome,
-              'produto_codigo', iv.produto_codigo,
-              'quantidade', iv.quantidade,
-              'preco_unitario', iv.preco_unitario,
-              'preco_total', iv.preco_total,
-              'desconto_valor', iv.desconto_valor,
-              'desconto_percentual', iv.desconto_percentual,
-              'observacoes', iv.observacoes
-            )
-          ) FILTER (WHERE iv.id IS NOT NULL) as itens,
-          json_agg(
-            DISTINCT jsonb_build_object(
-              'id', pv.id,
-              'forma_pagamento', pv.forma_pagamento,
-              'valor', pv.valor,
-              'numero_autorizacao', pv.numero_autorizacao,
-              'bandeira_cartao', pv.bandeira_cartao,
-              'codigo_transacao', pv.codigo_transacao,
-              'data_pagamento', pv.data_pagamento
-            )
-          ) FILTER (WHERE pv.id IS NOT NULL) as pagamentos
-        FROM vendas v
-        LEFT JOIN clientes c ON v.cliente_id = c.id
-        LEFT JOIN usuarios u ON v.usuario_id = u.id
-        LEFT JOIN itens_venda iv ON v.id = iv.venda_id
-        LEFT JOIN pagamentos_venda pv ON v.id = pv.venda_id
-      `;
-      
-      const conditions: string[] = [];
-      
-      if (filtros?.data_inicio) {
-        conditions.push(`v.data_venda >= '${filtros.data_inicio}'`);
+      let query = supabase
+        .from('vendas')
+        .select(`
+          *,
+          clientes(nome, cpf, cnpj, documento, telefone, email),
+          usuarios!vendas_usuario_id_fkey(nome),
+          itens_venda(
+            id,
+            produto_id,
+            produto_nome,
+            produto_codigo,
+            quantidade,
+            preco_unitario,
+            preco_total,
+            desconto_valor,
+            desconto_percentual,
+            observacoes
+          ),
+          pagamentos_venda(
+            id,
+            forma_pagamento,
+            valor,
+            numero_autorizacao,
+            bandeira_cartao,
+            codigo_transacao,
+            data_pagamento
+          )
+        `)
+        .order('created_at', { ascending: false });
+
+      // Aplicar filtros se fornecidos
+      if (filtros?.dataInicio && filtros.dataFim) {
+        query = query
+          .gte('data_venda', filtros.dataInicio)
+          .lte('data_venda', filtros.dataFim);
       }
-      
-      if (filtros?.data_fim) {
-        conditions.push(`v.data_venda <= '${filtros.data_fim}'`);
-      }
-      
+
       if (filtros?.status) {
-        conditions.push(`v.status = '${filtros.status}'`);
+        query = query.eq('status', filtros.status);
       }
-      
-      if (filtros?.usuario_id) {
-        conditions.push(`v.usuario_id = '${filtros.usuario_id}'`);
+
+      if (filtros?.statusPagamento) {
+        query = query.eq('status_pagamento', filtros.statusPagamento);
       }
-      
-      if (filtros?.cliente_id) {
-        conditions.push(`v.cliente_id = '${filtros.cliente_id}'`);
+
+      if (filtros?.clienteId) {
+        query = query.eq('cliente_id', filtros.clienteId);
       }
-      
-      if (filtros?.numero_venda) {
-        conditions.push(`v.numero_venda ILIKE '%${filtros.numero_venda}%'`);
+
+      if (filtros?.usuarioId) {
+        query = query.eq('usuario_id', filtros.usuarioId);
       }
-      
-      if (conditions.length > 0) {
-        query += ' WHERE ' + conditions.join(' AND ');
-      }
-      
-      query += `
-        GROUP BY v.id, c.nome, u.nome
-        ORDER BY v.created_at DESC
-      `;
-      
-      // Usar execute_sql do MCP
-      const response = await fetch('/api/vendas/listar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query, filtros })
-      });
-      
-      if (!response.ok) {
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('Erro ao listar vendas:', error);
         throw new Error('Erro ao listar vendas');
       }
-      
-      return await response.json();
+
+      // Transformar dados para o formato esperado
+      return data?.map(venda => ({
+        ...venda,
+        cliente_nome_completo: venda.clientes?.nome || '',
+        cliente_documento: venda.clientes?.cpf || venda.clientes?.cnpj || venda.clientes?.documento || '',
+        usuario_nome: venda.usuarios?.nome || '',
+        itens: venda.itens_venda || [],
+        pagamentos: venda.pagamentos_venda || []
+      })) || [];
+
     } catch (error) {
       console.error('Erro ao listar vendas:', error);
       throw error;
@@ -169,57 +155,57 @@ class VendasService implements VendasServiceInterface {
   
   async obterVenda(id: UUID): Promise<VendaCompleta | null> {
     try {
-      const query = `
-        SELECT 
-          v.*,
-          c.nome as cliente_nome_completo,
-          u.nome as usuario_nome,
-          json_agg(
-            DISTINCT jsonb_build_object(
-              'id', iv.id,
-              'produto_id', iv.produto_id,
-              'produto_nome', iv.produto_nome,
-              'produto_codigo', iv.produto_codigo,
-              'quantidade', iv.quantidade,
-              'preco_unitario', iv.preco_unitario,
-              'preco_total', iv.preco_total,
-              'desconto_valor', iv.desconto_valor,
-              'desconto_percentual', iv.desconto_percentual,
-              'observacoes', iv.observacoes
-            )
-          ) FILTER (WHERE iv.id IS NOT NULL) as itens,
-          json_agg(
-            DISTINCT jsonb_build_object(
-              'id', pv.id,
-              'forma_pagamento', pv.forma_pagamento,
-              'valor', pv.valor,
-              'numero_autorizacao', pv.numero_autorizacao,
-              'bandeira_cartao', pv.bandeira_cartao,
-              'codigo_transacao', pv.codigo_transacao,
-              'data_pagamento', pv.data_pagamento
-            )
-          ) FILTER (WHERE pv.id IS NOT NULL) as pagamentos
-        FROM vendas v
-        LEFT JOIN clientes c ON v.cliente_id = c.id
-        LEFT JOIN usuarios u ON v.usuario_id = u.id
-        LEFT JOIN itens_venda iv ON v.id = iv.venda_id
-        LEFT JOIN pagamentos_venda pv ON v.id = pv.venda_id
-        WHERE v.id = $1
-        GROUP BY v.id, c.nome, u.nome
-      `;
-      
-      const response = await fetch('/api/vendas/obter', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query, params: [id] })
-      });
-      
-      if (!response.ok) {
+      const { data, error } = await supabase
+        .from('vendas')
+        .select(`
+          *,
+          clientes(nome, cpf, cnpj, documento, telefone, email),
+          usuarios!vendas_usuario_id_fkey(nome),
+          itens_venda(
+            id,
+            produto_id,
+            produto_nome,
+            produto_codigo,
+            quantidade,
+            preco_unitario,
+            preco_total,
+            desconto_valor,
+            desconto_percentual,
+            observacoes
+          ),
+          pagamentos_venda(
+            id,
+            forma_pagamento,
+            valor,
+            numero_autorizacao,
+            bandeira_cartao,
+            codigo_transacao,
+            data_pagamento
+          )
+        `)
+        .eq('id', id)
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          return null; // Venda não encontrada
+        }
+        console.error('Erro ao obter venda:', error);
         throw new Error('Erro ao obter venda');
       }
-      
-      const vendas = await response.json();
-      return vendas.length > 0 ? vendas[0] : null;
+
+      if (!data) return null;
+
+      // Transformar dados para o formato esperado
+      return {
+        ...data,
+        cliente_nome_completo: data.clientes?.nome || '',
+        cliente_documento: data.clientes?.cpf || data.clientes?.cnpj || data.clientes?.documento || '',
+        usuario_nome: data.usuarios?.nome || '',
+        itens: data.itens_venda || [],
+        pagamentos: data.pagamentos_venda || []
+      };
+
     } catch (error) {
       console.error('Erro ao obter venda:', error);
       throw error;
@@ -228,17 +214,24 @@ class VendasService implements VendasServiceInterface {
   
   async criarVenda(venda: CreateVenda): Promise<ProcessarVendaResponse> {
     try {
-      const response = await fetch('/api/vendas/criar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(venda)
+      // Iniciar transação usando RPC (Stored Procedure)
+      const { data, error } = await supabase.rpc('processar_venda_completa', {
+        venda_data: venda
       });
-      
-      if (!response.ok) {
-        throw new Error('Erro ao criar venda');
+
+      if (error) {
+        console.error('Erro ao criar venda:', error);
+        return {
+          sucesso: false,
+          erro: error.message
+        };
       }
-      
-      return await response.json();
+
+      return {
+        sucesso: true,
+        venda: data
+      };
+
     } catch (error) {
       console.error('Erro ao criar venda:', error);
       return {
@@ -250,17 +243,23 @@ class VendasService implements VendasServiceInterface {
   
   async finalizarVenda(id: UUID): Promise<ProcessarVendaResponse> {
     try {
-      const response = await fetch('/api/vendas/finalizar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ venda_id: id })
+      const { data, error } = await supabase.rpc('finalizar_venda', {
+        venda_id: id
       });
-      
-      if (!response.ok) {
-        throw new Error('Erro ao finalizar venda');
+
+      if (error) {
+        console.error('Erro ao finalizar venda:', error);
+        return {
+          sucesso: false,
+          erro: error.message
+        };
       }
-      
-      return await response.json();
+
+      return {
+        sucesso: true,
+        venda: data
+      };
+
     } catch (error) {
       console.error('Erro ao finalizar venda:', error);
       return {
@@ -272,13 +271,22 @@ class VendasService implements VendasServiceInterface {
   
   async atualizarVenda(id: UUID, venda: Partial<CreateVenda>): Promise<boolean> {
     try {
-      const response = await fetch('/api/vendas/atualizar', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, ...venda })
-      });
-      
-      return response.ok;
+      const { error } = await supabase
+        .from('vendas')
+        .update({
+          cliente_id: venda.cliente_id,
+          observacoes: venda.observacoes,
+          desconto_total: venda.desconto_total,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id);
+
+      if (error) {
+        console.error('Erro ao atualizar venda:', error);
+        return false;
+      }
+
+      return true;
     } catch (error) {
       console.error('Erro ao atualizar venda:', error);
       return false;
@@ -287,13 +295,17 @@ class VendasService implements VendasServiceInterface {
   
   async cancelarVenda(id: UUID, motivo?: string): Promise<boolean> {
     try {
-      const response = await fetch('/api/vendas/cancelar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ venda_id: id, motivo })
+      const { error } = await supabase.rpc('cancelar_venda', {
+        venda_id: id,
+        motivo_cancelamento: motivo
       });
-      
-      return response.ok;
+
+      if (error) {
+        console.error('Erro ao cancelar venda:', error);
+        return false;
+      }
+
+      return true;
     } catch (error) {
       console.error('Erro ao cancelar venda:', error);
       return false;
@@ -306,17 +318,29 @@ class VendasService implements VendasServiceInterface {
   
   async adicionarItem(item: CreateItemVenda): Promise<ItemVenda> {
     try {
-      const response = await fetch('/api/vendas/itens/adicionar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(item)
-      });
-      
-      if (!response.ok) {
+      const { data, error } = await supabase
+        .from('itens_venda')
+        .insert({
+          venda_id: item.venda_id,
+          produto_id: item.produto_id,
+          produto_nome: item.produto_nome,
+          produto_codigo: item.produto_codigo,
+          quantidade: item.quantidade,
+          preco_unitario: item.preco_unitario,
+          preco_total: item.preco_total,
+          desconto_valor: item.desconto_valor,
+          desconto_percentual: item.desconto_percentual,
+          observacoes: item.observacoes
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Erro ao adicionar item:', error);
         throw new Error('Erro ao adicionar item');
       }
-      
-      return await response.json();
+
+      return data;
     } catch (error) {
       console.error('Erro ao adicionar item:', error);
       throw error;
@@ -325,13 +349,25 @@ class VendasService implements VendasServiceInterface {
   
   async atualizarItem(id: UUID, item: Partial<CreateItemVenda>): Promise<boolean> {
     try {
-      const response = await fetch('/api/vendas/itens/atualizar', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, ...item })
-      });
-      
-      return response.ok;
+      const { error } = await supabase
+        .from('itens_venda')
+        .update({
+          quantidade: item.quantidade,
+          preco_unitario: item.preco_unitario,
+          preco_total: item.preco_total,
+          desconto_valor: item.desconto_valor,
+          desconto_percentual: item.desconto_percentual,
+          observacoes: item.observacoes,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id);
+
+      if (error) {
+        console.error('Erro ao atualizar item:', error);
+        return false;
+      }
+
+      return true;
     } catch (error) {
       console.error('Erro ao atualizar item:', error);
       return false;
@@ -340,13 +376,17 @@ class VendasService implements VendasServiceInterface {
   
   async removerItem(id: UUID): Promise<boolean> {
     try {
-      const response = await fetch('/api/vendas/itens/remover', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id })
-      });
-      
-      return response.ok;
+      const { error } = await supabase
+        .from('itens_venda')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('Erro ao remover item:', error);
+        return false;
+      }
+
+      return true;
     } catch (error) {
       console.error('Erro ao remover item:', error);
       return false;
@@ -359,17 +399,26 @@ class VendasService implements VendasServiceInterface {
   
   async adicionarPagamento(pagamento: CreatePagamentoVenda): Promise<PagamentoVenda> {
     try {
-      const response = await fetch('/api/vendas/pagamentos/adicionar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(pagamento)
-      });
-      
-      if (!response.ok) {
+      const { data, error } = await supabase
+        .from('pagamentos_venda')
+        .insert({
+          venda_id: pagamento.venda_id,
+          forma_pagamento: pagamento.forma_pagamento,
+          valor: pagamento.valor,
+          numero_autorizacao: pagamento.numero_autorizacao,
+          bandeira_cartao: pagamento.bandeira_cartao,
+          codigo_transacao: pagamento.codigo_transacao,
+          data_pagamento: pagamento.data_pagamento || new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Erro ao adicionar pagamento:', error);
         throw new Error('Erro ao adicionar pagamento');
       }
-      
-      return await response.json();
+
+      return data;
     } catch (error) {
       console.error('Erro ao adicionar pagamento:', error);
       throw error;
@@ -378,13 +427,17 @@ class VendasService implements VendasServiceInterface {
   
   async removerPagamento(id: UUID): Promise<boolean> {
     try {
-      const response = await fetch('/api/vendas/pagamentos/remover', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id })
-      });
-      
-      return response.ok;
+      const { error } = await supabase
+        .from('pagamentos_venda')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('Erro ao remover pagamento:', error);
+        return false;
+      }
+
+      return true;
     } catch (error) {
       console.error('Erro ao remover pagamento:', error);
       return false;
@@ -397,28 +450,42 @@ class VendasService implements VendasServiceInterface {
   
   async listarClientes(termo?: string): Promise<ClienteVenda[]> {
     try {
-      let query = `
-        SELECT * FROM clientes 
-        WHERE ativo = true
-      `;
-      
+      let query = supabase
+        .from('clientes')
+        .select('*')
+        .eq('ativo', true)
+        .order('nome')
+        .limit(50);
+
       if (termo) {
-        query += ` AND (nome ILIKE '%${termo}%' OR documento ILIKE '%${termo}%' OR telefone ILIKE '%${termo}%')`;
+        query = query.or(`nome.ilike.%${termo}%,cpf.ilike.%${termo}%,cnpj.ilike.%${termo}%,telefone.ilike.%${termo}%,documento.ilike.%${termo}%`);
       }
-      
-      query += ` ORDER BY nome LIMIT 50`;
-      
-      const response = await fetch('/api/vendas/clientes/listar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query, termo })
-      });
-      
-      if (!response.ok) {
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('Erro ao listar clientes:', error);
         throw new Error('Erro ao listar clientes');
       }
-      
-      return await response.json();
+
+      // Transformar para o formato esperado
+      return data?.map(cliente => ({
+        id: cliente.id,
+        nome: cliente.nome,
+        cpf: cliente.cpf,
+        cnpj: cliente.cnpj,
+        telefone: cliente.telefone,
+        email: cliente.email,
+        endereco: cliente.endereco,
+        cidade: cliente.cidade,
+        estado: cliente.estado,
+        cep: cliente.cep,
+        data_nascimento: cliente.data_nascimento,
+        documento: cliente.cpf || cliente.cnpj || cliente.documento || '',
+        created_at: cliente.created_at,
+        updated_at: cliente.updated_at
+      })) || [];
+
     } catch (error) {
       console.error('Erro ao listar clientes:', error);
       throw error;
@@ -427,18 +494,40 @@ class VendasService implements VendasServiceInterface {
   
   async obterCliente(id: UUID): Promise<ClienteVenda | null> {
     try {
-      const response = await fetch('/api/vendas/clientes/obter', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id })
-      });
-      
-      if (!response.ok) {
+      const { data, error } = await supabase
+        .from('clientes')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          return null; // Cliente não encontrado
+        }
+        console.error('Erro ao obter cliente:', error);
         throw new Error('Erro ao obter cliente');
       }
-      
-      const clientes = await response.json();
-      return clientes.length > 0 ? clientes[0] : null;
+
+      if (!data) return null;
+
+      // Transformar para o formato esperado
+      return {
+        id: data.id,
+        nome: data.nome,
+        cpf: data.cpf,
+        cnpj: data.cnpj,
+        telefone: data.telefone,
+        email: data.email,
+        endereco: data.endereco,
+        cidade: data.cidade,
+        estado: data.estado,
+        cep: data.cep,
+        data_nascimento: data.data_nascimento,
+        documento: data.cpf || data.cnpj || data.documento || '',
+        created_at: data.created_at,
+        updated_at: data.updated_at
+      };
+
     } catch (error) {
       console.error('Erro ao obter cliente:', error);
       throw error;
@@ -447,17 +536,47 @@ class VendasService implements VendasServiceInterface {
   
   async criarCliente(cliente: CreateClienteVenda): Promise<ClienteVenda> {
     try {
-      const response = await fetch('/api/vendas/clientes/criar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(cliente)
-      });
-      
-      if (!response.ok) {
+      const { data, error } = await supabase
+        .from('clientes')
+        .insert({
+          nome: cliente.nome,
+          cpf: cliente.cpf,
+          cnpj: cliente.cnpj,
+          telefone: cliente.telefone,
+          email: cliente.email,
+          endereco: cliente.endereco,
+          cidade: cliente.cidade,
+          estado: cliente.estado,
+          cep: cliente.cep,
+          data_nascimento: cliente.data_nascimento,
+          ativo: true
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Erro ao criar cliente:', error);
         throw new Error('Erro ao criar cliente');
       }
-      
-      return await response.json();
+
+      // Transformar para o formato esperado
+      return {
+        id: data.id,
+        nome: data.nome,
+        cpf: data.cpf,
+        cnpj: data.cnpj,
+        telefone: data.telefone,
+        email: data.email,
+        endereco: data.endereco,
+        cidade: data.cidade,
+        estado: data.estado,
+        cep: data.cep,
+        data_nascimento: data.data_nascimento,
+        documento: data.cpf || data.cnpj || data.documento || '',
+        created_at: data.created_at,
+        updated_at: data.updated_at
+      };
+
     } catch (error) {
       console.error('Erro ao criar cliente:', error);
       throw error;
@@ -466,13 +585,29 @@ class VendasService implements VendasServiceInterface {
   
   async atualizarCliente(id: UUID, cliente: Partial<CreateClienteVenda>): Promise<boolean> {
     try {
-      const response = await fetch('/api/vendas/clientes/atualizar', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, ...cliente })
-      });
-      
-      return response.ok;
+      const { error } = await supabase
+        .from('clientes')
+        .update({
+          nome: cliente.nome,
+          cpf: cliente.cpf,
+          cnpj: cliente.cnpj,
+          telefone: cliente.telefone,
+          email: cliente.email,
+          endereco: cliente.endereco,
+          cidade: cliente.cidade,
+          estado: cliente.estado,
+          cep: cliente.cep,
+          data_nascimento: cliente.data_nascimento,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id);
+
+      if (error) {
+        console.error('Erro ao atualizar cliente:', error);
+        return false;
+      }
+
+      return true;
     } catch (error) {
       console.error('Erro ao atualizar cliente:', error);
       return false;
@@ -485,93 +620,82 @@ class VendasService implements VendasServiceInterface {
   
   async buscarProdutosPDV(filtros: FiltroProdutoPDV): Promise<any[]> {
     try {
-      let query = `
-        SELECT 
-          p.*,
-          cp.nome as categoria_nome,
-          ff.nome as forma_farmaceutica_nome,
-          f.nome_fantasia as fornecedor_nome,
-          COALESCE(
-            (SELECT SUM(l.quantidade_atual) 
-             FROM lote l 
-             WHERE l.produto_id = p.id 
-               AND l.ativo = true 
-               AND (l.data_validade IS NULL OR l.data_validade > CURRENT_DATE)
-            ), 0
-          ) as estoque_total
-        FROM produtos p
-        LEFT JOIN categorias_produto cp ON p.categoria_produto_id = cp.id
-        LEFT JOIN forma_farmaceutica ff ON p.forma_farmaceutica_id = ff.id
-        LEFT JOIN fornecedores f ON p.fornecedor_id = f.id
-        WHERE p.ativo = true
-      `;
-      
+      let query = supabase
+        .from('produtos')
+        .select(`
+          *,
+          categorias_produto(nome),
+          forma_farmaceutica(nome),
+          fornecedores(nome_fantasia),
+          lote(quantidade_atual, data_validade, ativo)
+        `)
+        .eq('ativo', true);
+
       if (filtros.termo_busca) {
-        query += ` AND (
-          p.nome ILIKE '%${filtros.termo_busca}%' OR 
-          p.codigo_interno ILIKE '%${filtros.termo_busca}%' OR 
-          p.codigo_ean ILIKE '%${filtros.termo_busca}%'
-        )`;
+        query = query.or(`nome.ilike.%${filtros.termo_busca}%,codigo_barras.ilike.%${filtros.termo_busca}%,codigo_produto.ilike.%${filtros.termo_busca}%`);
       }
-      
+
       if (filtros.categoria_id) {
-        query += ` AND p.categoria_produto_id = '${filtros.categoria_id}'`;
+        query = query.eq('categoria_produto_id', filtros.categoria_id);
       }
-      
+
       if (filtros.apenas_com_estoque) {
-        query += ` AND p.estoque_atual > 0`;
+        // Esta lógica pode precisar de uma view ou função no banco
+        query = query.not('lote', 'is', null);
       }
-      
-      if (filtros.controlado !== undefined) {
-        query += ` AND p.controlado = ${filtros.controlado}`;
-      }
-      
-      if (filtros.manipulado !== undefined) {
-        query += ` AND p.produto_manipulado = ${filtros.manipulado}`;
-      }
-      
-      query += ` ORDER BY p.nome LIMIT 50`;
-      
-      const response = await fetch('/api/vendas/produtos/buscar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query, filtros })
-      });
-      
-      if (!response.ok) {
+
+      query = query.limit(filtros.limite || 50);
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('Erro ao buscar produtos PDV:', error);
         throw new Error('Erro ao buscar produtos');
       }
-      
-      return await response.json();
+
+      // Calcular estoque total e transformar dados
+      return data?.map(produto => {
+        const estoqueTotal = produto.lote
+          ?.filter((l: any) => l.ativo && (!l.data_validade || new Date(l.data_validade) > new Date()))
+          ?.reduce((sum: number, l: any) => sum + (l.quantidade_atual || 0), 0) || 0;
+
+        return {
+          ...produto,
+          categoria_nome: produto.categorias_produto?.nome || '',
+          forma_farmaceutica_nome: produto.forma_farmaceutica?.nome || '',
+          fornecedor_nome: produto.fornecedores?.nome_fantasia || '',
+          estoque_total: estoqueTotal
+        };
+      }) || [];
+
     } catch (error) {
-      console.error('Erro ao buscar produtos:', error);
+      console.error('Erro ao buscar produtos PDV:', error);
       throw error;
     }
   }
   
   async validarEstoque(itens: CreateItemVenda[]): Promise<ValidarEstoqueResponse> {
     try {
-      const response = await fetch('/api/vendas/validar-estoque', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ itens })
+      // Usar RPC para validação complexa de estoque
+      const { data, error } = await supabase.rpc('validar_estoque_vendas', {
+        itens_venda: itens
       });
-      
-      if (!response.ok) {
-        throw new Error('Erro ao validar estoque');
+
+      if (error) {
+        console.error('Erro ao validar estoque:', error);
+        return {
+          valido: false,
+          erros: ['Erro interno ao validar estoque']
+        };
       }
-      
-      return await response.json();
+
+      return data;
+
     } catch (error) {
       console.error('Erro ao validar estoque:', error);
       return {
         valido: false,
-        erros: [{
-          produto_id: '',
-          produto_nome: 'Erro de validação',
-          quantidade_solicitada: 0,
-          quantidade_disponivel: 0
-        }]
+        erros: ['Erro interno ao validar estoque']
       };
     }
   }
@@ -582,36 +706,45 @@ class VendasService implements VendasServiceInterface {
   
   async obterCaixaAtivo(): Promise<AberturaCaixa | null> {
     try {
-      const response = await fetch('/api/vendas/caixa/ativo', {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' }
-      });
-      
-      if (!response.ok) {
-        return null;
+      const { data, error } = await supabase
+        .from('abertura_caixa')
+        .select(`
+          *,
+          usuarios(nome)
+        `)
+        .is('data_fechamento', null)
+        .eq('ativo', true)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Erro ao obter caixa ativo:', error);
+        throw new Error('Erro ao obter caixa ativo');
       }
-      
-      const caixas = await response.json();
-      return caixas.length > 0 ? caixas[0] : null;
+
+      return data;
+
     } catch (error) {
       console.error('Erro ao obter caixa ativo:', error);
-      return null;
+      throw error;
     }
   }
   
   async abrirCaixa(valorInicial: number, observacoes?: string): Promise<AberturaCaixa> {
     try {
-      const response = await fetch('/api/vendas/caixa/abrir', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ valor_inicial: valorInicial, observacoes })
+      const { data, error } = await supabase.rpc('abrir_caixa', {
+        valor_inicial: valorInicial,
+        observacoes_abertura: observacoes
       });
-      
-      if (!response.ok) {
+
+      if (error) {
+        console.error('Erro ao abrir caixa:', error);
         throw new Error('Erro ao abrir caixa');
       }
-      
-      return await response.json();
+
+      return data;
+
     } catch (error) {
       console.error('Erro ao abrir caixa:', error);
       throw error;
@@ -620,21 +753,19 @@ class VendasService implements VendasServiceInterface {
   
   async fecharCaixa(aberturaCaixaId: UUID, valorContado: number, observacoes?: string): Promise<FechamentoCaixa> {
     try {
-      const response = await fetch('/api/vendas/caixa/fechar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          abertura_caixa_id: aberturaCaixaId, 
-          valor_contado: valorContado, 
-          observacoes 
-        })
+      const { data, error } = await supabase.rpc('fechar_caixa', {
+        abertura_caixa_id: aberturaCaixaId,
+        valor_contado: valorContado,
+        observacoes_fechamento: observacoes
       });
-      
-      if (!response.ok) {
+
+      if (error) {
+        console.error('Erro ao fechar caixa:', error);
         throw new Error('Erro ao fechar caixa');
       }
-      
-      return await response.json();
+
+      return data;
+
     } catch (error) {
       console.error('Erro ao fechar caixa:', error);
       throw error;
@@ -642,25 +773,40 @@ class VendasService implements VendasServiceInterface {
   }
   
   // =====================================================
-  // RELATÓRIOS
+  // RELATÓRIOS E ESTATÍSTICAS
   // =====================================================
   
   async obterEstatisticas(dataInicio?: string, dataFim?: string): Promise<EstatisticasVendas> {
     try {
-      const response = await fetch('/api/vendas/estatisticas', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ data_inicio: dataInicio, data_fim: dataFim })
+      const { data, error } = await supabase.rpc('obter_estatisticas_vendas', {
+        data_inicio: dataInicio,
+        data_fim: dataFim
       });
-      
-      if (!response.ok) {
+
+      if (error) {
+        console.error('Erro ao obter estatísticas:', error);
         throw new Error('Erro ao obter estatísticas');
       }
-      
-      return await response.json();
+
+      return data || {
+        total_vendas: 0,
+        valor_total: 0,
+        ticket_medio: 0,
+        vendas_por_dia: [],
+        produtos_mais_vendidos: [],
+        formas_pagamento: []
+      };
+
     } catch (error) {
       console.error('Erro ao obter estatísticas:', error);
-      throw error;
+      return {
+        total_vendas: 0,
+        valor_total: 0,
+        ticket_medio: 0,
+        vendas_por_dia: [],
+        produtos_mais_vendidos: [],
+        formas_pagamento: []
+      };
     }
   }
 }

@@ -1,63 +1,10 @@
-✅ ERROS DE BANCO CORRIGIDOS - 26/12/2024 ✅
-
-## 🎯 Correções Aplicadas:
-
-### ✅ ERRO CORRIGIDO: HTTP 400 - Tabela lote com relacionamentos incorretos
-**✅ SOLUCIONADO:** 
-- Corrigidas as foreign keys nos relacionamentos
-- `produtos!lote_produto_id_fkey` em vez de `produtos`
-- `fornecedores!lote_fornecedor_id_fkey` em vez de `fornecedores`
-
-### ✅ ERRO CORRIGIDO: HTTP 406 - Filtros problemáticos na tabela produtos  
-**✅ SOLUCIONADO:** 
-- Removido filtro duplo `tipo=INSUMO` 
-- Adicionado filtro `ativo=true` para fornecedores
-- Simplificadas as queries para evitar conflitos
-
-## 🚀 Páginas Corrigidas:
-
-### Páginas de Lotes:
-- ✅ **Detalhes** - Query corrigida com foreign keys corretas
-- ✅ **Edição** - Relacionamentos ajustados  
-- ✅ **Formulário** - Filtros de produtos otimizados
-
-### Banco de Dados:
-- ✅ **Foreign Keys** - Referências explícitas nos relacionamentos
-- ✅ **Filtros** - Queries simplificadas e funcionais
-- ✅ **Performance** - Consultas otimizadas
-
-## 📊 Status Final:
-
-### Sistema Completamente Funcional:
-- ✅ **Páginas de Lotes** - 100% funcionais e modernas
-- ✅ **Banco de Dados** - Queries corrigidas e otimizadas  
-- ✅ **Navegação** - Todos os ícones e rotas funcionando
-- ✅ **Design** - Interface moderna e responsiva
-
-🎉 **SISTEMA DE LOTES TOTALMENTE OPERACIONAL** 🎉
+@supabase_supabase-js.js?v=81518561:3900 
+ GET https://hjwebmpvaaeogbfqxwub.supabase.co/rest/v1/contas_a_pagar?select=*&is_deleted=eq.false&status=eq.pendente 400 (Bad Request)
 
 @supabase_supabase-js.js?v=81518561:3900 
- GET https://hjwebmpvaaeogbfqxwub.supabase.co/rest/v1/lote?select=*%2Cprodutos%2…lefone%2Cemail%29&id=eq.324b35e7-bdad-47f6-a9e1-595229aa1063&ativo=eq.true 400 (Bad Request)
-
+ GET https://hjwebmpvaaeogbfqxwub.supabase.co/rest/v1/contas_a_pagar?select=*&is_deleted=eq.false&status=eq.pendente 400 (Bad Request)
 @supabase_supabase-js.js?v=81518561:3900 
- GET https://hjwebmpvaaeogbfqxwub.supabase.co/rest/v1/lote?select=*%2Cprodutos%2…lefone%2Cemail%29&id=eq.324b35e7-bdad-47f6-a9e1-595229aa1063&ativo=eq.true 400 (Bad Request)
+ GET https://hjwebmpvaaeogbfqxwub.supabase.co/rest/v1/contas_a_pagar?select=*&is_deleted=eq.false&status=eq.pendente 400 (Bad Request)
 @supabase_supabase-js.js?v=81518561:3900 
- GET https://hjwebmpvaaeogbfqxwub.supabase.co/rest/v1/lote?select=*%2Cprodutos%2…lefone%2Cemail%29&id=eq.324b35e7-bdad-47f6-a9e1-595229aa1063&ativo=eq.true 400 (Bad Request)
-@supabase_supabase-js.js?v=81518561:3900 
- GET https://hjwebmpvaaeogbfqxwub.supabase.co/rest/v1/lote?select=*%2Cprodutos%2…lefone%2Cemail%29&id=eq.324b35e7-bdad-47f6-a9e1-595229aa1063&ativo=eq.true 400 (Bad Request)
+ GET https://hjwebmpvaaeogbfqxwub.supabase.co/rest/v1/contas_a_pagar?select=*&is_deleted=eq.false&status=eq.pendente 400 (Bad Request)
 ﻿
-
-
-####
-
-@supabase_supabase-js.js?v=81518561:3900 
- GET https://hjwebmpvaaeogbfqxwub.supabase.co/rest/v1/produtos?select=id%2Cnome%…de_medida%2Ctipo&id=eq.17331e3c-7837-4819-bc4a-a168a9a856bf&tipo=eq.INSUMO 406 (Not Acceptable)
-
-@supabase_supabase-js.js?v=81518561:3900 
- GET https://hjwebmpvaaeogbfqxwub.supabase.co/rest/v1/produtos?select=id%2Cnome%…de_medida%2Ctipo&id=eq.17331e3c-7837-4819-bc4a-a168a9a856bf&tipo=eq.INSUMO 406 (Not Acceptable)
-@supabase_supabase-js.js?v=81518561:3900 
- GET https://hjwebmpvaaeogbfqxwub.supabase.co/rest/v1/produtos?select=id%2Cnome%…de_medida%2Ctipo&id=eq.17331e3c-7837-4819-bc4a-a168a9a856bf&tipo=eq.INSUMO 406 (Not Acceptable)
-@supabase_supabase-js.js?v=81518561:3900 
- GET https://hjwebmpvaaeogbfqxwub.supabase.co/rest/v1/produtos?select=id%2Cnome%…de_medida%2Ctipo&id=eq.17331e3c-7837-4819-bc4a-a168a9a856bf&tipo=eq.INSUMO 406 (Not Acceptable)
-﻿
-

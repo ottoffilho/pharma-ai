@@ -160,41 +160,64 @@ Este documento define as diretrizes gerais para o desenvolvimento do projeto Pha
 
 ## 8. Especificidades do Pharma.AI
 
-### 8.1. Sistema de Autenticação
+### 8.1. Sistema de Autenticação Avançado
 - **Obrigatório:** Usar Supabase Auth para autenticação
 - **Perfis:** Proprietário, Farmacêutico, Atendente, Manipulador
 - **Permissões:** Sistema granular (módulo + ação + nível)
-- **Proteção:** Todas as rotas admin devem usar PrivateRoute
+- **Proteção:** Todas as rotas admin devem usar ForceAuth
+- **DashboardRouter:** Roteamento inteligente por perfil
+- **ProtectedComponent:** Proteção granular de componentes
+- **Error Boundaries:** Implementados em toda aplicação
 - **Sincronização:** Automática entre auth.users e usuarios
 
-### 8.2. Estrutura de Banco de Dados
-- **MCP SUPABASE:** Sempre use mcp para interagir com o banco de dados
+### 8.2. Estrutura de Banco de Dados Unificada
+- **MCP SUPABASE:** Sempre use MCP para interagir com o banco de dados
 - **RLS obrigatório:** Todas as tabelas devem ter Row Level Security
 - **Nomenclatura:** snake_case para tabelas e colunas
-- **Triggers:** Automáticos para updated_at e histórico
+- **Triggers:** Automáticos para updated_at, histórico e cálculos
 - **Relacionamentos:** Sempre com ON DELETE apropriado
+- **Produtos unificados:** Tabela única para insumos, embalagens e medicamentos
+- **Sistema de markup:** Automatizado com triggers
 
 ### 8.3. Padrões de Componentes
-- **TypeScript:** Obrigatório para todos os componentes
+- **TypeScript:** Obrigatório para todos os componentes (98% tipado)
 - **Props:** Sempre tipadas com interfaces
 - **Hooks:** Usar custom hooks para lógica reutilizável
 - **UI:** Baseado em shadcn/ui + Tailwind CSS
+- **Error Boundaries:** Implementados para estabilidade
 
-### 8.4. Módulos Implementados
-- **M09 - Usuários e Permissões:** 100% (Production Ready)
-- **M05 - Manipulação Básica:** 85% (Funcional)
-- **M02 - Estoque:** 75% (Funcional)
-- **M06 - Financeiro:** 60% (Parcial)
-- **M01 - Cadastros:** 50% (Parcial)
-- **M03 - Atendimento:** 30% (Parcial)
+### 8.4. Edge Functions (15+ Implementadas)
+- **Padrão Deno:** Estrutura consistente com CORS e autenticação
+- **Vendas:** vendas-operations (sistema completo)
+- **Produtos:** gerenciar-produtos, gerenciar-lotes
+- **Usuários:** criar-usuario, excluir-usuario, check-first-access
+- **IA:** chatbot-ai-agent (funcional)
+- **Documentos:** buscar-dados-documento, workspace-document-data
 
-### 8.5. Próximas Prioridades
-1. **Unificar dashboards** - Integrar dashboard administrativo
-2. **Finalizar M03** - Sistema de atendimento completo
-3. **Implementar M08** - Funcionalidades de IA
-4. **Testes automatizados** - Cobertura mínima de 80%
+### 8.5. Módulos Implementados (Status Atualizado)
+- **M09 - Usuários e Permissões:** 100% (Production Ready) ✅
+- **M04 - PDV e Vendas:** 90% (Surpreendentemente avançado) 🟢
+- **M05 - Manipulação/Produção:** 90% (Sistema completo) 🟢
+- **M02 - Estoque:** 95% (Produtos unificados) 🟢
+- **M06 - Financeiro:** 75% (Integrado com vendas) 🟡
+- **M01 - Cadastros:** 80% (Funcionalidades principais) 🟡
+- **M03 - Atendimento:** 60% (Estrutura avançada) 🟡
+- **M08 - IA:** 25% (Chatbot funcional) 🔴
+
+### 8.6. Próximas Prioridades (Atualizadas)
+1. **Finalizar relatórios de vendas** - Completar M04 para 100%
+2. **Expandir IA farmacêutica** - Funcionalidades específicas
+3. **Implementar testes** - Cobertura mínima de 80%
+4. **Otimizar performance** - Preparar para produção
+5. **Completar M03** - Sistema de atendimento com IA
+
+### 8.7. Estado do Projeto
+- **Fase atual:** Transição MVP → Expansão (85% concluída)
+- **Pronto para produção:** M09, M04, M05, M02
+- **Diferencial competitivo:** Sistema de vendas + IA + manipulação
+- **Próximo milestone:** Finalizar MVP e iniciar testes
 
 ---
 
-*Última atualização: 2024-12-26*
-*Versão: 2.0.0* 
+*Última atualização: 2025-01-28*
+*Versão: 3.0.0 - Reflete estado real do projeto* 

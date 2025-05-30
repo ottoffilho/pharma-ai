@@ -139,32 +139,32 @@ const AdminDashboard: React.FC = () => {
       value: receitasCount || 0,
       color: '#10b981',
       icon: FileText,
-      trend: '+12%',
-      trendUp: true
+      trend: undefined,
+      trendUp: null
     },
     {
       name: 'Pedidos',
       value: pedidosCount || 0,
       color: '#3b82f6',
       icon: ShoppingCart,
-      trend: '+8%',
-      trendUp: true
+      trend: undefined,
+      trendUp: null
     },
     {
       name: 'Insumos',
       value: insumosCount || 0,
       color: '#f59e0b',
       icon: FlaskConical,
-      trend: '+5%',
-      trendUp: true
+      trend: undefined,
+      trendUp: null
     },
     {
       name: 'Embalagens',
       value: embalagensCount || 0,
       color: '#8b5cf6',
       icon: Box,
-      trend: '+3%',
-      trendUp: true
+      trend: undefined,
+      trendUp: null
     }
   ];
 
@@ -175,15 +175,40 @@ const AdminDashboard: React.FC = () => {
     { name: 'Tipos de Embalagem', value: embalagensCount || 0, color: '#8b5cf6' }
   ];
 
-  // Simulated time series data for trends
-  const trendData = [
-    { month: 'Jan', receitas: 12, pedidos: 8, insumos: 45 },
-    { month: 'Fev', receitas: 19, pedidos: 12, insumos: 52 },
-    { month: 'Mar', receitas: 25, pedidos: 18, insumos: 48 },
-    { month: 'Abr', receitas: 32, pedidos: 24, insumos: 61 },
-    { month: 'Mai', receitas: 28, pedidos: 20, insumos: 55 },
-    { month: 'Jun', receitas: 35, pedidos: 28, insumos: 67 }
-  ];
+  // Query para obter dados de tendência real dos últimos 6 meses
+  const { data: trendDataReal } = useQuery({
+    queryKey: ['trendData'],
+    queryFn: async () => {
+      const sixMonthsAgo = new Date();
+      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+      
+      const { data, error } = await supabase
+        .from('receitas_processadas')
+        .select('created_at')
+        .gte('created_at', sixMonthsAgo.toISOString());
+      
+      if (error) throw new Error(error.message);
+      
+      // Agrupar por mês
+      const monthlyData = data?.reduce((acc: Record<string, number>, item) => {
+        const month = new Date(item.created_at).toLocaleDateString('pt-BR', { month: 'short' });
+        acc[month] = (acc[month] || 0) + 1;
+        return acc;
+      }, {}) || {};
+      
+      // Converter para formato do gráfico
+      const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun'];
+      return months.map(month => ({
+        month,
+        receitas: monthlyData[month] || 0,
+        pedidos: 0, // TODO: Buscar dados reais de pedidos
+        insumos: 0  // TODO: Buscar dados reais de insumos
+      }));
+    }
+  });
+
+  // Usar dados reais se disponíveis, caso contrário array vazio
+  const trendData = trendDataReal || [];
 
   return (
     <AdminLayout>

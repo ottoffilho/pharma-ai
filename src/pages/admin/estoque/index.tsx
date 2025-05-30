@@ -147,8 +147,8 @@ export default function EstoqueOverview() {
     {
       label: 'Valor Total em Estoque',
       value: isLoading ? '-' : valorTotalFormatado,
-      change: '+0.0%', // Uma implementação mais completa teria comparação com período anterior
-      trend: 'up' as const,
+      change: '',
+      trend: 'stable' as const,
       icon: BarChart3,
       color: 'text-green-600',
       isLoading
@@ -156,8 +156,8 @@ export default function EstoqueOverview() {
     {
       label: 'Itens em Falta',
       value: isLoading ? '-' : estatisticas?.produtos_estoque_baixo?.toString() || '0',
-      change: '0%',
-      trend: 'down' as const,
+      change: '',
+      trend: 'stable' as const,
       icon: AlertTriangle,
       color: 'text-red-600',
       isLoading
@@ -165,8 +165,8 @@ export default function EstoqueOverview() {
     {
       label: 'Vencendo em 30 dias',
       value: isLoading ? '-' : estatisticas?.produtos_vencimento_proximo?.toString() || '0',
-      change: '0',
-      trend: 'up' as const,
+      change: '',
+      trend: 'stable' as const,
       icon: Calendar,
       color: 'text-yellow-600',
       isLoading
@@ -174,8 +174,8 @@ export default function EstoqueOverview() {
     {
       label: 'Giro de Estoque',
       value: isLoading ? '-' : giroEstoqueFormatado,
-      change: '+0.0x',
-      trend: 'up' as const,
+      change: '',
+      trend: 'stable' as const,
       icon: TrendingDown,
       color: 'text-blue-600',
       isLoading

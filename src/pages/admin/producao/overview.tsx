@@ -117,29 +117,10 @@ const productionStatus = {
   ]
 };
 
-// Produção recente
+// Dados simulados de produção recente (será substituído por dados reais)
+// TODO: Implementar consulta real ao banco de dados quando módulo de produção estiver ativo
 const recentProduction = [
-  {
-    id: 'OP-2452',
-    customer: 'Maria Silva',
-    formula: 'Creme Hidratante Corporal',
-    status: 'completed',
-    completedAt: '14:32'
-  },
-  {
-    id: 'OP-2451',
-    customer: 'João Almeida',
-    formula: 'Loção Capilar Antiqueda',
-    status: 'completed',
-    completedAt: '13:45'
-  },
-  {
-    id: 'OP-2450',
-    customer: 'Ana Pereira',
-    formula: 'Cápsulas de Colágeno com Vitamina C',
-    status: 'in-progress',
-    estimatedCompletion: '15:30'
-  }
+  // Dados removidos - aguardando implementação completa do módulo de produção
 ];
 
 export default function ProducaoOverview() {

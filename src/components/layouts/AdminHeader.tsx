@@ -32,6 +32,9 @@ interface AdminHeaderProps {
 export function AdminHeader({ user, onLogout, onMenuClick }: AdminHeaderProps) {
   const breadcrumbs = useBreadcrumbs();
 
+  // Debug: verificar se o usuário está sendo passado
+  console.log('AdminHeader - user:', user);
+
   // Função para obter as iniciais do usuário
   const getUserInitials = (nome?: string, email?: string) => {
     if (nome) {
@@ -97,7 +100,11 @@ export function AdminHeader({ user, onLogout, onMenuClick }: AdminHeaderProps) {
           {/* Menu do Usuário */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-8 w-auto rounded-full px-3">
+              <Button 
+                variant="ghost" 
+                className="relative h-8 w-auto rounded-full px-3"
+                aria-label="Menu do usuário"
+              >
                 <Avatar className="h-8 w-8">
                   <AvatarImage src="" alt={displayName} />
                   <AvatarFallback>

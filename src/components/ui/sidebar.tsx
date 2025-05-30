@@ -1,7 +1,7 @@
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { VariantProps, cva } from "class-variance-authority"
-import { PanelLeft } from "lucide-react"
+import { PanelLeft, ChevronDown } from "lucide-react"
 import { Link } from "react-router-dom"
 
 import { useIsMobile } from "@/hooks/use-mobile"
@@ -734,7 +734,7 @@ const SidebarMenuSubButton = React.forwardRef<
 })
 SidebarMenuSubButton.displayName = "SidebarMenuSubButton"
 
-// Novo componente para corrigir o problema do dropdown
+// Componente SidebarDropdown completamente reformulado
 interface SidebarDropdownProps {
   icon?: React.ReactNode
   label: string | React.ReactNode
@@ -762,65 +762,159 @@ const SidebarDropdown = React.forwardRef<
   href,
   ...props
 }, ref) => {
+  // Estado do dropdown - inicializado com defaultOpen ou isActive
   const [isOpen, setIsOpen] = React.useState(defaultOpen || isActive);
+  const { state } = useSidebar();
+  const isCollapsed = state === "collapsed";
   
-  const handleToggle = (e: React.MouseEvent) => {
+  // Auto-abrir quando item está ativo (apenas uma vez na inicialização)
+  React.useEffect(() => {
+    if (isActive) {
+      setIsOpen(true);
+    }
+  }, [isActive]);
+  
+  // Fechar dropdown quando sidebar colapsa
+  React.useEffect(() => {
+    if (isCollapsed) {
+      setIsOpen(false);
+    }
+  }, [isCollapsed]);
+  
+  // Função unificada para toggle do dropdown
+  const toggleDropdown = React.useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setIsOpen(!isOpen);
-  };
+    
+    // Não permitir toggle se sidebar está colapsado
+    if (isCollapsed) return;
+    
+    setIsOpen(prev => !prev);
+  }, [isCollapsed]);
+  
+  // Função para clique no item principal
+  const handleMainClick = React.useCallback((e: React.MouseEvent) => {
+    // Se sidebar está colapsado, não fazer nada
+    if (isCollapsed) return;
+    
+    // Se há href e queremos navegar, deixar o Link funcionar normalmente
+    if (href) {
+      // Não prevenir a navegação, mas ainda permitir toggle
+      return;
+    }
+    
+    // Se não há href, o clique principal faz toggle
+    toggleDropdown(e);
+  }, [isCollapsed, href, toggleDropdown]);
+  
+  // Renderizar conteúdo do botão principal
+  const buttonContent = (
+    <>
+      {icon && <span className="flex-shrink-0">{icon}</span>}
+      {!isCollapsed && label && (
+        <span className="truncate">{label}</span>
+      )}
+    </>
+  );
   
   return (
-    <SidebarMenuItem ref={ref} className={className} {...props}>
-      <div className="relative flex items-center w-full">
-        {/* Link principal que ocupa a maior parte do espaço */}
-        {href ? (
-          <Link 
-            to={href}
-            className="flex-1 flex items-center gap-2 p-2 rounded-md hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
-          >
-            {icon}
-            {label && <span className="truncate">{label}</span>}
-          </Link>
-        ) : (
-          <button
-            onClick={handleToggle}
-            className="flex-1 flex items-center gap-2 p-2 rounded-md hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors text-left"
-          >
-            {icon}
-            {label && <span className="truncate">{label}</span>}
-          </button>
-        )}
-        
-        {/* Botão de toggle do dropdown */}
-        <button
-          onClick={handleToggle}
-          className="p-2 rounded-md hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
-          aria-label={isOpen ? "Fechar submenu" : "Abrir submenu"}
-        >
-          <svg 
-            className={`size-4 shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
-            xmlns="http://www.w3.org/2000/svg" 
-            width="24" 
-            height="24" 
-            viewBox="0 0 24 24" 
-            fill="none" 
-            stroke="currentColor" 
-            strokeWidth="2" 
-            strokeLinecap="round" 
-            strokeLinejoin="round"
-          >
-            <path d="m6 9 6 6 6-6"/>
-          </svg>
-        </button>
+    <SidebarMenuItem ref={ref} className={cn("group", className)} {...props}>
+      {/* Container do item principal */}
+      <div className="relative w-full">
+        {/* Botão principal com ou sem Link */}
+        <div className="flex items-center w-full">
+          {href ? (
+            // Com Link - permite navegação
+            <SidebarMenuButton
+              asChild
+              isActive={isActive}
+              className={cn(
+                "flex-1 justify-start",
+                !isCollapsed && "pr-8" // Espaço para o botão de toggle
+              )}
+              size={size}
+              variant={variant}
+            >
+              <Link 
+                to={href}
+                onClick={handleMainClick}
+                className="flex items-center gap-2 w-full"
+              >
+                {buttonContent}
+              </Link>
+            </SidebarMenuButton>
+          ) : (
+            // Sem Link - apenas toggle
+            <SidebarMenuButton
+              onClick={handleMainClick}
+              isActive={isActive}
+              className={cn(
+                "flex-1 justify-start",
+                !isCollapsed && "pr-8" // Espaço para o botão de toggle
+              )}
+              size={size}
+              variant={variant}
+            >
+              <div className="flex items-center gap-2 w-full">
+                {buttonContent}
+              </div>
+            </SidebarMenuButton>
+          )}
+          
+          {/* Botão de toggle - apenas visível quando não colapsado */}
+          {!isCollapsed && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={toggleDropdown}
+              className={cn(
+                "absolute right-1 h-6 w-6 p-0 z-10",
+                "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                "transition-all duration-200",
+                // Visibilidade baseada no hover do grupo ou estado aberto
+                isOpen 
+                  ? "opacity-100" 
+                  : "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"
+              )}
+              aria-label={isOpen ? "Fechar submenu" : "Abrir submenu"}
+              aria-expanded={isOpen}
+              tabIndex={-1} // Remove do tab order para não atrapalhar navegação
+            >
+              <ChevronDown 
+                className={cn(
+                  "h-3 w-3 transition-transform duration-200", 
+                  isOpen && "rotate-180"
+                )} 
+              />
+            </Button>
+          )}
+        </div>
       </div>
       
-      {/* Submenu com animação */}
-      {isOpen && (
-        <SidebarMenuSub className="mt-1">
-          {children}
-        </SidebarMenuSub>
-      )}
+      {/* Submenu com animação CSS Grid */}
+      <div 
+        className={cn(
+          "grid transition-all duration-300 ease-in-out overflow-hidden",
+          isOpen && !isCollapsed 
+            ? "grid-rows-[1fr] opacity-100" 
+            : "grid-rows-[0fr] opacity-0"
+        )}
+        style={{
+          // CSS custom properties para melhor controle da animação
+          '--dropdown-duration': '300ms'
+        } as React.CSSProperties}
+      >
+        <div className="overflow-hidden">
+          <SidebarMenuSub className={cn(
+            "mt-1 space-y-0.5",
+            // Adicionar classe de conteúdo apenas quando visível
+            isOpen && !isCollapsed && "sidebar-dropdown-content"
+          )}>
+            {children}
+          </SidebarMenuSub>
+        </div>
+      </div>
     </SidebarMenuItem>
   );
 });

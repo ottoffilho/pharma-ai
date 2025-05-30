@@ -62,61 +62,102 @@ import type { DashboardProps } from '../types';
  * Otimizado com React.memo para evitar re-renders desnecessários
  */
 const DashboardAdministrativoComponent: React.FC<DashboardProps> = ({ usuario, permissoes }) => {
-  // Query to get count of processed recipes
-  const { data: receitasCount, isLoading: receitasLoading } = useQuery({
-    queryKey: ['receitasCount'],
+  // Query to get count of inputs (produtos tipo INSUMO) - dados reais
+  const { data: insumosData, isLoading: insumosLoading } = useQuery({
+    queryKey: ['insumosData'],
     queryFn: async () => {
-      const { count, error } = await supabase
-        .from('receitas_processadas')
-        .select('*', { count: 'exact', head: true });
-      
-      if (error) throw new Error(error.message);
-      return count || 0;
+      try {
+        const { data, count, error } = await supabase
+          .from('produtos')
+          .select('nome, tipo, categoria, estoque_atual', { count: 'exact' })
+          .eq('tipo', 'INSUMO')
+          .eq('ativo', true)
+          .eq('is_deleted', false);
+        
+        if (error) throw new Error(error.message);
+        
+        return {
+          total: count || 0,
+          dados: data || []
+        };
+      } catch (e) {
+        console.error('Erro ao buscar insumos:', e);
+        return { total: 0, dados: [] };
+      }
     },
     staleTime: 5 * 60 * 1000, // 5 minutos
     refetchOnWindowFocus: false
   });
 
-  // Query to get count of orders
+  // Query to get count of packages (produtos tipo EMBALAGEM) - dados reais
+  const { data: embalagensData, isLoading: embalagensLoading } = useQuery({
+    queryKey: ['embalagensData'],
+    queryFn: async () => {
+      try {
+        const { data, count, error } = await supabase
+          .from('produtos')
+          .select('nome, tipo, categoria, volume_capacidade', { count: 'exact' })
+          .eq('tipo', 'EMBALAGEM')
+          .eq('ativo', true)
+          .eq('is_deleted', false);
+        
+        if (error) throw new Error(error.message);
+        
+        return {
+          total: count || 0,
+          dados: data || []
+        };
+      } catch (e) {
+        console.error('Erro ao buscar embalagens:', e);
+        return { total: 0, dados: [] };
+      }
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutos
+    refetchOnWindowFocus: false
+  });
+
+  // Query to get count of medicines (produtos tipo MEDICAMENTO) - dados reais
+  const { data: medicamentosData, isLoading: medicamentosLoading } = useQuery({
+    queryKey: ['medicamentosData'],
+    queryFn: async () => {
+      try {
+        const { count, error } = await supabase
+          .from('produtos')
+          .select('*', { count: 'exact', head: true })
+          .eq('tipo', 'MEDICAMENTO')
+          .eq('ativo', true)
+          .eq('is_deleted', false);
+        
+        if (error) throw new Error(error.message);
+        
+        return count || 0;
+      } catch (e) {
+        console.error('Erro ao buscar medicamentos:', e);
+        return 0;
+      }
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutos
+    refetchOnWindowFocus: false
+  });
+
+  // Query to get count of orders - verificando se há pedidos reais
   const { data: pedidosCount, isLoading: pedidosLoading } = useQuery({
     queryKey: ['pedidosCount'],
     queryFn: async () => {
-      const { count, error } = await supabase
-        .from('pedidos')
-        .select('*', { count: 'exact', head: true });
-      
-      if (error) throw new Error(error.message);
-      return count || 0;
-    },
-    staleTime: 5 * 60 * 1000, // 5 minutos
-    refetchOnWindowFocus: false
-  });
-
-  // Query to get count of inputs
-  const { data: insumosCount, isLoading: insumosLoading } = useQuery({
-    queryKey: ['insumosCount'],
-    queryFn: async () => {
-      const { count, error } = await supabase
-        .from('insumos')
-        .select('*', { count: 'exact', head: true });
-      
-      if (error) throw new Error(error.message);
-      return count || 0;
-    },
-    staleTime: 5 * 60 * 1000, // 5 minutos
-    refetchOnWindowFocus: false
-  });
-
-  // Query to get count of packages
-  const { data: embalagensCount, isLoading: embalagensLoading } = useQuery({
-    queryKey: ['embalagensCount'],
-    queryFn: async () => {
-      const { count, error } = await supabase
-        .from('embalagens')
-        .select('*', { count: 'exact', head: true });
-      
-      if (error) throw new Error(error.message);
-      return count || 0;
+      try {
+        const { count, error } = await supabase
+          .from('pedidos')
+          .select('*', { count: 'exact', head: true });
+        
+        if (error) {
+          console.log('Tabela pedidos não encontrada ou vazia:', error.message);
+          return 0;
+        }
+        return count || 0;
+      } catch (e) {
+        console.log('Erro ao buscar pedidos:', e);
+        return 0;
+      }
     },
     staleTime: 5 * 60 * 1000, // 5 minutos
     refetchOnWindowFocus: false
@@ -126,12 +167,20 @@ const DashboardAdministrativoComponent: React.FC<DashboardProps> = ({ usuario, p
   const { data: usuariosCount, isLoading: usuariosLoading } = useQuery({
     queryKey: ['usuariosCount'],
     queryFn: async () => {
-      const { count, error } = await supabase
-        .from('usuarios')
-        .select('*', { count: 'exact', head: true });
-      
-      if (error) throw new Error(error.message);
-      return count || 0;
+      try {
+        const { count, error } = await supabase
+          .from('usuarios')
+          .select('*', { count: 'exact', head: true });
+        
+        if (error) {
+          console.log('Erro ao buscar usuários:', error.message);
+          return 1; // Pelo menos o usuário atual existe
+        }
+        return count || 1;
+      } catch (e) {
+        console.log('Erro ao buscar usuários:', e);
+        return 1;
+      }
     },
     staleTime: 5 * 60 * 1000, // 5 minutos
     refetchOnWindowFocus: false
@@ -139,8 +188,8 @@ const DashboardAdministrativoComponent: React.FC<DashboardProps> = ({ usuario, p
 
   // Memoizar cálculos para evitar re-renders
   const isLoading = useMemo(() => {
-    return receitasLoading || pedidosLoading || insumosLoading || embalagensLoading || usuariosLoading;
-  }, [receitasLoading, pedidosLoading, insumosLoading, embalagensLoading, usuariosLoading]);
+    return medicamentosLoading || pedidosLoading || insumosLoading || embalagensLoading || usuariosLoading;
+  }, [medicamentosLoading, pedidosLoading, insumosLoading, embalagensLoading, usuariosLoading]);
 
   // Helper function to format numbers
   const formatNumber = useMemo(() => (num: number): string => {
@@ -152,58 +201,78 @@ const DashboardAdministrativoComponent: React.FC<DashboardProps> = ({ usuario, p
     return num.toString();
   }, []);
 
-  // Memoizar dados dos gráficos
+  // Memoizar dados dos gráficos - agora com dados reais
   const metricsData = useMemo(() => [
     {
-      name: 'Receitas',
-      value: receitasCount || 0,
+      name: 'Medicamentos',
+      value: medicamentosData || 0,
       color: '#10b981',
       icon: FileText,
-      trend: '+12%',
-      trendUp: true
+      trend: undefined,
+      trendUp: null
     },
     {
       name: 'Pedidos',
       value: pedidosCount || 0,
       color: '#3b82f6',
       icon: ShoppingCart,
-      trend: '+8%',
-      trendUp: true
+      trend: undefined,
+      trendUp: null
     },
     {
       name: 'Insumos',
-      value: insumosCount || 0,
+      value: insumosData?.total || 0,
       color: '#f59e0b',
       icon: FlaskConical,
-      trend: '+5%',
-      trendUp: true
+      trend: undefined,
+      trendUp: null
     },
     {
       name: 'Embalagens',
-      value: embalagensCount || 0,
+      value: embalagensData?.total || 0,
       color: '#8b5cf6',
       icon: Box,
-      trend: '+3%',
-      trendUp: true
+      trend: undefined,
+      trendUp: null
     }
-  ], [receitasCount, pedidosCount, insumosCount, embalagensCount]);
+  ], [medicamentosData, pedidosCount, insumosData?.total, embalagensData?.total]);
 
   const pieChartData = useMemo(() => [
-    { name: 'Receitas Processadas', value: receitasCount || 0, color: '#10b981' },
+    { name: 'Medicamentos Cadastrados', value: medicamentosData || 0, color: '#10b981' },
     { name: 'Pedidos Ativos', value: pedidosCount || 0, color: '#3b82f6' },
-    { name: 'Insumos Disponíveis', value: insumosCount || 0, color: '#f59e0b' },
-    { name: 'Tipos de Embalagem', value: embalagensCount || 0, color: '#8b5cf6' }
-  ], [receitasCount, pedidosCount, insumosCount, embalagensCount]);
+    { name: 'Insumos Disponíveis', value: insumosData?.total || 0, color: '#f59e0b' },
+    { name: 'Tipos de Embalagem', value: embalagensData?.total || 0, color: '#8b5cf6' }
+  ], [medicamentosData, pedidosCount, insumosData?.total, embalagensData?.total]);
 
-  // Simulated time series data for trends (memoizado)
-  const trendData = useMemo(() => [
-    { month: 'Jan', receitas: 12, pedidos: 8, insumos: 45 },
-    { month: 'Fev', receitas: 19, pedidos: 12, insumos: 52 },
-    { month: 'Mar', receitas: 25, pedidos: 18, insumos: 48 },
-    { month: 'Abr', receitas: 32, pedidos: 24, insumos: 61 },
-    { month: 'Mai', receitas: 28, pedidos: 20, insumos: 55 },
-    { month: 'Jun', receitas: 35, pedidos: 28, insumos: 67 }
-  ], []);
+  // Query para obter dados de tendência real dos últimos 6 meses (memoizado)
+  const { data: trendDataReal } = useQuery({
+    queryKey: ['trendData', insumosData?.dados, embalagensData?.dados, medicamentosData],
+    queryFn: async () => {
+      // Criar dados de tendência baseados nos produtos reais cadastrados
+      const hoje = new Date();
+      const meses = [];
+      
+      // Gerar últimos 6 meses
+      for (let i = 5; i >= 0; i--) {
+        const data = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
+        const nomeMonth = data.toLocaleDateString('pt-BR', { month: 'short' });
+        meses.push({
+          month: nomeMonth,
+          medicamentos: i === 0 ? (medicamentosData || 0) : 0, // Apenas mês atual com dados reais
+          pedidos: 0,  // Pedidos zerados pois não há dados reais
+          insumos: i === 0 ? (insumosData?.total || 0) : 0, // Apenas mês atual com dados reais
+          embalagens: i === 0 ? (embalagensData?.total || 0) : 0 // Apenas mês atual com dados reais
+        });
+      }
+      
+      return meses;
+    },
+    enabled: !!(insumosData || embalagensData || medicamentosData),
+    staleTime: 5 * 60 * 1000
+  });
+
+  // Usar dados reais se disponíveis, caso contrário array vazio
+  const trendData = useMemo(() => trendDataReal || [], [trendDataReal]);
 
   return (
     <AdminLayout>
@@ -424,7 +493,7 @@ const DashboardAdministrativoComponent: React.FC<DashboardProps> = ({ usuario, p
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={trendData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                   <defs>
-                    <linearGradient id="colorReceitas" x1="0" y1="0" x2="0" y2="1">
+                    <linearGradient id="colorMedicamentos" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
                       <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
                     </linearGradient>
@@ -457,11 +526,11 @@ const DashboardAdministrativoComponent: React.FC<DashboardProps> = ({ usuario, p
                   />
                   <Area
                     type="monotone"
-                    dataKey="receitas"
+                    dataKey="medicamentos"
                     stroke="#10b981"
                     strokeWidth={3}
                     fillOpacity={1}
-                    fill="url(#colorReceitas)"
+                    fill="url(#colorMedicamentos)"
                   />
                   <Area
                     type="monotone"
@@ -519,70 +588,87 @@ const DashboardAdministrativoComponent: React.FC<DashboardProps> = ({ usuario, p
               </CardFooter>
             </Card>
 
-            <Card className="bg-gradient-to-br from-blue-500/10 to-white border-blue-500/30 hover:shadow-lg transition-all">
+            <Card className="bg-gradient-to-br from-orange-500/10 to-white border-orange-500/30 hover:shadow-lg transition-all">
               <CardHeader className="pb-3">
                 <div className="flex items-center gap-2 mb-2">
-                  <Target className="h-5 w-5 text-blue-500" />
-                  <CardTitle className="text-lg">Previsões Inteligentes</CardTitle>
+                  <FlaskConical className="h-5 w-5 text-orange-500" />
+                  <CardTitle className="text-lg">Insumos Cadastrados</CardTitle>
                     </div>
                 <CardDescription>
-                  Análise preditiva para otimização
+                  Inventário atual de insumos
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Módulo</span>
-                    <Badge variant="outline" className="text-xs">Em Breve</Badge>
+                    <span className="text-sm text-muted-foreground">Total</span>
+                    <span className="text-2xl font-bold text-orange-600">{insumosData?.total || 0}</span>
                   </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4 text-green-500" />
-                      <span className="text-xs">Previsão de demanda</span>
+                  {insumosData?.dados && insumosData.dados.length > 0 ? (
+                    <div className="space-y-2">
+                      <p className="text-xs font-medium text-gray-700">Últimos cadastrados:</p>
+                      {insumosData.dados.slice(0, 3).map((insumo: any, index: number) => (
+                        <div key={index} className="flex items-center gap-2 text-xs">
+                          <CheckCircle className="h-3 w-3 text-green-500" />
+                          <span className="truncate">{insumo.nome}</span>
+                        </div>
+                      ))}
                     </div>
-                    <div className="flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4 text-green-500" />
-                      <span className="text-xs">Otimização de compras</span>
-                    </div>
-                  </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      Nenhum insumo cadastrado ainda
+                    </p>
+                  )}
                 </div>
               </CardContent>
               <CardFooter>
-                <Link to="/admin/ia/previsao-demanda" className="w-full">
-                  <Button variant="outline" className="w-full border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white">
-                    Conhecer Módulo
+                <Link to="/admin/estoque/insumos" className="w-full">
+                  <Button variant="outline" className="w-full border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white">
+                    <FlaskConical className="h-4 w-4 mr-2" />
+                    Gerenciar Insumos
                   </Button>
                 </Link>
               </CardFooter>
             </Card>
 
-            <Card className="bg-gradient-to-br from-yellow-500/10 to-white border-yellow-500/30 hover:shadow-lg transition-all">
+            <Card className="bg-gradient-to-br from-purple-500/10 to-white border-purple-500/30 hover:shadow-lg transition-all">
               <CardHeader className="pb-3">
                 <div className="flex items-center gap-2 mb-2">
-                  <Lightbulb className="h-5 w-5 text-yellow-600" />
-                  <CardTitle className="text-lg">Insights Avançados</CardTitle>
+                  <Box className="h-5 w-5 text-purple-500" />
+                  <CardTitle className="text-lg">Embalagens Cadastradas</CardTitle>
                     </div>
                 <CardDescription>
-                  Análises detalhadas do seu negócio
+                  Tipos de embalagem disponíveis
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Info className="h-4 w-4 text-yellow-600" />
-                      <span className="text-sm font-medium text-yellow-800">Dica do Sistema</span>
-                    </div>
-                    <p className="text-xs text-yellow-700">
-                      Cadastre mais insumos para ampliar sua capacidade de atendimento
-                    </p>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Total</span>
+                    <span className="text-2xl font-bold text-purple-600">{embalagensData?.total || 0}</span>
                   </div>
-              </div>
+                  {embalagensData?.dados && embalagensData.dados.length > 0 ? (
+                    <div className="space-y-2">
+                      <p className="text-xs font-medium text-gray-700">Últimas cadastradas:</p>
+                      {embalagensData.dados.slice(0, 3).map((embalagem: any, index: number) => (
+                        <div key={index} className="flex items-center gap-2 text-xs">
+                          <CheckCircle className="h-3 w-3 text-green-500" />
+                          <span className="truncate">{embalagem.nome} - {embalagem.categoria || embalagem.volume_capacidade || 'N/A'}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      Nenhuma embalagem cadastrada ainda
+                    </p>
+                  )}
+                </div>
               </CardContent>
               <CardFooter>
-                <Link to="/admin/estoque/insumos" className="w-full">
-                  <Button variant="outline" className="w-full border-yellow-600 text-yellow-600 hover:bg-yellow-600 hover:text-white">
-                    Ver Sugestões
+                <Link to="/admin/estoque/embalagens" className="w-full">
+                  <Button variant="outline" className="w-full border-purple-500 text-purple-500 hover:bg-purple-500 hover:text-white">
+                    <Box className="h-4 w-4 mr-2" />
+                    Gerenciar Embalagens
                   </Button>
                 </Link>
               </CardFooter>

@@ -117,21 +117,26 @@ export interface PagamentoVenda {
 export interface ClienteVenda {
   id: UUID;
   nome: string;
-  documento?: string; // CPF/CNPJ
+  cpf?: string; // CPF para pessoa física
+  cnpj?: string; // CNPJ para pessoa jurídica
+  documento?: string; // CPF/CNPJ (campo genérico para compatibilidade)
   telefone?: string;
   email?: string;
   endereco?: string;
+  cidade?: string;
+  estado?: string;
+  cep?: string;
   data_nascimento?: string;
   
   // Histórico
-  total_compras: number;
+  total_compras?: number;
   ultima_compra?: Timestamp;
   
   // Programa fidelidade
-  pontos_fidelidade: number;
+  pontos_fidelidade?: number;
   
   // Controle
-  ativo: boolean;
+  ativo?: boolean;
   created_at: Timestamp;
   updated_at: Timestamp;
 }

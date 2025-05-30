@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { 
   DollarSign, 
   PieChart, 
@@ -22,6 +23,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import AdminLayout from '@/components/layouts/AdminLayout';
+import { supabase } from '@/integrations/supabase/client';
+import { format, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
 
 interface FinanceFeatureCard {
   title: string;
@@ -37,90 +40,239 @@ interface FinanceFeatureCard {
   gradient: string;
 }
 
-const financeFeatures: FinanceFeatureCard[] = [
-  {
-    title: 'Categorias Financeiras',
-    description: 'Organize suas finanças com categorias personalizáveis para receitas e despesas.',
-    icon: <PieChart className="h-6 w-6" />,
-    href: '/admin/financeiro/categorias',
-    stats: [
-      { label: 'Categorias criadas', value: '28', trend: 'up' },
-      { label: 'Categorias em uso', value: '92%', trend: 'up' }
-    ],
-    status: 'ativo',
-    gradient: 'from-blue-500 to-indigo-500'
-  },
-  {
-    title: 'Fluxo de Caixa',
-    description: 'Visualize entradas e saídas com análises detalhadas e projeções para o futuro.',
-    icon: <LineChart className="h-6 w-6" />,
-    href: '/admin/financeiro/caixa',
-    stats: [
-      { label: 'Saldo atual', value: 'R$ 46.789,45', trend: 'up' },
-      { label: 'Movimentações mensais', value: '124', trend: 'stable' }
-    ],
-    status: 'ativo',
-    gradient: 'from-green-500 to-emerald-500'
-  },
-  {
-    title: 'Contas a Pagar',
-    description: 'Gerencie compromissos financeiros com lembretes e programação automática.',
-    icon: <Receipt className="h-6 w-6" />,
-    href: '/admin/financeiro/contas-a-pagar',
-    stats: [
-      { label: 'Contas pendentes', value: '12', trend: 'down' },
-      { label: 'Vencendo em 7 dias', value: 'R$ 12.450,00', trend: 'up' }
-    ],
-    status: 'ativo',
-    gradient: 'from-purple-500 to-pink-500'
-  },
-  {
-    title: 'Relatórios Financeiros',
-    description: 'Relatórios detalhados e personalizáveis com gráficos interativos e exportação.',
-    icon: <BarChart3 className="h-6 w-6" />,
-    href: '/admin/financeiro/relatorios',
-    stats: [
-      { label: 'Relatórios gerados', value: '32', trend: 'up' },
-      { label: 'Economia identificada', value: 'R$ 8.600,00', trend: 'up' }
-    ],
-    status: 'em-breve',
-    gradient: 'from-orange-500 to-red-500'
-  }
-];
+// Hook para buscar dados financeiros reais
+const useFinanceData = () => {
+  const currentDate = new Date();
+  const startMonth = startOfMonth(currentDate);
+  const endMonth = endOfMonth(currentDate);
+  const startYear = startOfYear(currentDate);
+  const endYear = endOfYear(currentDate);
 
-// Métricas financeiras
-const financeMetrics = [
-  {
-    label: 'Receita Mensal',
-    value: 'R$ 124.586,00',
-    change: '+8.4%',
-    trend: 'up' as const,
-    color: 'text-green-600'
-  },
-  {
-    label: 'Despesas Mensais',
-    value: 'R$ 82.315,75',
-    change: '-2.1%',
-    trend: 'down' as const,
-    color: 'text-green-600'
-  },
-  {
-    label: 'Margem de Lucro',
-    value: '33.9%',
-    change: '+2.7%',
-    trend: 'up' as const,
-    color: 'text-green-600'
-  },
-  {
-    label: 'Previsão Trimestral',
-    value: 'R$ 405.800,00',
-    change: '+12.5%',
-    trend: 'up' as const,
-    color: 'text-green-600'
-  }
-];
+  // Buscar movimentações do mês atual
+  const { data: movimentacoesMes } = useQuery({
+    queryKey: ['movimentacoes-mes', format(startMonth, 'yyyy-MM'), format(endMonth, 'yyyy-MM')],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('movimentacoes_caixa')
+        .select('*')
+        .eq('is_deleted', false)
+        .gte('data_movimentacao', format(startMonth, 'yyyy-MM-dd'))
+        .lte('data_movimentacao', format(endMonth, 'yyyy-MM-dd'));
+      
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // Buscar movimentações do ano atual
+  const { data: movimentacoesAno } = useQuery({
+    queryKey: ['movimentacoes-ano', format(startYear, 'yyyy'), format(endYear, 'yyyy')],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('movimentacoes_caixa')
+        .select('*')
+        .eq('is_deleted', false)
+        .gte('data_movimentacao', format(startYear, 'yyyy-MM-dd'))
+        .lte('data_movimentacao', format(endYear, 'yyyy-MM-dd'));
+      
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // Buscar categorias financeiras
+  const { data: categorias } = useQuery({
+    queryKey: ['categorias-financeiras'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('categorias_financeiras')
+        .select('*')
+        .eq('is_deleted', false);
+      
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // Buscar contas a pagar
+  const { data: contasPagar } = useQuery({
+    queryKey: ['contas-pagar-pendentes'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('contas_a_pagar')
+        .select('*')
+        .eq('is_deleted', false)
+        .eq('status_conta', 'pendente');
+      
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // Calcular métricas
+  const calcularMetricas = () => {
+    if (!movimentacoesMes || !movimentacoesAno) {
+      return {
+        receitaMensal: 0,
+        despesasMensais: 0,
+        saldoAtual: 0,
+        previsaoTrimestral: 0,
+        margemLucro: 0,
+        categoriasAtivas: 0,
+        contasPendentes: 0,
+        valorVencendo: 0
+      };
+    }
+
+    const receitaMensal = movimentacoesMes
+      .filter(mov => mov.tipo_movimentacao === 'entrada')
+      .reduce((total, mov) => total + parseFloat(mov.valor), 0);
+
+    const despesasMensais = movimentacoesMes
+      .filter(mov => mov.tipo_movimentacao === 'saida')
+      .reduce((total, mov) => total + parseFloat(mov.valor), 0);
+
+    const saldoAtual = receitaMensal - despesasMensais;
+
+    const receitaAnual = movimentacoesAno
+      .filter(mov => mov.tipo_movimentacao === 'entrada')
+      .reduce((total, mov) => total + parseFloat(mov.valor), 0);
+
+    const despesasAnuais = movimentacoesAno
+      .filter(mov => mov.tipo_movimentacao === 'saida')
+      .reduce((total, mov) => total + parseFloat(mov.valor), 0);
+
+    const margemLucro = receitaMensal > 0 ? ((receitaMensal - despesasMensais) / receitaMensal) * 100 : 0;
+    const previsaoTrimestral = receitaMensal * 3; // Projeção baseada no mês atual
+
+    const categoriasAtivas = categorias?.length || 0;
+    const contasPendentes = contasPagar?.length || 0;
+
+    // Contas vencendo em 7 dias
+    const seteDiasAFrente = new Date();
+    seteDiasAFrente.setDate(seteDiasAFrente.getDate() + 7);
+    
+    const valorVencendo = contasPagar
+      ?.filter(conta => {
+        const dataVencimento = new Date(conta.data_vencimento);
+        return dataVencimento <= seteDiasAFrente;
+      })
+      .reduce((total, conta) => total + parseFloat(conta.valor_previsto), 0) || 0;
+
+    return {
+      receitaMensal,
+      despesasMensais,
+      saldoAtual,
+      previsaoTrimestral,
+      margemLucro,
+      categoriasAtivas,
+      contasPendentes,
+      valorVencendo
+    };
+  };
+
+  return calcularMetricas();
+};
 
 export default function FinanceiroOverview() {
+  const metricas = useFinanceData();
+
+  // Função para formatar valores em Real brasileiro
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    }).format(value);
+  };
+
+  const formatPercentage = (value: number) => {
+    return `${value.toFixed(1)}%`;
+  };
+
+  // Features com dados atualizados
+  const financeFeatures: FinanceFeatureCard[] = [
+    {
+      title: 'Categorias Financeiras',
+      description: 'Organize suas finanças com categorias personalizáveis para receitas e despesas.',
+      icon: <PieChart className="h-6 w-6" />,
+      href: '/admin/financeiro/categorias',
+      stats: [
+        { label: 'Categorias criadas', value: metricas.categoriasAtivas.toString(), trend: 'stable' },
+        { label: 'Categorias em uso', value: metricas.categoriasAtivas > 0 ? '100%' : '0%', trend: 'stable' }
+      ],
+      status: 'ativo',
+      gradient: 'from-blue-500 to-indigo-500'
+    },
+    {
+      title: 'Fluxo de Caixa',
+      description: 'Visualize entradas e saídas com análises detalhadas e projeções para o futuro.',
+      icon: <LineChart className="h-6 w-6" />,
+      href: '/admin/financeiro/caixa',
+      stats: [
+        { label: 'Saldo atual', value: formatCurrency(metricas.saldoAtual), trend: metricas.saldoAtual >= 0 ? 'up' : 'down' },
+        { label: 'Movimentações mensais', value: '—', trend: 'stable' }
+      ],
+      status: 'ativo',
+      gradient: 'from-green-500 to-emerald-500'
+    },
+    {
+      title: 'Contas a Pagar',
+      description: 'Gerencie compromissos financeiros com lembretes e programação automática.',
+      icon: <Receipt className="h-6 w-6" />,
+      href: '/admin/financeiro/contas-a-pagar',
+      stats: [
+        { label: 'Contas pendentes', value: metricas.contasPendentes.toString(), trend: metricas.contasPendentes > 0 ? 'up' : 'stable' },
+        { label: 'Vencendo em 7 dias', value: formatCurrency(metricas.valorVencendo), trend: metricas.valorVencendo > 0 ? 'up' : 'stable' }
+      ],
+      status: 'ativo',
+      gradient: 'from-purple-500 to-pink-500'
+    },
+    {
+      title: 'Relatórios Financeiros',
+      description: 'Relatórios detalhados e personalizáveis com gráficos interativos e exportação.',
+      icon: <BarChart3 className="h-6 w-6" />,
+      href: '/admin/financeiro/relatorios',
+      stats: [
+        { label: 'Relatórios gerados', value: '—', trend: 'stable' },
+        { label: 'Economia identificada', value: '—', trend: 'stable' }
+      ],
+      status: 'em-breve',
+      gradient: 'from-orange-500 to-red-500'
+    }
+  ];
+
+  // Métricas financeiras atualizadas com dados reais
+  const financeMetrics = [
+    {
+      label: 'Receita Mensal',
+      value: formatCurrency(metricas.receitaMensal),
+      change: '—', // TODO: Calcular baseado no mês anterior
+      trend: 'stable' as const,
+      color: 'text-green-600'
+    },
+    {
+      label: 'Despesas Mensais',
+      value: formatCurrency(metricas.despesasMensais),
+      change: '—', // TODO: Calcular baseado no mês anterior
+      trend: 'stable' as const,
+      color: 'text-red-600'
+    },
+    {
+      label: 'Margem de Lucro',
+      value: formatPercentage(metricas.margemLucro),
+      change: '—', // TODO: Calcular baseado no mês anterior
+      trend: metricas.margemLucro >= 20 ? 'up' : metricas.margemLucro >= 10 ? 'stable' : 'down' as const,
+      color: metricas.margemLucro >= 20 ? 'text-green-600' : metricas.margemLucro >= 10 ? 'text-yellow-600' : 'text-red-600'
+    },
+    {
+      label: 'Projeção Trimestral',
+      value: formatCurrency(metricas.previsaoTrimestral),
+      change: '—', // TODO: Calcular baseado no trimestre anterior
+      trend: 'stable' as const,
+      color: 'text-blue-600'
+    }
+  ];
+
   return (
     <AdminLayout>
       <div>
@@ -144,11 +296,15 @@ export default function FinanceiroOverview() {
                   <div className="flex items-center gap-4 pt-4">
                     <div className="flex items-center gap-2">
                       <Wallet className="h-5 w-5 text-emerald-500" />
-                      <span className="text-sm font-medium">Fluxo positivo</span>
+                      <span className="text-sm font-medium">
+                        {metricas.saldoAtual >= 0 ? 'Fluxo positivo' : 'Fluxo negativo'}
+                      </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <CalendarRange className="h-5 w-5 text-blue-500" />
-                      <span className="text-sm font-medium">Previsão otimista</span>
+                      <span className="text-sm font-medium">
+                        {metricas.margemLucro >= 20 ? 'Previsão otimista' : metricas.margemLucro >= 10 ? 'Previsão moderada' : 'Previsão cautelosa'}
+                      </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Calculator className="h-5 w-5 text-purple-500" />
@@ -271,23 +427,23 @@ export default function FinanceiroOverview() {
                     <div>
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-sm font-medium">Receita vs Meta</span>
-                        <span className="text-sm text-green-600">92%</span>
+                        <span className="text-sm text-green-600">—</span>
                       </div>
-                      <Progress value={92} className="h-2" />
+                      <Progress value={0} className="h-2" />
                     </div>
                     <div>
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-sm font-medium">Despesas vs Orçamento</span>
-                        <span className="text-sm text-amber-600">78%</span>
+                        <span className="text-sm text-amber-600">—</span>
                       </div>
-                      <Progress value={78} className="h-2" />
+                      <Progress value={0} className="h-2" />
                     </div>
                     <div>
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-sm font-medium">Lucro Líquido (Meta anual)</span>
-                        <span className="text-sm text-blue-600">65%</span>
+                        <span className="text-sm text-blue-600">—</span>
                       </div>
-                      <Progress value={65} className="h-2" />
+                      <Progress value={0} className="h-2" />
                     </div>
                   </div>
                 </div>

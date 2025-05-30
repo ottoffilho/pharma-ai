@@ -5,6 +5,9 @@ import React, { useState, useEffect } from 'react';
 import { useAuthSimple } from '../hooks/useAuthSimple';
 import type { DashboardProps } from '../types';
 import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
 
 /**
  * Dashboard de Atendimento - Para Atendentes e Balconistas
@@ -15,6 +18,84 @@ export const DashboardAtendimento: React.FC<DashboardProps> = ({ usuario, permis
   const [pedidosHoje, setPedidosHoje] = useState(0);
   const [metaDiaria, setMetaDiaria] = useState(15);
   const [carregando, setCarregando] = useState(true);
+
+  // Query para buscar pedidos pendentes do usuário atual
+  const { data: pedidosPendentes, isLoading: pedidosLoading } = useQuery({
+    queryKey: ['pedidosPendentes', usuario?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('pedidos')
+        .select(`
+          id,
+          cliente_nome,
+          status,
+          tipo_pedido,
+          created_at
+        `)
+        .or('status.eq.pendente,status.eq.aguardando_aprovacao,status.eq.pronto_entrega')
+        .order('created_at', { ascending: false })
+        .limit(3);
+      
+      if (error) throw new Error(error.message);
+      return data || [];
+    },
+    enabled: !!usuario?.id
+  });
+
+  // Query para buscar produtos em falta ou com estoque baixo
+  const { data: produtosEmFalta, isLoading: produtosLoading } = useQuery({
+    queryKey: ['produtosEmFalta'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('insumos')
+        .select(`
+          nome,
+          quantidade_atual,
+          quantidade_minima
+        `)
+        .or('quantidade_atual.eq.0,quantidade_atual.lte.quantidade_minima')
+        .order('quantidade_atual', { ascending: true })
+        .limit(3);
+      
+      if (error) throw new Error(error.message);
+      return data || [];
+    }
+  });
+
+  // Mapear status para cores e labels
+  const getStatusConfig = (status: string) => {
+    const statusMap: Record<string, { label: string, bgColor: string, borderColor: string, dotColor: string, textColor: string }> = {
+      'pendente': {
+        label: 'Pendente',
+        bgColor: 'bg-yellow-50',
+        borderColor: 'border-yellow-200',
+        dotColor: 'bg-yellow-500',
+        textColor: 'text-yellow-700'
+      },
+      'aguardando_aprovacao': {
+        label: 'Orçamento',
+        bgColor: 'bg-blue-50',
+        borderColor: 'border-blue-200',
+        dotColor: 'bg-blue-500',
+        textColor: 'text-blue-700'
+      },
+      'pronto_entrega': {
+        label: 'Pronto',
+        bgColor: 'bg-green-50',
+        borderColor: 'border-green-200',
+        dotColor: 'bg-green-500',
+        textColor: 'text-green-700'
+      }
+    };
+    
+    return statusMap[status] || {
+      label: status,
+      bgColor: 'bg-gray-50',
+      borderColor: 'border-gray-200',
+      dotColor: 'bg-gray-500',
+      textColor: 'text-gray-700'
+    };
+  };
 
   useEffect(() => {
     // Simular carregamento de dados do atendente
@@ -221,57 +302,70 @@ export const DashboardAtendimento: React.FC<DashboardProps> = ({ usuario, permis
             <div className="p-6">
               <div className="space-y-4">
                 
-                {/* Pedido 1 */}
-                <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-                  <div className="flex items-center">
-                    <div className="w-2 h-2 bg-yellow-500 rounded-full mr-3"></div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">#1234 - Maria Silva</p>
-                      <p className="text-xs text-gray-500">Manipulação - Aguardando produção</p>
+                {pedidosLoading ? (
+                  // Loading skeleton
+                  Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                      <div className="flex items-center">
+                        <div className="w-2 h-2 bg-gray-300 rounded-full mr-3 animate-pulse"></div>
+                        <div>
+                          <div className="h-4 w-32 bg-gray-300 rounded animate-pulse mb-1"></div>
+                          <div className="h-3 w-24 bg-gray-300 rounded animate-pulse"></div>
+                        </div>
+                      </div>
+                      <div className="h-5 w-16 bg-gray-300 rounded-full animate-pulse"></div>
                     </div>
-                  </div>
-                  <span className="text-xs text-yellow-700 bg-yellow-100 px-2 py-1 rounded-full">
-                    Pendente
-                  </span>
-                </div>
-
-                {/* Pedido 2 */}
-                <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200">
-                  <div className="flex items-center">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full mr-3"></div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">#1235 - João Santos</p>
-                      <p className="text-xs text-gray-500">Orçamento - Aguardando aprovação</p>
+                  ))
+                ) : pedidosPendentes && pedidosPendentes.length > 0 ? (
+                  // Dados reais dos pedidos
+                  pedidosPendentes.map((pedido) => {
+                    const statusConfig = getStatusConfig(pedido.status);
+                    return (
+                      <div key={pedido.id} className={`flex items-center justify-between p-3 ${statusConfig.bgColor} rounded-lg border ${statusConfig.borderColor}`}>
+                        <div className="flex items-center">
+                          <div className={`w-2 h-2 ${statusConfig.dotColor} rounded-full mr-3`}></div>
+                          <div>
+                            <p className="text-sm font-medium text-gray-900">#{pedido.id} - {pedido.cliente_nome || 'Cliente não informado'}</p>
+                            <p className="text-xs text-gray-500">
+                              {pedido.tipo_pedido || 'Manipulação'} - {
+                                pedido.status === 'pendente' ? 'Aguardando produção' :
+                                pedido.status === 'aguardando_aprovacao' ? 'Aguardando aprovação' :
+                                pedido.status === 'pronto_entrega' ? 'Pronto para entrega' :
+                                pedido.status
+                              }
+                            </p>
+                          </div>
+                        </div>
+                        <span className={`text-xs ${statusConfig.textColor} ${statusConfig.bgColor.replace('50', '100')} px-2 py-1 rounded-full`}>
+                          {statusConfig.label}
+                        </span>
+                      </div>
+                    );
+                  })
+                ) : (
+                  // Estado quando não há pedidos
+                  <div className="text-center py-8">
+                    <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
                     </div>
+                    <p className="text-sm text-gray-500 mb-2">Nenhum pedido pendente</p>
+                    <p className="text-xs text-gray-400">Todos os pedidos estão em dia!</p>
                   </div>
-                  <span className="text-xs text-blue-700 bg-blue-100 px-2 py-1 rounded-full">
-                    Orçamento
-                  </span>
-                </div>
+                )}
 
-                {/* Pedido 3 */}
-                <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
-                  <div className="flex items-center">
-                    <div className="w-2 h-2 bg-green-500 rounded-full mr-3"></div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">#1236 - Ana Costa</p>
-                      <p className="text-xs text-gray-500">Pronto para entrega</p>
-                    </div>
+                {/* Ver todos - só mostrar se houver pedidos */}
+                {pedidosPendentes && pedidosPendentes.length > 0 && (
+                  <div className="text-center pt-2">
+                    <a
+                      href="/admin/pedidos"
+                      className="text-sm text-blue-600 hover:text-blue-500"
+                    >
+                      Ver todos os pedidos
+                    </a>
                   </div>
-                  <span className="text-xs text-green-700 bg-green-100 px-2 py-1 rounded-full">
-                    Pronto
-                  </span>
-                </div>
-
-                {/* Ver todos */}
-                <div className="text-center pt-2">
-                  <a
-                    href="/admin/pedidos"
-                    className="text-sm text-blue-600 hover:text-blue-500"
-                  >
-                    Ver todos os pedidos
-                  </a>
-                </div>
+                )}
 
               </div>
             </div>
@@ -290,57 +384,59 @@ export const DashboardAtendimento: React.FC<DashboardProps> = ({ usuario, permis
             </div>
             <div className="p-6">
               <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-900">Paracetamol 500mg</span>
-                  <span className="text-xs text-red-600 bg-red-100 px-2 py-1 rounded-full">
-                    Esgotado
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-900">Dipirona Sódica</span>
-                  <span className="text-xs text-yellow-600 bg-yellow-100 px-2 py-1 rounded-full">
-                    Baixo
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-900">Ibuprofeno 600mg</span>
-                  <span className="text-xs text-red-600 bg-red-100 px-2 py-1 rounded-full">
-                    Esgotado
-                  </span>
-                </div>
+                {produtosLoading ? (
+                  // Loading skeleton
+                  Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className="flex items-center justify-between">
+                      <div className="h-4 w-32 bg-gray-300 rounded animate-pulse"></div>
+                      <div className="h-5 w-16 bg-gray-300 rounded-full animate-pulse"></div>
+                    </div>
+                  ))
+                ) : produtosEmFalta && produtosEmFalta.length > 0 ? (
+                  produtosEmFalta.map((produto, i) => (
+                    <div key={i} className="flex items-center justify-between">
+                      <span className="text-sm text-gray-900">{produto.nome}</span>
+                      <span className={`text-xs px-2 py-1 rounded-full ${
+                        produto.quantidade_atual === 0 
+                          ? 'text-red-600 bg-red-100' 
+                          : 'text-yellow-600 bg-yellow-100'
+                      }`}>
+                        {produto.quantidade_atual === 0 ? 'Esgotado' : 'Baixo'}
+                      </span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-4">
+                    <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                      <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <p className="text-sm text-gray-500">Estoque normalizado</p>
+                    <p className="text-xs text-gray-400">Nenhum produto em falta</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
 
-          {/* Lembretes */}
+          {/* Lembretes e Notificações */}
           <div className="bg-white rounded-lg shadow">
             <div className="px-6 py-4 border-b border-gray-200">
               <h3 className="text-lg font-medium text-gray-900">
-                Lembretes
+                Notificações do Sistema
               </h3>
             </div>
             <div className="p-6">
               <div className="space-y-3">
-                <div className="flex items-start">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 mr-3"></div>
-                  <div>
-                    <p className="text-sm text-gray-900">Reunião de equipe às 14h</p>
-                    <p className="text-xs text-gray-500">Hoje</p>
+                <div className="text-center py-4">
+                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                    <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5 5v-5zM4 19h4a1 1 0 001-1v-1a1 1 0 011-1h4a1 1 0 011 1v1a1 1 0 001 1h4" />
+                    </svg>
                   </div>
-                </div>
-                <div className="flex items-start">
-                  <div className="w-2 h-2 bg-yellow-500 rounded-full mt-2 mr-3"></div>
-                  <div>
-                    <p className="text-sm text-gray-900">Verificar receitas vencidas</p>
-                    <p className="text-xs text-gray-500">Amanhã</p>
-                  </div>
-                </div>
-                <div className="flex items-start">
-                  <div className="w-2 h-2 bg-green-500 rounded-full mt-2 mr-3"></div>
-                  <div>
-                    <p className="text-sm text-gray-900">Treinamento novo sistema</p>
-                    <p className="text-xs text-gray-500">Sexta-feira</p>
-                  </div>
+                  <p className="text-sm text-gray-500 mb-1">Sistema atualizado</p>
+                  <p className="text-xs text-gray-400">Todas as funcionalidades operando normalmente</p>
                 </div>
               </div>
             </div>

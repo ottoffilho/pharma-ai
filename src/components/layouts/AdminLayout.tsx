@@ -33,13 +33,18 @@ import {
   AlertTriangle,
   RefreshCw,
   ShoppingCart,
+  Stethoscope,
+  Factory,
+  Building2,
+  CreditCard,
+  Shield,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthSimple } from '@/modules/usuarios-permissoes/hooks/useAuthSimple';
 import { AdminHeader } from '@/components/layouts/AdminHeader';
 import AdminChatbotWidget from '@/components/chatbot/AdminChatbotWidget';
-import { useResizeObserver } from '@/hooks/use-resize-observer';
+import { useResizeObserver, useWindowSize } from '@/hooks/use-resize-observer';
 
 // Importando as imagens do logo
 import logoImagem from '@/assets/logo/pharma-image2.png';
@@ -74,6 +79,12 @@ import {
   SidebarDropdown,
   SidebarProvider
 } from '@/components/ui/sidebar';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
@@ -82,8 +93,27 @@ interface AdminLayoutProps {
   children: React.ReactNode;
 }
 
+// Definição dos tipos para melhor organização
+interface NavigationLink {
+  title: string;
+  href: string;
+  icon: React.ReactNode;
+  description?: string;
+  badge?: string | number;
+  submenu?: {
+    title: string;
+    href: string;
+    description?: string;
+    badge?: string | number;
+  }[];
+}
+
 export default function AdminLayout({ children }: AdminLayoutProps) {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
+    // Recuperar estado salvo do localStorage
+    const saved = localStorage.getItem('pharma-sidebar-state');
+    return saved ? JSON.parse(saved) : true;
+  });
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [mainContentRef, mainContentSize] = useResizeObserver<HTMLDivElement>();
   const [databaseError, setDatabaseError] = useState(false);
@@ -91,8 +121,17 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const { toast } = useToast();
   const location = useLocation();
   const navigate = useNavigate();
+  const windowSize = useWindowSize();
   
   const { usuario, logout, carregando } = useAuthSimple();
+
+  // Detectar se é mobile baseado no tamanho da janela
+  const isMobile = windowSize.width < 768;
+
+  // Salvar estado do sidebar no localStorage
+  useEffect(() => {
+    localStorage.setItem('pharma-sidebar-state', JSON.stringify(isSidebarOpen));
+  }, [isSidebarOpen]);
 
   // Verificar se as tabelas essenciais existem
   useEffect(() => {
@@ -146,88 +185,184 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     }
   };
 
-  // Navigation links
-  const navLinks = [
+  // Navigation links reorganizados por ordem de importância e uso
+  const navLinks: NavigationLink[] = [
     {
       title: 'Dashboard',
       href: '/admin',
-      icon: <LayoutDashboard className="h-5 w-5 text-homeo-blue" />,
+      icon: <LayoutDashboard className="h-5 w-5 text-blue-600" />,
+      description: 'Visão geral do sistema'
     },
     {
-      title: 'Inteligência Artificial',
-      href: '/admin/ia',
-      icon: <Brain className="h-5 w-5 text-homeo-accent" />,
-      submenu: [
-        { title: 'Processamento de Receitas', href: '/admin/ia/processamento-receitas' },
-        { title: 'Previsão de Demanda', href: '/admin/ia/previsao-demanda' },
-        { title: 'Otimização de Compras', href: '/admin/ia/otimizacao-compras' },
-        { title: 'Análise de Clientes', href: '/admin/ia/analise-clientes' },
-        { title: 'Monitoramento IA', href: '/admin/ia/monitoramento' },
-      ],
-    },
-    {
-      title: 'Pedidos',
+      title: 'Atendimento',
       href: '/admin/pedidos',
-      icon: <FileText className="h-5 w-5 text-homeo-green" />,
+      icon: <Stethoscope className="h-5 w-5 text-emerald-600" />,
+      description: 'Gestão de atendimento e receitas',
       submenu: [
-        { title: 'Listar Pedidos', href: '/admin/pedidos/listar' },
-        { title: 'Nova Receita', href: '/admin/pedidos/nova-receita' },
+        { title: 'Listar Pedidos', href: '/admin/pedidos/listar', description: 'Ver todos os pedidos' },
+        { title: 'Nova Receita', href: '/admin/pedidos/nova-receita', description: 'Registrar nova receita' },
       ],
     },
     {
       title: 'Estoque',
       href: '/admin/estoque',
-      icon: <Box className="h-5 w-5 text-orange-500" />,
+      icon: <Box className="h-5 w-5 text-orange-600" />,
+      description: 'Controle de produtos e lotes',
       submenu: [
-        { title: 'Produtos', href: '/admin/estoque/produtos' },
-        { title: 'Lotes', href: '/admin/estoque/lotes' },
-        { title: 'Importar NF-e', href: '/admin/estoque/importacao-nf' },
-        { title: 'Markup', href: '/admin/configuracoes/markup' },
+        { title: 'Produtos', href: '/admin/estoque/produtos', description: 'Gerenciar produtos' },
+        { title: 'Lotes', href: '/admin/estoque/lotes', description: 'Controle de lotes' },
+        { title: 'Importar NF-e', href: '/admin/estoque/importacao-nf', description: 'Importar notas fiscais' },
+        { title: 'Markup', href: '/admin/configuracoes/markup', description: 'Configurar margem de lucro' },
       ],
     },
     {
       title: 'Produção',
       href: '/admin/producao/overview',
-      icon: <Package className="h-5 w-5 text-blue-500" />,
+      icon: <Factory className="h-5 w-5 text-purple-600" />,
+      description: 'Gestão da produção farmacêutica',
       submenu: [
-        { title: 'Ordens de Produção', href: '/admin/producao' },
-        { title: 'Nova Ordem', href: '/admin/producao/nova' },
+        { title: 'Ordens de Produção', href: '/admin/producao', description: 'Gerenciar produção' },
+        { title: 'Nova Ordem', href: '/admin/producao/nova', description: 'Criar nova ordem' },
       ],
     },
     {
       title: 'Vendas',
       href: '/admin/vendas',
-      icon: <ShoppingCart className="h-5 w-5 text-green-500" />,
+      icon: <ShoppingCart className="h-5 w-5 text-green-700" />,
+      description: 'Ponto de venda e histórico',
       submenu: [
-        { title: 'PDV - Ponto de Venda', href: '/admin/vendas/pdv' },
-        { title: 'Histórico de Vendas', href: '/admin/vendas/historico' },
-        { title: 'Controle de Caixa', href: '/admin/vendas/caixa' },
+        { title: 'PDV - Ponto de Venda', href: '/admin/vendas/pdv', description: 'Sistema de vendas' },
+        { title: 'Histórico de Vendas', href: '/admin/vendas/historico', description: 'Relatórios de vendas' },
+        { title: 'Controle de Caixa', href: '/admin/vendas/caixa', description: 'Gestão do caixa' },
       ],
     },
     {
       title: 'Financeiro',
       href: '/admin/financeiro',
-      icon: <DollarSign className="h-5 w-5 text-emerald-600" />,
+      icon: <CreditCard className="h-5 w-5 text-amber-600" />,
+      description: 'Gestão financeira',
       submenu: [
-        { title: 'Categorias', href: '/admin/financeiro/categorias' },
-        { title: 'Fluxo de Caixa', href: '/admin/financeiro/caixa' },
-        { title: 'Contas a Pagar', href: '/admin/financeiro/contas-a-pagar' },
+        { title: 'Categorias', href: '/admin/financeiro/categorias', description: 'Categorias financeiras' },
+        { title: 'Fluxo de Caixa', href: '/admin/financeiro/caixa', description: 'Controle de fluxo' },
+        { title: 'Contas a Pagar', href: '/admin/financeiro/contas-a-pagar', description: 'Gestão de pagamentos' },
+      ],
+    },
+    {
+      title: 'Inteligência Artificial',
+      href: '/admin/ia',
+      icon: <Brain className="h-5 w-5 text-pink-600" />,
+      description: 'Recursos de IA do sistema',
+      submenu: [
+        { title: 'Processamento de Receitas', href: '/admin/ia/processamento-receitas', description: 'IA para receitas' },
+        { title: 'Previsão de Demanda', href: '/admin/ia/previsao-demanda', description: 'Análise preditiva' },
+        { title: 'Otimização de Compras', href: '/admin/ia/otimizacao-compras', description: 'Sugestões inteligentes' },
+        { title: 'Análise de Clientes', href: '/admin/ia/analise-clientes', description: 'Insights de clientes' },
+        { title: 'Monitoramento IA', href: '/admin/ia/monitoramento', description: 'Status dos modelos' },
       ],
     },
     {
       title: 'Cadastros',
       href: '/admin/cadastros',
-      icon: <Database className="h-5 w-5 text-indigo-500" />,
+      icon: <Building2 className="h-5 w-5 text-slate-600" />,
+      description: 'Dados mestres do sistema',
       submenu: [
-        { title: 'Fornecedores', href: '/admin/cadastros/fornecedores' },
+        { title: 'Fornecedores', href: '/admin/cadastros/fornecedores', description: 'Gerenciar fornecedores' },
       ],
     },
     {
       title: 'Usuários',
       href: '/admin/usuarios',
-      icon: <Users className="h-5 w-5 text-purple-500" />,
+      icon: <Shield className="h-5 w-5 text-indigo-600" />,
+      description: 'Gestão de usuários e permissões',
     },
   ];
+
+  // Função para renderizar item de menu com tooltip no modo colapsado
+  const renderMenuItemWithTooltip = (link: NavigationLink, index: number) => {
+    const isActive = location.pathname === link.href || 
+      (link.submenu && link.submenu.some(sublink => location.pathname === sublink.href));
+
+    if (link.submenu) {
+      return (
+        <SidebarDropdown 
+          key={index}
+          icon={link.icon}
+          label={link.title}
+          isActive={isActive}
+          href={link.href}
+          className="sidebar-item"
+        >
+          {link.submenu.map((sublink, subIndex) => (
+            <SidebarMenuSubButton
+              key={subIndex}
+              asChild
+              isActive={location.pathname === sublink.href}
+              className="sidebar-item sidebar-item-hover"
+            >
+              <Link to={sublink.href} title={sublink.description}>
+                {sublink.title}
+                {sublink.badge && (
+                  <span className="ml-auto text-xs bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full sidebar-badge">
+                    {sublink.badge}
+                  </span>
+                )}
+              </Link>
+            </SidebarMenuSubButton>
+          ))}
+        </SidebarDropdown>
+      );
+    }
+
+    const menuButton = (
+      <SidebarMenuButton 
+        asChild
+        isActive={isActive}
+        className="sidebar-item sidebar-item-hover sidebar-menu-button"
+        aria-current={isActive ? "page" : undefined}
+      >
+        <Link to={link.href} className="flex items-center gap-3">
+          <span className="flex-shrink-0">{link.icon}</span>
+          {isSidebarOpen && (
+            <>
+              <span className="flex-1 truncate">{link.title}</span>
+              {link.badge && (
+                <span className="text-xs bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full sidebar-badge">
+                  {link.badge}
+                </span>
+              )}
+            </>
+          )}
+        </Link>
+      </SidebarMenuButton>
+    );
+
+    // Se sidebar está colapsado, envolver com tooltip
+    if (!isSidebarOpen) {
+      return (
+        <SidebarMenuItem key={index}>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                {menuButton}
+              </TooltipTrigger>
+              <TooltipContent side="right" className="ml-2 sidebar-tooltip">
+                <div className="text-sm font-medium">{link.title}</div>
+                {link.description && (
+                  <div className="text-xs text-muted-foreground mt-1">{link.description}</div>
+                )}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </SidebarMenuItem>
+      );
+    }
+
+    return (
+      <SidebarMenuItem key={index}>
+        {menuButton}
+      </SidebarMenuItem>
+    );
+  };
 
   // Se encontrou erro no banco de dados, mostrar alerta
   if (databaseError) {
@@ -295,122 +430,115 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       <div 
         className="min-h-screen flex relative w-full overflow-hidden"
         style={{ 
-          "--current-sidebar-width": isSidebarOpen ? "16rem" : "6rem" 
+          "--current-sidebar-width": isSidebarOpen ? "16rem" : "4rem" 
         } as React.CSSProperties}
       >
+        {/* Botão de expandir/recolher FORA do sidebar */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          aria-label={isSidebarOpen ? "Recolher sidebar" : "Expandir sidebar"}
+          title={isSidebarOpen ? "Recolher sidebar" : "Expandir sidebar"}
+          style={{
+            position: 'fixed',
+            top: '1rem',
+            left: 'var(--current-sidebar-width)',
+            zIndex: 999,
+          }}
+          className="border-0 shadow-none hover:bg-accent/50 focus:outline-none focus:ring-0"
+        >
+          {isSidebarOpen ? (
+            <ChevronsLeft className="h-5 w-5 text-muted-foreground hover:text-foreground transition-colors" />
+          ) : (
+            <ChevronRight className="h-5 w-5 text-muted-foreground hover:text-foreground transition-colors" />
+          )}
+        </Button>
+
         {/* Desktop Sidebar */}
         <aside
           className={cn(
-            "hidden md:block border-r transition-all duration-300 ease-in-out fixed top-0 h-full z-10",
-            isSidebarOpen ? "w-64" : "w-24"
+            "hidden md:block border-r bg-sidebar backdrop-blur supports-[backdrop-filter]:bg-sidebar/60 transition-all duration-300 ease-in-out fixed top-0 h-full z-10 shadow-sm sidebar-glass",
+            isSidebarOpen ? "w-64" : "w-16"
           )}
         >
           {/* Sidebar Header */}
-          <div className="p-4 flex items-center justify-between border-b h-16">
-            <div className={cn("flex items-center", !isSidebarOpen && "justify-center w-full")}>
+          <div className="p-4 flex items-center justify-between border-b h-16 bg-sidebar user-section relative">
+            <div className={cn("flex items-center logo-transition", !isSidebarOpen && "justify-center w-full")}>
               {isSidebarOpen ? (
-                <Link to="/admin" className="flex items-center">
+                <Link to="/admin" className="flex items-center transition-opacity hover:opacity-80 logo-transition">
                   <img src={logoHorizontal} alt="Pharma.AI" className="h-10" />
                 </Link>
               ) : (
-                <Link to="/admin">
-                  <img src={logoIcon} alt="Logo" className="h-12 w-12 object-contain" />
+                <Link to="/admin" className="transition-transform hover:scale-105 logo-transition">
+                  <img src={logoIcon} alt="Logo" className="h-10 w-10 object-contain" />
                 </Link>
               )}
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className={cn("", !isSidebarOpen && "hidden")}
-            >
-              <ChevronsLeft className="h-5 w-5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className={cn("hidden", !isSidebarOpen && "block w-full")}
-            >
-              <ChevronRight className="h-5 w-5" />
-            </Button>
           </div>
 
           {/* Navigation Links - VERSÃO DESKTOP */}
-          <nav className="flex-1 overflow-y-auto py-4 h-[calc(100%-8rem)]">
-            <SidebarMenu>
-              {navLinks.map((link, index) => 
-                link.submenu ? (
-                  <SidebarDropdown 
-                    key={index}
-                    icon={link.icon}
-                    label={isSidebarOpen ? link.title : ""}
-                    isActive={link.submenu.some(sublink => location.pathname === sublink.href)}
-                    href={link.href}
-                  >
-                    {link.submenu.map((sublink, subIndex) => (
-                      <SidebarMenuSubButton
-                        key={subIndex}
-                        asChild
-                        isActive={location.pathname === sublink.href}
-                      >
-                        <Link to={sublink.href}>{sublink.title}</Link>
-                      </SidebarMenuSubButton>
-                    ))}
-                  </SidebarDropdown>
-                ) : (
-                  <SidebarMenuItem key={index}>
-                    <SidebarMenuButton 
-                      asChild
-                      isActive={location.pathname === link.href}
-                    >
-                      <Link to={link.href}>
-                        {link.icon}
-                        {isSidebarOpen && <span>{link.title}</span>}
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                )
-              )}
+          <nav 
+            className="flex-1 overflow-y-auto py-4 h-[calc(100%-8rem)] scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent"
+            role="navigation"
+            aria-label="Menu principal"
+          >
+            <SidebarMenu className="px-2 space-y-1">
+              {navLinks.map((link, index) => renderMenuItemWithTooltip(link, index))}
             </SidebarMenu>
           </nav>
 
+          {/* Separator */}
+          <div className="sidebar-separator h-px mx-4"></div>
+
           {/* User Section */}
-          <div className="border-t p-4 absolute bottom-0 w-full">
+          <div className="border-t p-4 absolute bottom-0 w-full bg-sidebar user-section">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="w-full flex items-center justify-start gap-2 px-2">
-                  <Avatar className="h-7 w-7">
+                <Button 
+                  variant="ghost" 
+                  className={cn(
+                    "w-full flex items-center gap-2 px-2 py-2 hover:bg-sidebar-accent transition-colors rounded-md sidebar-item-hover",
+                    !isSidebarOpen && "justify-center px-0"
+                  )}
+                  aria-label="Menu do usuário"
+                >
+                  <Avatar className="h-8 w-8 border-2 border-sidebar-border shadow-sm">
                     <AvatarImage src="/avatar-placeholder.png" alt={usuario?.usuario?.nome} />
-                    <AvatarFallback>{usuario?.usuario?.nome?.charAt(0)}</AvatarFallback>
+                    <AvatarFallback className="text-sm font-medium">
+                      {usuario?.usuario?.nome?.charAt(0)}
+                    </AvatarFallback>
                   </Avatar>
                   {isSidebarOpen && (
-                    <div className="flex flex-col items-start text-left">
-                      <span className="text-sm font-medium truncate max-w-[150px]">
+                    <div className="flex flex-col items-start text-left flex-1 min-w-0">
+                      <span className="text-sm font-medium truncate max-w-full">
                         {usuario?.usuario?.nome}
                       </span>
-                      <span className="text-xs text-gray-500 truncate max-w-[150px]">
+                      <span className="text-xs text-muted-foreground truncate max-w-full">
                         {usuario?.usuario?.perfil?.nome}
                       </span>
                     </div>
                   )}
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuContent align="end" className="w-56" sideOffset={8}>
                 <DropdownMenuItem asChild>
-                  <Link to="/admin/perfil" className="flex items-center gap-2">
+                  <Link to="/admin/perfil" className="flex items-center gap-2 cursor-pointer sidebar-item-hover">
                     <User className="h-4 w-4" />
                     <span>Meu Perfil</span>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link to="/admin/configuracoes" className="flex items-center gap-2">
+                  <Link to="/admin/configuracoes" className="flex items-center gap-2 cursor-pointer sidebar-item-hover">
                     <Settings className="h-4 w-4" />
                     <span>Configurações</span>
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout} className="flex items-center gap-2 text-red-500">
+                <DropdownMenuSeparator className="sidebar-separator" />
+                <DropdownMenuItem 
+                  onClick={handleLogout} 
+                  className="flex items-center gap-2 text-red-600 focus:text-red-600 cursor-pointer sidebar-item-hover"
+                >
                   <LogOut className="h-4 w-4" />
                   <span>Sair</span>
                 </DropdownMenuItem>
@@ -421,14 +549,18 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
         {/* Mobile Sidebar */}
         <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-          <SheetContent side="left" className="w-[300px] sm:max-w-sm p-0">
-            <SheetHeader className="p-4 border-b">
+          <SheetContent side="left" className="w-[300px] sm:max-w-sm p-0 bg-sidebar mobile-sidebar">
+            <SheetHeader className="p-4 border-b bg-sidebar">
               <div className="flex items-center">
-                <img src={logoHorizontal} alt="Pharma.AI" className="h-10" />
+                <img src={logoHorizontal} alt="Pharma.AI" className="h-10 logo-transition" />
               </div>
             </SheetHeader>
-            <nav className="flex-1 overflow-y-auto py-4">
-              <SidebarMenu>
+            <nav 
+              className="flex-1 overflow-y-auto py-4 scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent"
+              role="navigation"
+              aria-label="Menu principal móvel"
+            >
+              <SidebarMenu className="px-4 space-y-1">
                 {navLinks.map((link, index) => 
                   link.submenu ? (
                     <SidebarDropdown 
@@ -437,6 +569,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                       label={link.title}
                       isActive={link.submenu.some(sublink => location.pathname === sublink.href)}
                       href={link.href}
+                      className="sidebar-item"
                     >
                       {link.submenu.map((sublink, subIndex) => (
                         <SidebarMenuSubButton
@@ -444,8 +577,16 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                           asChild
                           isActive={location.pathname === sublink.href}
                           onClick={() => setIsMobileMenuOpen(false)}
+                          className="sidebar-item sidebar-item-hover"
                         >
-                          <Link to={sublink.href}>{sublink.title}</Link>
+                          <Link to={sublink.href} title={sublink.description}>
+                            {sublink.title}
+                            {sublink.badge && (
+                              <span className="ml-auto text-xs bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full sidebar-badge">
+                                {sublink.badge}
+                              </span>
+                            )}
+                          </Link>
                         </SidebarMenuSubButton>
                       ))}
                     </SidebarDropdown>
@@ -455,10 +596,17 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                         asChild
                         isActive={location.pathname === link.href}
                         onClick={() => setIsMobileMenuOpen(false)}
+                        className="sidebar-item sidebar-item-hover sidebar-menu-button"
+                        aria-current={location.pathname === link.href ? "page" : undefined}
                       >
-                        <Link to={link.href}>
-                          {link.icon}
-                          <span>{link.title}</span>
+                        <Link to={link.href} className="flex items-center gap-3" title={link.description}>
+                          <span className="flex-shrink-0">{link.icon}</span>
+                          <span className="flex-1 truncate">{link.title}</span>
+                          {link.badge && (
+                            <span className="text-xs bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full sidebar-badge">
+                              {link.badge}
+                            </span>
+                          )}
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
@@ -466,31 +614,51 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 )}
               </SidebarMenu>
             </nav>
-            <div className="border-t p-4">
-              <div className="flex items-center gap-2 mb-4">
-                <Avatar className="h-9 w-9">
+            
+            {/* Separator */}
+            <div className="sidebar-separator h-px mx-4"></div>
+            
+            {/* User Section Mobile */}
+            <div className="border-t p-4 bg-sidebar user-section">
+              <div className="flex items-center gap-3 mb-4 p-2 rounded-lg bg-sidebar-accent/50">
+                <Avatar className="h-10 w-10 border-2 border-sidebar-border shadow-sm">
                   <AvatarImage src="/avatar-placeholder.png" alt={usuario?.usuario?.nome} />
-                  <AvatarFallback>{usuario?.usuario?.nome?.charAt(0)}</AvatarFallback>
+                  <AvatarFallback className="text-sm font-medium">
+                    {usuario?.usuario?.nome?.charAt(0)}
+                  </AvatarFallback>
                 </Avatar>
-                <div className="flex flex-col">
-                  <span className="text-sm font-medium">{usuario?.usuario?.nome}</span>
-                  <span className="text-xs text-gray-500">{usuario?.usuario?.perfil?.nome}</span>
+                <div className="flex flex-col flex-1 min-w-0">
+                  <span className="text-sm font-medium truncate">{usuario?.usuario?.nome}</span>
+                  <span className="text-xs text-muted-foreground truncate">{usuario?.usuario?.perfil?.nome}</span>
                 </div>
               </div>
+              
               <div className="flex flex-col gap-2">
-                <Button variant="outline" asChild className="justify-start">
-                  <Link to="/admin/perfil" className="flex items-center gap-2" onClick={() => setIsMobileMenuOpen(false)}>
+                <Button variant="outline" asChild className="justify-start sidebar-item-hover">
+                  <Link 
+                    to="/admin/perfil" 
+                    className="flex items-center gap-2" 
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
                     <User className="h-4 w-4" />
                     <span>Meu Perfil</span>
                   </Link>
                 </Button>
-                <Button variant="outline" asChild className="justify-start">
-                  <Link to="/admin/configuracoes" className="flex items-center gap-2" onClick={() => setIsMobileMenuOpen(false)}>
+                <Button variant="outline" asChild className="justify-start sidebar-item-hover">
+                  <Link 
+                    to="/admin/configuracoes" 
+                    className="flex items-center gap-2" 
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
                     <Settings className="h-4 w-4" />
                     <span>Configurações</span>
                   </Link>
                 </Button>
-                <Button variant="destructive" onClick={handleLogout} className="justify-start">
+                <Button 
+                  variant="destructive" 
+                  onClick={handleLogout} 
+                  className="justify-start sidebar-item-hover"
+                >
                   <LogOut className="h-4 w-4 mr-2" />
                   <span>Sair</span>
                 </Button>
@@ -502,10 +670,10 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         {/* Main Content */}
         <div 
           ref={mainContentRef}
-          className="flex-1 flex flex-col h-screen"
+          className="flex-1 flex flex-col h-screen transition-all duration-300 ease-in-out"
           style={{ 
-            marginLeft: "var(--current-sidebar-width)",
-            width: "calc(100% - var(--current-sidebar-width))"
+            marginLeft: !isMobile ? "var(--current-sidebar-width)" : "0",
+            width: !isMobile ? "calc(100% - var(--current-sidebar-width))" : "100%"
           }}
         >
           {/* Top Bar */}
@@ -516,7 +684,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           />
           
           {/* Main Content Area - Única área com scroll */}
-          <main className="flex-1 w-full overflow-y-auto">
+          <main className="flex-1 w-full overflow-y-auto bg-background/50">
             <div className="w-full max-w-none py-6 px-4 md:px-6 pb-16">
               {children}
             </div>

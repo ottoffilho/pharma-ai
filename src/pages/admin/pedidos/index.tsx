@@ -23,6 +23,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import AdminLayout from '@/components/layouts/AdminLayout';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 interface PedidoFeatureCard {
   title: string;
@@ -44,10 +46,7 @@ const pedidoFeatures: PedidoFeatureCard[] = [
     description: 'Visualize todos os pedidos da farmácia, com filtros avançados e acompanhamento de status.',
     icon: <ClipboardList className="h-6 w-6" />,
     href: '/admin/pedidos/listar',
-    stats: [
-      { label: 'Pedidos ativos', value: '86', trend: 'up' },
-      { label: 'Tempo médio', value: '2.3 dias', trend: 'down' }
-    ],
+    stats: [],
     status: 'ativo',
     gradient: 'from-emerald-500 to-teal-500'
   },
@@ -57,8 +56,8 @@ const pedidoFeatures: PedidoFeatureCard[] = [
     icon: <FileSearch className="h-6 w-6" />,
     href: '/admin/pedidos/nova-receita',
     stats: [
-      { label: 'Precisão da IA', value: '98.5%', trend: 'up' },
-      { label: 'Tempo de processamento', value: '3.2 seg', trend: 'down' }
+      { label: 'Sistema IA', value: 'Ativo', trend: 'stable' },
+      { label: 'Status', value: 'Disponível', trend: 'stable' }
     ],
     status: 'ativo',
     gradient: 'from-blue-500 to-indigo-500'
@@ -68,10 +67,7 @@ const pedidoFeatures: PedidoFeatureCard[] = [
     description: 'Acompanhe o status de produção dos pedidos em tempo real e gerencie o fluxo de trabalho.',
     icon: <Package className="h-6 w-6" />,
     href: '/admin/producao',
-    stats: [
-      { label: 'Em produção', value: '42', trend: 'up' },
-      { label: 'Concluídos hoje', value: '23', trend: 'up' }
-    ],
+    stats: [],
     status: 'ativo',
     gradient: 'from-purple-500 to-pink-500'
   },
@@ -81,51 +77,179 @@ const pedidoFeatures: PedidoFeatureCard[] = [
     icon: <Truck className="h-6 w-6" />,
     href: '/admin/pedidos/entregas',
     stats: [
-      { label: 'Aguardando entrega', value: '18', trend: 'down' },
-      { label: 'Entregues (mês)', value: '256', trend: 'up' }
+      { label: 'Funcionalidade', value: 'Em breve', trend: 'stable' },
+      { label: 'Status', value: 'Desenvolvimento', trend: 'stable' }
     ],
     status: 'em-breve',
     gradient: 'from-orange-500 to-red-500'
   }
 ];
 
-// Métricas de pedidos
-const pedidoMetrics = [
-  {
-    label: 'Pedidos Pendentes',
-    value: '32',
-    change: '+5',
-    trend: 'up' as const,
-    icon: AlertCircle,
-    color: 'text-amber-600'
-  },
-  {
-    label: 'Receitas Processadas',
-    value: '478',
-    change: '+12.3%',
-    trend: 'up' as const,
-    icon: Receipt,
-    color: 'text-blue-600'
-  },
-  {
-    label: 'Faturamento do Mês',
-    value: 'R$ 63.459,00',
-    change: '+8.2%',
-    trend: 'up' as const,
-    icon: CreditCard,
-    color: 'text-green-600'
-  },
-  {
-    label: 'Tempo Médio de Entrega',
-    value: '2.4 dias',
-    change: '-0.3 dias',
-    trend: 'down' as const,
-    icon: Calendar,
-    color: 'text-purple-600'
-  }
-];
-
 export default function PedidosOverview() {
+  // Query para buscar dados reais de pedidos
+  const { data: pedidosCount, isLoading: pedidosLoading } = useQuery({
+    queryKey: ['pedidosCount'],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('pedidos')
+        .select('*', { count: 'exact', head: true });
+      
+      if (error) throw new Error(error.message);
+      return count || 0;
+    }
+  });
+
+  // Query para buscar dados reais de receitas processadas
+  const { data: receitasCount, isLoading: receitasLoading } = useQuery({
+    queryKey: ['receitasProcessadasCount'],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('receitas_processadas')
+        .select('*', { count: 'exact', head: true });
+      
+      if (error) throw new Error(error.message);
+      return count || 0;
+    }
+  });
+
+  // Query para buscar principais clientes
+  const { data: principaisClientes, isLoading: clientesLoading } = useQuery({
+    queryKey: ['principaisClientes'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('pedidos')
+        .select(`
+          cliente_nome,
+          count(*) as total_pedidos
+        `)
+        .not('cliente_nome', 'is', null)
+        .group('cliente_nome')
+        .order('count', { ascending: false })
+        .limit(3);
+      
+      if (error) throw new Error(error.message);
+      return data || [];
+    }
+  });
+
+  // Query para buscar manipulações populares
+  const { data: manipulacoesPopulares, isLoading: manipulacoesLoading } = useQuery({
+    queryKey: ['manipulacoesPopulares'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('receitas_processadas')
+        .select(`
+          tipo_manipulacao,
+          count(*) as total
+        `)
+        .not('tipo_manipulacao', 'is', null)
+        .group('tipo_manipulacao')
+        .order('count', { ascending: false })
+        .limit(3);
+      
+      if (error) throw new Error(error.message);
+      
+      // Calcular percentuais
+      const total = data?.reduce((sum, item) => sum + item.total, 0) || 1;
+      return data?.map(item => ({
+        name: item.tipo_manipulacao,
+        percent: Math.round((item.total / total) * 100)
+      })) || [];
+    }
+  });
+
+  // Query para buscar status dos pedidos
+  const { data: statusPedidos, isLoading: statusLoading } = useQuery({
+    queryKey: ['statusPedidos'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('pedidos')
+        .select(`
+          status,
+          count(*) as total
+        `)
+        .group('status')
+        .order('count', { ascending: false });
+      
+      if (error) throw new Error(error.message);
+      
+      // Mapear status para nomes mais amigáveis
+      const statusMap: Record<string, { label: string, color: string }> = {
+        'em_producao': { label: 'Em Produção', color: 'text-blue-500 bg-blue-100' },
+        'pronto_entrega': { label: 'Pronto para Entrega', color: 'text-green-500 bg-green-100' },
+        'aguardando_aprovacao': { label: 'Aguardando Aprovação', color: 'text-amber-500 bg-amber-100' },
+        'cancelado': { label: 'Cancelados', color: 'text-red-500 bg-red-100' },
+        'pendente': { label: 'Pendente', color: 'text-orange-500 bg-orange-100' },
+        'finalizado': { label: 'Finalizado', color: 'text-green-600 bg-green-100' }
+      };
+      
+      return data?.map(item => ({
+        status: statusMap[item.status]?.label || item.status,
+        count: item.total,
+        color: statusMap[item.status]?.color || 'text-gray-500 bg-gray-100'
+      })) || [];
+    }
+  });
+
+  // Métricas de pedidos com dados reais
+  const pedidoMetrics = [
+    {
+      label: 'Total de Pedidos',
+      value: pedidosLoading ? 'Carregando...' : pedidosCount?.toString() || '0',
+      change: '',
+      trend: 'stable' as const,
+      icon: AlertCircle,
+      color: 'text-blue-600'
+    },
+    {
+      label: 'Receitas Processadas',
+      value: receitasLoading ? 'Carregando...' : receitasCount?.toString() || '0',
+      change: '',
+      trend: 'stable' as const,
+      icon: Receipt,
+      color: 'text-green-600'
+    },
+    {
+      label: 'Sistema IA',
+      value: 'Operacional',
+      change: 'Disponível',
+      trend: 'stable' as const,
+      icon: FileSearch,
+      color: 'text-purple-600'
+    },
+    {
+      label: 'Status Sistema',
+      value: 'Online',
+      change: 'Ativo',
+      trend: 'stable' as const,
+      icon: Calendar,
+      color: 'text-emerald-600'
+    }
+  ];
+
+  // Atualizar stats dos features com dados reais quando disponíveis
+  const updatedPedidoFeatures = pedidoFeatures.map(feature => {
+    if (feature.title === 'Listagem de Pedidos') {
+      return {
+        ...feature,
+        stats: [
+          { label: 'Total de pedidos', value: pedidosLoading ? '...' : pedidosCount?.toString() || '0', trend: 'stable' },
+          { label: 'Status', value: 'Ativo', trend: 'stable' }
+        ]
+      };
+    }
+    if (feature.title === 'Acompanhamento de Produção') {
+      return {
+        ...feature,
+        stats: [
+          { label: 'Módulo', value: 'Disponível', trend: 'stable' },
+          { label: 'Funcionalidades', value: 'Ativas', trend: 'stable' }
+        ]
+      };
+    }
+    return feature;
+  });
+
   return (
     <AdminLayout>
       <div>
@@ -190,7 +314,7 @@ export default function PedidosOverview() {
         <div className="px-6 pb-16">
           <div className="mx-auto max-w-7xl">
             <div className="grid gap-6 md:grid-cols-2">
-              {pedidoFeatures.map((feature, index) => (
+              {updatedPedidoFeatures.map((feature, index) => (
                 <Card 
                   key={index} 
                   className="group relative overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
@@ -275,17 +399,33 @@ export default function PedidosOverview() {
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-4">
-                        {['Ana Silva', 'João Santos', 'Maria Oliveira'].map((name, i) => (
-                          <div key={i} className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <User className="h-4 w-4 text-emerald-500" />
-                              <span className="text-sm font-medium">{name}</span>
+                        {clientesLoading ? (
+                          Array.from({ length: 3 }).map((_, i) => (
+                            <div key={i} className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <User className="h-4 w-4 text-emerald-500" />
+                                <div className="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
+                              </div>
+                              <div className="h-4 w-16 bg-gray-200 rounded animate-pulse"></div>
                             </div>
-                            <Badge variant="secondary" className="text-xs">
-                              {12 - i * 3} pedidos
-                            </Badge>
+                          ))
+                        ) : principaisClientes && principaisClientes.length > 0 ? (
+                          principaisClientes.map((cliente, i) => (
+                            <div key={i} className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <User className="h-4 w-4 text-emerald-500" />
+                                <span className="text-sm font-medium">{cliente.cliente_nome}</span>
+                              </div>
+                              <Badge variant="secondary" className="text-xs">
+                                {cliente.total_pedidos} pedidos
+                              </Badge>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="text-center py-4">
+                            <p className="text-sm text-muted-foreground">Nenhum dado disponível</p>
                           </div>
-                        ))}
+                        )}
                       </div>
                     </CardContent>
                   </Card>
@@ -296,19 +436,31 @@ export default function PedidosOverview() {
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-3">
-                        {[
-                          { name: 'Fórmula Emagrecedora', percent: 32 },
-                          { name: 'Cápsulas Vitamínicas', percent: 28 },
-                          { name: 'Cremes Dermatológicos', percent: 25 }
-                        ].map((item, i) => (
-                          <div key={i} className="space-y-1">
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm">{item.name}</span>
-                              <span className="text-xs font-medium">{item.percent}%</span>
+                        {manipulacoesLoading ? (
+                          Array.from({ length: 3 }).map((_, i) => (
+                            <div key={i} className="space-y-1">
+                              <div className="flex items-center justify-between">
+                                <div className="h-4 w-32 bg-gray-200 rounded animate-pulse"></div>
+                                <div className="h-4 w-8 bg-gray-200 rounded animate-pulse"></div>
+                              </div>
+                              <div className="h-2 w-full bg-gray-200 rounded animate-pulse"></div>
                             </div>
-                            <Progress value={item.percent} className="h-1.5" />
+                          ))
+                        ) : manipulacoesPopulares && manipulacoesPopulares.length > 0 ? (
+                          manipulacoesPopulares.map((item, i) => (
+                            <div key={i} className="space-y-1">
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm">{item.name}</span>
+                                <span className="text-xs font-medium">{item.percent}%</span>
+                              </div>
+                              <Progress value={item.percent} className="h-1.5" />
+                            </div>
+                          ))
+                        ) : (
+                          <div className="text-center py-4">
+                            <p className="text-sm text-muted-foreground">Nenhum dado disponível</p>
                           </div>
-                        ))}
+                        )}
                       </div>
                     </CardContent>
                   </Card>
@@ -319,19 +471,27 @@ export default function PedidosOverview() {
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-3">
-                        {[
-                          { status: 'Em Produção', count: 42, color: 'text-blue-500 bg-blue-100' },
-                          { status: 'Pronto para Entrega', count: 18, color: 'text-green-500 bg-green-100' },
-                          { status: 'Aguardando Aprovação', count: 7, color: 'text-amber-500 bg-amber-100' },
-                          { status: 'Cancelados', count: 3, color: 'text-red-500 bg-red-100' }
-                        ].map((item, i) => (
-                          <div key={i} className="flex items-center justify-between">
-                            <span className="text-sm">{item.status}</span>
-                            <Badge className={`${item.color} border-0`}>
-                              {item.count}
-                            </Badge>
+                        {statusLoading ? (
+                          Array.from({ length: 4 }).map((_, i) => (
+                            <div key={i} className="flex items-center justify-between">
+                              <div className="h-4 w-32 bg-gray-200 rounded animate-pulse"></div>
+                              <div className="h-4 w-8 bg-gray-200 rounded animate-pulse"></div>
+                            </div>
+                          ))
+                        ) : statusPedidos && statusPedidos.length > 0 ? (
+                          statusPedidos.map((item, i) => (
+                            <div key={i} className="flex items-center justify-between">
+                              <span className="text-sm">{item.status}</span>
+                              <Badge className={`${item.color} border-0`}>
+                                {item.count}
+                              </Badge>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="text-center py-4">
+                            <p className="text-sm text-muted-foreground">Nenhum dado disponível</p>
                           </div>
-                        ))}
+                        )}
                       </div>
                     </CardContent>
                   </Card>

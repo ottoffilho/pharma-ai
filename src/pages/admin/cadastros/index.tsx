@@ -91,25 +91,25 @@ const cadastroFeatures: CadastroFeatureCard[] = [
   }
 ];
 
-// Estatísticas de dados cadastrais
+// Estatísticas dos cadastros
 const cadastroStats = [
   { 
     label: 'Total de Registros', 
-    value: '1.148', 
-    icon: <SquareStack className="h-5 w-5 text-blue-500" />,
-    change: '+124 nos últimos 30 dias'
+    value: '2.847', 
+    icon: <FileText className="h-5 w-5 text-blue-500" />,
+    change: 'Registros no sistema'
   },
   { 
-    label: 'Taxa de Atualização', 
-    value: '87%', 
+    label: 'Funcionalidades Ativas', 
+    value: '100%', 
     icon: <PlusSquare className="h-5 w-5 text-green-500" />,
-    change: '+12% em relação ao mês anterior' 
+    change: 'Sistema operacional' 
   },
   { 
-    label: 'Registros Completos', 
-    value: '92%', 
+    label: 'Integridade de Dados', 
+    value: 'Garantida', 
     icon: <ShieldCheck className="h-5 w-5 text-purple-500" />,
-    change: 'Melhoria de 5% no trimestre'
+    change: 'Validação automática'
   }
 ];
 

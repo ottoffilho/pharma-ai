@@ -7,29 +7,21 @@ const TestimonialsSection = () => {
     <section id="testimonials" className="py-16 bg-gray-100">
       <div className="container mx-auto px-6">
         <h2 className="text-3xl font-bold text-center text-gray-800 mb-12">
-          Depoimentos de farmácias que já transformaram sua operação com o Pharma.AI.
+          Depoimentos dos nossos clientes
         </h2>
-        <div className="grid md:grid-cols-3 gap-8">
-          <div className="bg-white p-6 rounded-lg shadow-lg">
-            <p className="text-gray-600 italic mb-4">
-              "Espaço reservado para futuros depoimentos de clientes satisfeitos com a plataforma Pharma.AI."
+        
+        {/* Seção temporária enquanto coletamos depoimentos reais */}
+        <div className="text-center max-w-2xl mx-auto">
+          <div className="bg-white p-8 rounded-lg shadow-lg">
+            <div className="text-6xl text-gray-300 mb-4">💬</div>
+            <p className="text-gray-600 text-lg mb-4">
+              Estamos coletando depoimentos de farmácias que estão transformando 
+              suas operações com o Pharma.AI.
             </p>
-            <p className="text-gray-800 font-semibold">Nome do Cliente 1</p>
-            <p className="text-gray-500 text-sm">Cargo, Nome da Farmácia 1</p>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow-lg">
-            <p className="text-gray-600 italic mb-4">
-              "Espaço reservado para futuros depoimentos de clientes satisfeitos com a plataforma Pharma.AI."
+            <p className="text-gray-500">
+              Em breve, você verá aqui relatos reais de como nossa plataforma 
+              está ajudando farmácias a otimizar processos e melhorar o atendimento.
             </p>
-            <p className="text-gray-800 font-semibold">Nome do Cliente 2</p>
-            <p className="text-gray-500 text-sm">Cargo, Nome da Farmácia 2</p>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow-lg">
-            <p className="text-gray-600 italic mb-4">
-              "Espaço reservado para futuros depoimentos de clientes satisfeitos com a plataforma Pharma.AI."
-            </p>
-            <p className="text-gray-800 font-semibold">Nome do Cliente 3</p>
-            <p className="text-gray-500 text-sm">Cargo, Nome da Farmácia 3</p>
           </div>
         </div>
       </div>

@@ -62,30 +62,22 @@ interface ProcessingResult {
   error?: string;
 }
 
-// Mock data to simulate IA response
+// Mock response data for IA processing result (for testing only)
 const mockIAResponse: IAExtractedData = {
   medications: [
     {
-      name: "Arnica Montana",
-      dinamization: "30CH",
-      form: "Glóbulos",
-      quantity: 10,
-      unit: "unidades",
-      dosage_instructions: "5 glóbulos, 3x ao dia"
-    },
-    {
-      name: "Belladonna",
+      name: "Medicamento Exemplo",
       dinamization: "6CH",
       form: "Glóbulos",
-      quantity: 5,
-      unit: "unidades",
-      dosage_instructions: "3 glóbulos antes de dormir"
+      quantity: 1,
+      unit: "frasco",
+      dosage_instructions: "Conforme orientação médica"
     }
   ],
-  patient_name: "Maria Silva",
-  patient_dob: "1985-06-15",
-  prescriber_name: "Dr. João Santos",
-  prescriber_identifier: "CRM 12345-SP"
+  patient_name: "",
+  patient_dob: "",
+  prescriber_name: "",
+  prescriber_identifier: ""
 };
 
 // Mock functions for services

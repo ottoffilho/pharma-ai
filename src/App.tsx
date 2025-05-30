@@ -60,14 +60,12 @@ import { ChatbotProvider } from "@/contexts/ChatbotContext";
 import { useLocation } from "react-router-dom";
 import { AuthProvider } from '@/modules/usuarios-permissoes/components/AuthProvider';
 import { AuthSimpleProvider } from '@/modules/usuarios-permissoes/components/AuthSimpleProvider';
-import DebugAuth from './components/DebugAuth';
 import PrivateRouteDebug from './components/Auth/PrivateRouteDebug';
 import PrivateRouteSimple from './components/Auth/PrivateRouteSimple';
 import ForceAuth from './components/Auth/ForceAuth';
 import { DashboardRouter } from '@/modules/usuarios-permissoes/components/DashboardRouter';
 import { ProtectedComponent } from '@/modules/usuarios-permissoes/components/ProtectedComponent';
 import { ModuloSistema, AcaoPermissao } from '@/modules/usuarios-permissoes/types';
-import DebugTest from './pages/debug-test';
 import EsqueciSenha from './pages/EsqueciSenha';
 import RedefinirSenha from './pages/RedefinirSenha';
 import PrimeiroAcesso from './pages/PrimeiroAcesso';
@@ -291,12 +289,8 @@ const App = (): JSX.Element => {
                       </ThemeProvider>
                     }
                   />
-                  <Route path="/debug" element={<DebugTest />} />
-                  <Route path="/debug-auth" element={
-                    <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange>
-                      <DebugAuth />
-                    </ThemeProvider>
-                  } />
+                  <Route path="/debug" element={<Navigate to="/" replace />} />
+                  <Route path="/debug-auth" element={<Navigate to="/" replace />} />
                   
                   {/* Rota de debug para acessar admin sem autenticação */}
                   <Route element={<PrivateRouteDebug />}>

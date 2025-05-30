@@ -27,6 +27,7 @@ import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthSimple } from '@/modules/usuarios-permissoes/hooks/useAuthSimple';
 import AdminLayout from '@/components/layouts/AdminLayout';
+import { supabase } from '@/lib/supabase';
 
 interface VendaPendente {
   id: string;
@@ -72,63 +73,50 @@ export default function FechamentoVendas() {
   }, []);
 
   const carregarVendasPendentes = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
+      // Buscar vendas pendentes reais do banco de dados
+      const { data: vendas, error } = await supabase
+        .from('vendas')
+        .select(`
+          id,
+          numero_venda,
+          data_venda,
+          cliente_nome,
+          cliente_documento,
+          total,
+          status,
+          status_pagamento,
+          usuario_nome,
+          vendas_itens (
+            produto_nome,
+            quantidade,
+            preco_unitario,
+            preco_total
+          )
+        `)
+        .in('status', ['rascunho', 'aberta'])
+        .order('data_venda', { ascending: false });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      // Mapear dados para o formato esperado
+      const vendasFormatadas: VendaPendente[] = (vendas || []).map(venda => ({
+        id: venda.id,
+        numero_venda: venda.numero_venda || `VEN${venda.id.toString().padStart(6, '0')}`,
+        data_venda: venda.data_venda || new Date().toISOString(),
+        cliente_nome: venda.cliente_nome,
+        cliente_documento: venda.cliente_documento,
+        total: venda.total || 0,
+        status: venda.status as 'rascunho' | 'aberta',
+        status_pagamento: venda.status_pagamento as 'pendente' | 'parcial',
+        usuario_nome: venda.usuario_nome || 'Usuário Sistema',
+        itens: venda.vendas_itens || []
+      }));
       
-      // Mock de dados para demonstração
-      const mockVendas: VendaPendente[] = [
-        {
-          id: '1',
-          numero_venda: 'VEN000123',
-          data_venda: new Date().toISOString(),
-          cliente_nome: 'João Silva',
-          cliente_documento: '123.456.789-00',
-          total: 85.50,
-          status: 'rascunho',
-          status_pagamento: 'pendente',
-          usuario_nome: 'Maria Santos',
-          itens: [
-            {
-              produto_nome: 'Dipirona 500mg - 20 comp',
-              quantidade: 2,
-              preco_unitario: 12.50,
-              preco_total: 25.00
-            },
-            {
-              produto_nome: 'Vitamina C 1g - 30 comp',
-              quantidade: 1,
-              preco_unitario: 60.50,
-              preco_total: 60.50
-            }
-          ]
-        },
-        {
-          id: '2',
-          numero_venda: 'VEN000124',
-          data_venda: new Date().toISOString(),
-          cliente_nome: 'Ana Costa',
-          total: 125.80,
-          status: 'aberta',
-          status_pagamento: 'parcial',
-          usuario_nome: 'Carlos Oliveira',
-          itens: [
-            {
-              produto_nome: 'Omeprazol 20mg - 28 caps',
-              quantidade: 1,
-              preco_unitario: 25.80,
-              preco_total: 25.80
-            },
-            {
-              produto_nome: 'Complexo B - 60 comp',
-              quantidade: 2,
-              preco_unitario: 50.00,
-              preco_total: 100.00
-            }
-          ]
-        }
-      ];
-      
-      setVendasPendentes(mockVendas);
+      setVendasPendentes(vendasFormatadas);
     } catch (error) {
       console.error('Erro ao carregar vendas pendentes:', error);
       toast({

@@ -47,11 +47,13 @@ function splitTextIntoChunks(text: string, maxChunkSize: number = 1000): string[
 
 // Função para gerar embeddings (usando OpenAI como exemplo)
 async function generateEmbedding(text: string): Promise<number[]> {
-  // Por enquanto, vamos simular um embedding
-  // Em produção, usar OpenAI API ou outro serviço
+  // ATENÇÃO: Esta é uma implementação simulada para desenvolvimento
+  // Em produção, deve ser substituída por uma chamada real para OpenAI API ou outro serviço
   console.log(`[SIMULADO] Gerando embedding para texto de ${text.length} caracteres`);
+  console.warn('⚠️  AVISO: Usando embeddings simulados. Substituir por implementação real em produção.');
   
-  // Retornar embedding fake de 1536 dimensões (tamanho OpenAI ada-002)
+  // Retornar embedding simulado de 1536 dimensões (tamanho OpenAI ada-002)
+  // TODO: Implementar chamada real para OpenAI API ou outro serviço de embeddings
   return Array.from({ length: 1536 }, () => Math.random() - 0.5);
 }
 

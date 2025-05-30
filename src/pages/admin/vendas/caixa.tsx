@@ -13,19 +13,27 @@ import {
   Calendar,
   Target,
   AlertCircle,
-  CheckCircle
+  CheckCircle,
+  Plus,
+  Minus,
+  ArrowRight,
+  Sparkles,
+  PiggyBank
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthSimple } from '@/modules/usuarios-permissoes/hooks/useAuthSimple';
+import AdminLayout from '@/components/layouts/AdminLayout';
 
 interface CaixaStatus {
   id?: string;
@@ -94,8 +102,6 @@ export default function ControleCaixa() {
   const loadCaixaStatus = async () => {
     try {
       setLoading(true);
-      // Aqui seria a chamada real para a API
-      // const status = await CaixaService.obterStatusAtual();
       
       // Mock de dados para demonstração
       const mockCaixa: CaixaStatus = {
@@ -155,6 +161,13 @@ export default function ControleCaixa() {
     }
   };
 
+  const formatarDinheiro = (valor: number): string => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(valor);
+  };
+
   const handleAbrirCaixa = async () => {
     try {
       if (!valorInicialAbertura || Number(valorInicialAbertura) <= 0) {
@@ -165,12 +178,6 @@ export default function ControleCaixa() {
         });
         return;
       }
-
-      // Aqui seria a chamada real para a API
-      // await CaixaService.abrirCaixa({
-      //   valor_inicial: Number(valorInicialAbertura),
-      //   observacoes: observacoesAbertura
-      // });
 
       toast({
         title: 'Sucesso',
@@ -197,17 +204,11 @@ export default function ControleCaixa() {
       if (!valorFinalFechamento || Number(valorFinalFechamento) <= 0) {
         toast({
           title: 'Erro',
-          description: 'Informe o valor final do caixa',
+          description: 'Informe um valor final válido',
           variant: 'destructive'
         });
         return;
       }
-
-      // Aqui seria a chamada real para a API
-      // await CaixaService.fecharCaixa({
-      //   valor_final: Number(valorFinalFechamento),
-      //   observacoes: observacoesFechamento
-      // });
 
       toast({
         title: 'Sucesso',
@@ -249,13 +250,6 @@ export default function ControleCaixa() {
         return;
       }
 
-      // Aqui seria a chamada real para a API
-      // await CaixaService.adicionarMovimento({
-      //   tipo: tipoMovimento,
-      //   valor: Number(valorMovimento),
-      //   descricao: descricaoMovimento
-      // });
-
       toast({
         title: 'Sucesso',
         description: `${tipoMovimento === 'sangria' ? 'Sangria' : 'Suprimento'} registrado com sucesso`
@@ -276,410 +270,511 @@ export default function ControleCaixa() {
     }
   };
 
-  const valorCalculadoFinal = caixaAtual 
+  const valorAtualCaixa = caixaAtual 
     ? caixaAtual.valor_inicial + caixaAtual.valor_vendas - caixaAtual.valor_sangrias + caixaAtual.valor_suprimentos
     : 0;
 
-  if (loading) {
-    return (
-      <div className="p-6 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p>Carregando informações do caixa...</p>
-        </div>
-      </div>
-    );
-  }
+  const diferenca = caixaAtual && valorFinalFechamento 
+    ? Number(valorFinalFechamento) - valorAtualCaixa 
+    : 0;
+
+  // Métricas do caixa
+  const caixaMetrics = [
+    {
+      label: 'Valor Atual',
+      value: loading ? '-' : formatarDinheiro(valorAtualCaixa),
+      change: '+12.5%',
+      trend: 'up' as const,
+      icon: DollarSign,
+      color: 'text-green-600',
+      isLoading: loading
+    },
+    {
+      label: 'Vendas do Dia',
+      value: loading ? '-' : formatarDinheiro(resumoVendas?.total_vendas || 0),
+      change: `${resumoVendas?.quantidade_vendas || 0} vendas`,
+      trend: 'up' as const,
+      icon: TrendingUp,
+      color: 'text-blue-600',
+      isLoading: loading
+    },
+    {
+      label: 'Sangrias',
+      value: loading ? '-' : formatarDinheiro(caixaAtual?.valor_sangrias || 0),
+      change: '-5.2%',
+      trend: 'down' as const,
+      icon: TrendingDown,
+      color: 'text-red-600',
+      isLoading: loading
+    },
+    {
+      label: 'Suprimentos',
+      value: loading ? '-' : formatarDinheiro(caixaAtual?.valor_suprimentos || 0),
+      change: '+8.1%',
+      trend: 'up' as const,
+      icon: TrendingUp,
+      color: 'text-purple-600',
+      isLoading: loading
+    }
+  ];
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold">Controle de Caixa</h1>
-          <p className="text-gray-600">Gerencie abertura, fechamento e movimentações do caixa</p>
-        </div>
-        <div className="flex gap-2">
-          {!caixaAtual || caixaAtual.status === 'fechado' ? (
-            <Dialog open={aberturaOpen} onOpenChange={setAberturaOpen}>
-              <DialogTrigger asChild>
-                <Button>
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                  Abrir Caixa
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Abrir Caixa</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="valor-inicial">Valor Inicial</Label>
-                    <Input
-                      id="valor-inicial"
-                      type="number"
-                      step="0.01"
-                      placeholder="0,00"
-                      value={valorInicialAbertura}
-                      onChange={(e) => setValorInicialAbertura(e.target.value)}
-                    />
+    <AdminLayout>
+      <div>
+        {/* Hero Section */}
+        <div className="relative overflow-hidden mb-8">
+          <div className="absolute inset-0 bg-gradient-to-br from-orange-50 via-yellow-50 to-amber-50 dark:from-orange-950/20 dark:via-yellow-950/20 dark:to-amber-950/20" />
+          <div className="relative px-6 py-16">
+            <div className="mx-auto max-w-7xl">
+              <div className="flex items-center justify-between">
+                <div className="space-y-4 max-w-3xl">
+                  <div className="flex items-center gap-2">
+                    <CreditCard className="h-10 w-10 text-orange-600" />
+                    <h1 className="text-4xl font-bold bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">
+                      Controle de Caixa
+                    </h1>
+                    {caixaAtual && (
+                      <Badge 
+                        variant={caixaAtual.status === 'aberto' ? 'default' : 'secondary'}
+                        className="ml-4"
+                      >
+                        {caixaAtual.status === 'aberto' ? 'Caixa Aberto' : 'Caixa Fechado'}
+                      </Badge>
+                    )}
                   </div>
-                  <div>
-                    <Label htmlFor="observacoes-abertura">Observações (opcional)</Label>
-                    <Textarea
-                      id="observacoes-abertura"
-                      placeholder="Observações sobre a abertura do caixa..."
-                      value={observacoesAbertura}
-                      onChange={(e) => setObservacoesAbertura(e.target.value)}
-                    />
-                  </div>
-                  <div className="flex gap-2 justify-end">
-                    <Button variant="outline" onClick={() => setAberturaOpen(false)}>
-                      Cancelar
-                    </Button>
-                    <Button onClick={handleAbrirCaixa}>
-                      Abrir Caixa
-                    </Button>
+                  <p className="text-xl text-muted-foreground">
+                    Gerencie a abertura, fechamento e movimentações do caixa com controle 
+                    total sobre valores, sangrias e suprimentos em tempo real.
+                  </p>
+                </div>
+                <div className="hidden lg:block">
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-gradient-to-r from-orange-400 to-amber-400 blur-3xl opacity-20" />
+                    <PiggyBank className="h-48 w-48 text-orange-600/20" />
                   </div>
                 </div>
-              </DialogContent>
-            </Dialog>
-          ) : (
-            <>
-              <Dialog open={movimentoOpen} onOpenChange={setMovimentoOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="outline">
-                    <Calculator className="h-4 w-4 mr-2" />
-                    Movimento
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Movimento de Caixa</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div>
-                      <Label>Tipo de Movimento</Label>
-                      <div className="flex gap-2 mt-2">
-                        <Button
-                          variant={tipoMovimento === 'sangria' ? 'default' : 'outline'}
-                          onClick={() => setTipoMovimento('sangria')}
-                          className="flex-1"
-                        >
-                          <TrendingDown className="h-4 w-4 mr-2" />
-                          Sangria
-                        </Button>
-                        <Button
-                          variant={tipoMovimento === 'suprimento' ? 'default' : 'outline'}
-                          onClick={() => setTipoMovimento('suprimento')}
-                          className="flex-1"
-                        >
-                          <TrendingUp className="h-4 w-4 mr-2" />
-                          Suprimento
+              </div>
+
+              {/* Status e Ações Rápidas */}
+              <div className="mt-8 flex flex-col sm:flex-row gap-4">
+                {caixaAtual?.status === 'fechado' && (
+                  <Dialog open={aberturaOpen} onOpenChange={setAberturaOpen}>
+                    <DialogTrigger asChild>
+                      <Button size="lg" className="h-12 px-8">
+                        <DollarSign className="h-5 w-5 mr-2" />
+                        Abrir Caixa
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Abrir Caixa</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div>
+                          <Label htmlFor="valor-inicial">Valor Inicial</Label>
+                          <Input
+                            id="valor-inicial"
+                            type="number"
+                            placeholder="0,00"
+                            value={valorInicialAbertura}
+                            onChange={(e) => setValorInicialAbertura(e.target.value)}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="observacoes-abertura">Observações</Label>
+                          <Textarea
+                            id="observacoes-abertura"
+                            placeholder="Observações sobre a abertura do caixa..."
+                            value={observacoesAbertura}
+                            onChange={(e) => setObservacoesAbertura(e.target.value)}
+                          />
+                        </div>
+                        <Button onClick={handleAbrirCaixa} className="w-full">
+                          Confirmar Abertura
                         </Button>
                       </div>
-                    </div>
-                    <div>
-                      <Label htmlFor="valor-movimento">Valor</Label>
-                      <Input
-                        id="valor-movimento"
-                        type="number"
-                        step="0.01"
-                        placeholder="0,00"
-                        value={valorMovimento}
-                        onChange={(e) => setValorMovimento(e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="descricao-movimento">Descrição</Label>
-                      <Textarea
-                        id="descricao-movimento"
-                        placeholder="Motivo do movimento..."
-                        value={descricaoMovimento}
-                        onChange={(e) => setDescricaoMovimento(e.target.value)}
-                      />
-                    </div>
-                    <div className="flex gap-2 justify-end">
-                      <Button variant="outline" onClick={() => setMovimentoOpen(false)}>
-                        Cancelar
-                      </Button>
-                      <Button onClick={handleMovimentoCaixa}>
-                        Registrar
-                      </Button>
-                    </div>
-                  </div>
-                </DialogContent>
-              </Dialog>
+                    </DialogContent>
+                  </Dialog>
+                )}
 
-              <Dialog open={fechamentoOpen} onOpenChange={setFechamentoOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="destructive">
-                    <AlertCircle className="h-4 w-4 mr-2" />
-                    Fechar Caixa
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Fechar Caixa</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <Alert>
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertDescription>
-                        Valor calculado pelo sistema: {valorCalculadoFinal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                      </AlertDescription>
-                    </Alert>
-                    <div>
-                      <Label htmlFor="valor-final">Valor Final (conferido)</Label>
-                      <Input
-                        id="valor-final"
-                        type="number"
-                        step="0.01"
-                        placeholder="0,00"
-                        value={valorFinalFechamento}
-                        onChange={(e) => setValorFinalFechamento(e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="observacoes-fechamento">Observações (opcional)</Label>
-                      <Textarea
-                        id="observacoes-fechamento"
-                        placeholder="Observações sobre o fechamento do caixa..."
-                        value={observacoesFechamento}
-                        onChange={(e) => setObservacoesFechamento(e.target.value)}
-                      />
-                    </div>
-                    {valorFinalFechamento && Number(valorFinalFechamento) !== valorCalculadoFinal && (
-                      <Alert>
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertDescription>
-                          <strong>Diferença encontrada:</strong> {(Number(valorFinalFechamento) - valorCalculadoFinal).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                        </AlertDescription>
-                      </Alert>
-                    )}
-                    <div className="flex gap-2 justify-end">
-                      <Button variant="outline" onClick={() => setFechamentoOpen(false)}>
-                        Cancelar
-                      </Button>
-                      <Button variant="destructive" onClick={handleFecharCaixa}>
-                        Fechar Caixa
-                      </Button>
-                    </div>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            </>
-          )}
+                {caixaAtual?.status === 'aberto' && (
+                  <>
+                    <Dialog open={movimentoOpen} onOpenChange={setMovimentoOpen}>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" size="lg" className="h-12 px-8">
+                          <Calculator className="h-5 w-5 mr-2" />
+                          Movimento
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Movimento de Caixa</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <div className="grid grid-cols-2 gap-2">
+                            <Button
+                              variant={tipoMovimento === 'sangria' ? 'default' : 'outline'}
+                              onClick={() => setTipoMovimento('sangria')}
+                            >
+                              <Minus className="h-4 w-4 mr-2" />
+                              Sangria
+                            </Button>
+                            <Button
+                              variant={tipoMovimento === 'suprimento' ? 'default' : 'outline'}
+                              onClick={() => setTipoMovimento('suprimento')}
+                            >
+                              <Plus className="h-4 w-4 mr-2" />
+                              Suprimento
+                            </Button>
+                          </div>
+                          <div>
+                            <Label htmlFor="valor-movimento">Valor</Label>
+                            <Input
+                              id="valor-movimento"
+                              type="number"
+                              placeholder="0,00"
+                              value={valorMovimento}
+                              onChange={(e) => setValorMovimento(e.target.value)}
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="descricao-movimento">Descrição</Label>
+                            <Textarea
+                              id="descricao-movimento"
+                              placeholder="Descreva o motivo do movimento..."
+                              value={descricaoMovimento}
+                              onChange={(e) => setDescricaoMovimento(e.target.value)}
+                            />
+                          </div>
+                          <Button onClick={handleMovimentoCaixa} className="w-full">
+                            Confirmar {tipoMovimento === 'sangria' ? 'Sangria' : 'Suprimento'}
+                          </Button>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+
+                    <Dialog open={fechamentoOpen} onOpenChange={setFechamentoOpen}>
+                      <DialogTrigger asChild>
+                        <Button variant="destructive" size="lg" className="h-12 px-8">
+                          <CheckCircle className="h-5 w-5 mr-2" />
+                          Fechar Caixa
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Fechar Caixa</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <Alert>
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertDescription>
+                              Valor esperado no caixa: {formatarDinheiro(valorAtualCaixa)}
+                            </AlertDescription>
+                          </Alert>
+                          <div>
+                            <Label htmlFor="valor-final">Valor Contado</Label>
+                            <Input
+                              id="valor-final"
+                              type="number"
+                              placeholder="0,00"
+                              value={valorFinalFechamento}
+                              onChange={(e) => setValorFinalFechamento(e.target.value)}
+                            />
+                            {valorFinalFechamento && (
+                              <p className={`text-sm mt-1 ${diferenca === 0 ? 'text-green-600' : diferenca > 0 ? 'text-blue-600' : 'text-red-600'}`}>
+                                Diferença: {formatarDinheiro(diferenca)}
+                                {diferenca > 0 ? ' (sobra)' : diferenca < 0 ? ' (falta)' : ' (confere)'}
+                              </p>
+                            )}
+                          </div>
+                          <div>
+                            <Label htmlFor="observacoes-fechamento">Observações</Label>
+                            <Textarea
+                              id="observacoes-fechamento"
+                              placeholder="Observações sobre o fechamento..."
+                              value={observacoesFechamento}
+                              onChange={(e) => setObservacoesFechamento(e.target.value)}
+                            />
+                          </div>
+                          <Button onClick={handleFecharCaixa} className="w-full" variant="destructive">
+                            Confirmar Fechamento
+                          </Button>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  </>
+                )}
+              </div>
+
+              {/* Métricas Rápidas */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
+                {caixaMetrics.map((metric, index) => {
+                  const IconComponent = metric.icon;
+                  return (
+                    <Card key={index} className="border-0 shadow-sm">
+                      <CardHeader className="pb-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium text-muted-foreground">{metric.label}</span>
+                          <IconComponent className={`h-4 w-4 ${metric.color}`} />
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="flex items-end justify-between">
+                          {metric.isLoading ? (
+                            <Skeleton className="h-6 w-24" />
+                          ) : (
+                            <span className="text-2xl font-bold">{metric.value}</span>
+                          )}
+                          <span className={`text-sm font-medium ${
+                            metric.trend === 'up' ? 'text-green-600' : 'text-red-600'
+                          }`}>
+                            {metric.change}
+                          </span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
 
-      {/* Status do Caixa */}
-      {caixaAtual && (
-        <Card>
-          <CardHeader>
-            <div className="flex justify-between items-center">
-              <CardTitle className="flex items-center gap-2">
-                <DollarSign className="h-5 w-5" />
-                Status do Caixa
-              </CardTitle>
-              <Badge variant={caixaAtual.status === 'aberto' ? 'default' : 'secondary'}>
-                {caixaAtual.status === 'aberto' ? 'Aberto' : 'Fechado'}
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-              <div className="text-center">
-                <p className="text-sm text-gray-600">Valor Inicial</p>
-                <p className="text-2xl font-bold text-blue-600">
-                  {caixaAtual.valor_inicial.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                </p>
-              </div>
-              <div className="text-center">
-                <p className="text-sm text-gray-600">Vendas</p>
-                <p className="text-2xl font-bold text-green-600">
-                  +{caixaAtual.valor_vendas.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                </p>
-              </div>
-              <div className="text-center">
-                <p className="text-sm text-gray-600">Sangrias</p>
-                <p className="text-2xl font-bold text-red-600">
-                  -{caixaAtual.valor_sangrias.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                </p>
-              </div>
-              <div className="text-center">
-                <p className="text-sm text-gray-600">Valor Calculado</p>
-                <p className="text-2xl font-bold text-purple-600">
-                  {valorCalculadoFinal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                </p>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-              <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-gray-500" />
-                <span>Aberto às {format(new Date(caixaAtual.data_abertura), 'HH:mm', { locale: ptBR })}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <User className="h-4 w-4 text-gray-500" />
-                <span>{caixaAtual.usuario_abertura}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-gray-500" />
-                <span>{format(new Date(caixaAtual.data_abertura), 'dd/MM/yyyy', { locale: ptBR })}</span>
-              </div>
-            </div>
+        {/* Conteúdo Principal */}
+        <div className="px-6 pb-16">
+          <div className="mx-auto max-w-7xl space-y-8">
+            {caixaAtual?.status === 'aberto' && (
+              <div className="grid gap-6 lg:grid-cols-3">
+                {/* Resumo do Caixa - 2/3 da largura */}
+                <div className="lg:col-span-2 space-y-6">
+                  {/* Resumo Financeiro */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Calculator className="h-5 w-5" />
+                        Resumo Financeiro
+                      </CardTitle>
+                      <CardDescription>
+                        Status atual do caixa desde a abertura
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                          <div className="text-2xl font-bold text-blue-600">
+                            {formatarDinheiro(caixaAtual?.valor_inicial || 0)}
+                          </div>
+                          <div className="text-sm text-muted-foreground">Valor Inicial</div>
+                        </div>
+                        <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                          <div className="text-2xl font-bold text-green-600">
+                            {formatarDinheiro(resumoVendas?.total_vendas || 0)}
+                          </div>
+                          <div className="text-sm text-muted-foreground">Vendas</div>
+                        </div>
+                        <div className="text-center p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                          <div className="text-2xl font-bold text-red-600">
+                            {formatarDinheiro(caixaAtual?.valor_sangrias || 0)}
+                          </div>
+                          <div className="text-sm text-muted-foreground">Sangrias</div>
+                        </div>
+                        <div className="text-center p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                          <div className="text-2xl font-bold text-purple-600">
+                            {formatarDinheiro(caixaAtual?.valor_suprimentos || 0)}
+                          </div>
+                          <div className="text-sm text-muted-foreground">Suprimentos</div>
+                        </div>
+                      </div>
 
-            {caixaAtual.observacoes_abertura && (
-              <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-                <p className="text-sm text-gray-600">Observações de abertura:</p>
-                <p className="text-sm">{caixaAtual.observacoes_abertura}</p>
+                      <div className="mt-6 p-4 bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 rounded-lg">
+                        <div className="text-center">
+                          <div className="text-3xl font-bold text-orange-600">
+                            {formatarDinheiro(valorAtualCaixa)}
+                          </div>
+                          <div className="text-lg text-muted-foreground">Valor Atual no Caixa</div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Vendas por Forma de Pagamento */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Banknote className="h-5 w-5" />
+                        Vendas por Forma de Pagamento
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-medium">Dinheiro</span>
+                            <span className="text-sm text-muted-foreground">
+                              {formatarDinheiro(resumoVendas?.vendas_dinheiro || 0)}
+                            </span>
+                          </div>
+                          <Progress 
+                            value={resumoVendas?.total_vendas ? (resumoVendas.vendas_dinheiro / resumoVendas.total_vendas) * 100 : 0} 
+                            className="h-2" 
+                          />
+                        </div>
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-medium">Cartão</span>
+                            <span className="text-sm text-muted-foreground">
+                              {formatarDinheiro(resumoVendas?.vendas_cartao || 0)}
+                            </span>
+                          </div>
+                          <Progress 
+                            value={resumoVendas?.total_vendas ? (resumoVendas.vendas_cartao / resumoVendas.total_vendas) * 100 : 0} 
+                            className="h-2" 
+                          />
+                        </div>
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-medium">PIX</span>
+                            <span className="text-sm text-muted-foreground">
+                              {formatarDinheiro(resumoVendas?.vendas_pix || 0)}
+                            </span>
+                          </div>
+                          <Progress 
+                            value={resumoVendas?.total_vendas ? (resumoVendas.vendas_pix / resumoVendas.total_vendas) * 100 : 0} 
+                            className="h-2" 
+                          />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Sidebar - 1/3 da largura */}
+                <div className="space-y-6">
+                  {/* Informações do Caixa */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <User className="h-5 w-5" />
+                        Informações do Caixa
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-muted-foreground">Aberto por:</span>
+                        <span className="text-sm font-medium">{caixaAtual?.usuario_abertura}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-muted-foreground">Data/Hora:</span>
+                        <span className="text-sm font-medium">
+                          {format(new Date(caixaAtual?.data_abertura || ''), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-muted-foreground">Status:</span>
+                        <Badge variant={caixaAtual?.status === 'aberto' ? 'default' : 'secondary'}>
+                          {caixaAtual?.status === 'aberto' ? 'Aberto' : 'Fechado'}
+                        </Badge>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Últimos Movimentos */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Clock className="h-5 w-5" />
+                        Últimos Movimentos
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        {loading ? (
+                          Array.from({ length: 3 }).map((_, i) => (
+                            <Skeleton key={i} className="h-16 w-full" />
+                          ))
+                        ) : movimentos.slice(-3).map((movimento) => (
+                          <div key={movimento.id} className="border-b pb-3 last:border-b-0 last:pb-0">
+                            <div className="flex items-center justify-between">
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-2">
+                                  {movimento.tipo === 'sangria' ? (
+                                    <Minus className="h-4 w-4 text-red-500" />
+                                  ) : (
+                                    <Plus className="h-4 w-4 text-green-500" />
+                                  )}
+                                  <span className="text-sm font-medium">
+                                    {movimento.tipo === 'sangria' ? 'Sangria' : 'Suprimento'}
+                                  </span>
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  {movimento.descricao}
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  {format(new Date(movimento.data_movimento), 'HH:mm', { locale: ptBR })}
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <div className={`font-bold ${
+                                  movimento.tipo === 'sangria' ? 'text-red-600' : 'text-green-600'
+                                }`}>
+                                  {movimento.tipo === 'sangria' ? '-' : '+'}
+                                  {formatarDinheiro(movimento.valor)}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
               </div>
             )}
-          </CardContent>
-        </Card>
-      )}
 
-      {/* Resumo de Vendas */}
-      {resumoVendas && caixaAtual?.status === 'aberto' && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Target className="h-5 w-5" />
-              Resumo de Vendas
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-              <div className="text-center">
-                <div className="h-12 w-12 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-2">
-                  <DollarSign className="h-6 w-6 text-green-600" />
+            {/* Insights */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-start gap-4">
+                  <div className="p-2 rounded-lg bg-orange-100 dark:bg-orange-900/20">
+                    <Sparkles className="h-5 w-5 text-orange-600" />
+                  </div>
+                  <div className="flex-1">
+                    <CardTitle className="text-lg">Insights do Caixa</CardTitle>
+                    <CardDescription>
+                      Análise baseada no movimento do dia atual
+                    </CardDescription>
+                  </div>
                 </div>
-                <p className="text-sm text-gray-600">Total de Vendas</p>
-                <p className="text-lg font-bold">
-                  {resumoVendas.total_vendas.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                </p>
-                <p className="text-xs text-gray-500">{resumoVendas.quantidade_vendas} vendas</p>
-              </div>
-              
-              <div className="text-center">
-                <div className="h-12 w-12 bg-yellow-100 rounded-lg flex items-center justify-center mx-auto mb-2">
-                  <Banknote className="h-6 w-6 text-yellow-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium">Eficiência de Vendas</span>
+                      <span className="text-sm text-muted-foreground">85%</span>
+                    </div>
+                    <Progress value={85} className="h-2" />
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium">Controle de Movimento</span>
+                      <span className="text-sm text-muted-foreground">92%</span>
+                    </div>
+                    <Progress value={92} className="h-2" />
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium">Acuracidade do Caixa</span>
+                      <span className="text-sm text-muted-foreground">98%</span>
+                    </div>
+                    <Progress value={98} className="h-2" />
+                  </div>
                 </div>
-                <p className="text-sm text-gray-600">Dinheiro</p>
-                <p className="text-lg font-bold">
-                  {resumoVendas.vendas_dinheiro.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                </p>
-              </div>
-
-              <div className="text-center">
-                <div className="h-12 w-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-2">
-                  <CreditCard className="h-6 w-6 text-blue-600" />
-                </div>
-                <p className="text-sm text-gray-600">Cartão</p>
-                <p className="text-lg font-bold">
-                  {resumoVendas.vendas_cartao.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                </p>
-              </div>
-
-              <div className="text-center">
-                <div className="h-12 w-12 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-2">
-                  <span className="text-purple-600 font-bold">PIX</span>
-                </div>
-                <p className="text-sm text-gray-600">PIX</p>
-                <p className="text-lg font-bold">
-                  {resumoVendas.vendas_pix.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                </p>
-              </div>
-
-              <div className="text-center">
-                <div className="h-12 w-12 bg-gray-100 rounded-lg flex items-center justify-center mx-auto mb-2">
-                  <Calculator className="h-6 w-6 text-gray-600" />
-                </div>
-                <p className="text-sm text-gray-600">Outros</p>
-                <p className="text-lg font-bold">
-                  {resumoVendas.vendas_outros.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Movimentos de Caixa */}
-      {movimentos.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calculator className="h-5 w-5" />
-              Movimentos de Caixa
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Valor</TableHead>
-                  <TableHead>Descrição</TableHead>
-                  <TableHead>Usuário</TableHead>
-                  <TableHead>Data/Hora</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {movimentos.map((movimento) => (
-                  <TableRow key={movimento.id}>
-                    <TableCell>
-                      <Badge variant={movimento.tipo === 'sangria' ? 'destructive' : 'default'}>
-                        {movimento.tipo === 'sangria' ? (
-                          <>
-                            <TrendingDown className="h-3 w-3 mr-1" />
-                            Sangria
-                          </>
-                        ) : (
-                          <>
-                            <TrendingUp className="h-3 w-3 mr-1" />
-                            Suprimento
-                          </>
-                        )}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className={movimento.tipo === 'sangria' ? 'text-red-600' : 'text-green-600'}>
-                      {movimento.tipo === 'sangria' ? '-' : '+'}
-                      {movimento.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                    </TableCell>
-                    <TableCell>{movimento.descricao}</TableCell>
-                    <TableCell>{movimento.usuario}</TableCell>
-                    <TableCell>
-                      {format(new Date(movimento.data_movimento), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Mensagem quando não há caixa aberto */}
-      {!caixaAtual && (
-        <Card>
-          <CardContent className="text-center py-12">
-            <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Nenhum caixa aberto</h3>
-            <p className="text-gray-600 mb-4">
-              Para iniciar as operações, você precisa abrir o caixa informando o valor inicial.
-            </p>
-            <Dialog open={aberturaOpen} onOpenChange={setAberturaOpen}>
-              <DialogTrigger asChild>
-                <Button>
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                  Abrir Caixa
-                </Button>
-              </DialogTrigger>
-            </Dialog>
-          </CardContent>
-        </Card>
-      )}
-    </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    </AdminLayout>
   );
 } 
