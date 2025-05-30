@@ -330,7 +330,7 @@ const calcularEstoqueInteligente = (nomeProduto: string, quantidade: number) => 
 ### **Integração IA** ✅ **80% COMPLETO**
 ```typescript
 // Serviços IA
-- OpenAI GPT-4 integrado
+- deepseek integrado
 - Embeddings com pgvector
 - RAG (Retrieval Augmented Generation)
 - Edge Functions para IA
