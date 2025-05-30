@@ -86,6 +86,12 @@ import HistoricoVendas from './pages/admin/vendas/historico';
 import ControleCaixa from './pages/admin/vendas/caixa';
 import FechamentoVendas from './pages/admin/vendas/fechamento';
 
+// Importações do sistema de clientes
+import GestaoClientes from "./pages/admin/clientes/index";
+import NovoClientePage from "./pages/admin/clientes/novo";
+import EditarCliente from "./pages/admin/clientes/[id]/editar";
+import DetalhesClientePage from "./pages/admin/clientes/[id]/index";
+
 const queryClient = new QueryClient();
 
 // Componente para controlar qual chatbot mostrar
@@ -363,6 +369,13 @@ const App = (): JSX.Element => {
                             <Route path="usuarios/test-permissions" element={<TestPermissionsPage />} />
                             <Route path="usuarios/novo" element={<ProtectedComponent modulo={ModuloSistema.USUARIOS_PERMISSOES} acao={AcaoPermissao.CRIAR} fallback={<Navigate to='/admin' replace />}><NovoUsuarioPage /></ProtectedComponent>} />
                             <Route path="usuarios/editar/:id" element={<ProtectedComponent modulo={ModuloSistema.USUARIOS_PERMISSOES} acao={AcaoPermissao.EDITAR} fallback={<Navigate to='/admin' replace />}><EditarUsuarioPage /></ProtectedComponent>} />
+                            
+                            {/* Rotas de Clientes */}
+                            <Route path="clientes" element={<GestaoClientes />} />
+                            <Route path="clientes/novo" element={<NovoClientePage />} />
+                            <Route path="clientes/:id" element={<DetalhesClientePage />} />
+                            <Route path="clientes/:id/editar" element={<EditarCliente />} />
+                            
                             <Route path="financeiro" element={<FinanceiroOverview />} />
                             <Route path="cadastros" element={<CadastrosOverview />} />
                             <Route path="producao/overview" element={<ProducaoOverview />} />

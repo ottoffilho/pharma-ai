@@ -3,14 +3,14 @@
 // Interface moderna e intuitiva para vendas
 // =====================================================
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -18,6 +18,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { useVendasCards } from '@/hooks/useVendasCards';
+import { useClientes } from '@/hooks/useClientes';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   ShoppingCart, 
   Search, 
@@ -69,6 +71,55 @@ interface PagamentoPDV {
 }
 
 // =====================================================
+// FUNÇÕES DE BUSCA DE PRODUTOS PARA PDV
+// =====================================================
+
+const buscarProdutosPDV = async (termo: string): Promise<ProdutoPDV[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('produtos')
+      .select(`
+        id,
+        nome,
+        codigo_interno,
+        codigo_ean,
+        preco_venda,
+        estoque_atual,
+        controlado,
+        requer_receita,
+        categoria_produto:categoria_produto_id(nome),
+        forma_farmaceutica:forma_farmaceutica_id(nome)
+      `)
+      .or(`nome.ilike.%${termo}%,codigo_interno.ilike.%${termo}%,codigo_ean.ilike.%${termo}%`)
+      .eq('ativo', true)
+      .gt('estoque_atual', 0) // Apenas produtos com estoque
+      .order('nome')
+      .limit(20);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data?.map(produto => ({
+      id: produto.id,
+      nome: produto.nome,
+      codigo_interno: produto.codigo_interno,
+      codigo_ean: produto.codigo_ean,
+      preco_venda: parseFloat(produto.preco_venda?.toString() || '0'),
+      estoque_atual: parseFloat(produto.estoque_atual?.toString() || '0'),
+      categoria_nome: produto.categoria_produto?.nome || '',
+      controlado: produto.controlado || false,
+      requer_receita: produto.requer_receita || false,
+      forma_farmaceutica_nome: produto.forma_farmaceutica?.nome || ''
+    })) || [];
+
+  } catch (error) {
+    console.error('Erro ao buscar produtos PDV:', error);
+    throw error;
+  }
+};
+
+// =====================================================
 // COMPONENTE PRINCIPAL
 // =====================================================
 
@@ -94,14 +145,90 @@ export default function PDVPage() {
   const [modalPagamento, setModalPagamento] = useState(false);
   const [modalDesconto, setModalDesconto] = useState(false);
   const [observacoes, setObservacoes] = useState('');
+  const [isProcessando, setIsProcessando] = useState(false);
+  
+  // Estados para busca de clientes
+  const [termoBuscaCliente, setTermoBuscaCliente] = useState('');
+  
+  // Estados para controle de caixa
+  const [caixaAberto, setCaixaAberto] = useState<any>(null);
+  const [modalAbrirCaixa, setModalAbrirCaixa] = useState(false);
+  const [valorInicialCaixa, setValorInicialCaixa] = useState('');
+  const [observacoesCaixa, setObservacoesCaixa] = useState('');
+  
+  // Variáveis do ambiente Supabase
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
   // Hook para dados das vendas
   const {
     data: vendasData,
     isLoading: isLoadingVendas,
     formatarDinheiro,
-    formatarTempo
+    formatarTempo,
+    refetch: refetchVendas
   } = useVendasCards();
+
+  // Hook para buscar clientes com filtro
+  const { data: clientes = [], isLoading: isLoadingClientes, error: errorClientes } = useClientes({
+    busca: termoBuscaCliente,
+    ativo: true, // Apenas clientes ativos
+    ordem: 'nome',
+    direcao: 'asc'
+  });
+
+  // Hook alternativo para testar - buscar todos os clientes ativos
+  const { data: todosClientes = [], isLoading: loadingTodos } = useClientes({
+    ativo: true
+  });
+
+  // =====================================================
+  // CORREÇÃO DE ACESSIBILIDADE PARA MODAIS
+  // =====================================================
+  
+  useEffect(() => {
+    // Função para corrigir aria-hidden em modais abertos
+    const fixModalAccessibility = () => {
+      const openModals = document.querySelectorAll('[role="dialog"][data-state="open"]');
+      openModals.forEach(modal => {
+        // Remover aria-hidden="true" de modais abertos
+        if (modal.getAttribute('aria-hidden') === 'true') {
+          modal.removeAttribute('aria-hidden');
+        }
+        
+        // Garantir que elementos focáveis dentro do modal não tenham aria-hidden
+        const focusableElements = modal.querySelectorAll('button, input, select, textarea, [tabindex]:not([tabindex="-1"])');
+        focusableElements.forEach(element => {
+          if (element.getAttribute('aria-hidden') === 'true') {
+            element.removeAttribute('aria-hidden');
+          }
+        });
+
+        // Garantir que o modal tenha foco se não houver elemento focado
+        const activeElement = document.activeElement;
+        if (!modal.contains(activeElement)) {
+          const firstFocusable = modal.querySelector('input, button, select, textarea, [tabindex]:not([tabindex="-1"])');
+          if (firstFocusable && typeof (firstFocusable as HTMLElement).focus === 'function') {
+            (firstFocusable as HTMLElement).focus();
+          }
+        }
+      });
+    };
+
+    // Executar quando modais abrem/fecham
+    if (modalCliente || modalPagamento || modalDesconto) {
+      // Múltiplas tentativas para garantir que o Radix UI termine sua renderização
+      const timeoutId1 = setTimeout(fixModalAccessibility, 50);
+      const timeoutId2 = setTimeout(fixModalAccessibility, 100);
+      const timeoutId3 = setTimeout(fixModalAccessibility, 200);
+      
+      return () => {
+        clearTimeout(timeoutId1);
+        clearTimeout(timeoutId2);
+        clearTimeout(timeoutId3);
+      };
+    }
+  }, [modalCliente, modalPagamento, modalDesconto]);
 
   // =====================================================
   // FUNÇÕES DE BUSCA
@@ -115,51 +242,8 @@ export default function PDVPage() {
     
     setLoading(true);
     try {
-      // Simular busca de produtos - substituir por chamada real do serviço
-      const produtosMock: ProdutoPDV[] = [
-        {
-          id: '1',
-          nome: 'Dipirona 500mg - Caixa com 20 comprimidos',
-          codigo_interno: 'DIP001',
-          codigo_ean: '7891234567890',
-          preco_venda: 12.50,
-          estoque_atual: 45,
-          categoria_nome: 'Analgésicos',
-          controlado: false,
-          requer_receita: false,
-          forma_farmaceutica_nome: 'Comprimido'
-        },
-        {
-          id: '2',
-          nome: 'Amoxicilina 500mg - Caixa com 21 cápsulas',
-          codigo_interno: 'AMO001',
-          codigo_ean: '7891234567891',
-          preco_venda: 25.80,
-          estoque_atual: 23,
-          categoria_nome: 'Antibióticos',
-          controlado: false,
-          requer_receita: true,
-          forma_farmaceutica_nome: 'Cápsula'
-        },
-        {
-          id: '3',
-          nome: 'Rivotril 2mg - Caixa com 30 comprimidos',
-          codigo_interno: 'RIV001',
-          codigo_ean: '7891234567892',
-          preco_venda: 45.60,
-          estoque_atual: 8,
-          categoria_nome: 'Controlados',
-          controlado: true,
-          requer_receita: true,
-          forma_farmaceutica_nome: 'Comprimido'
-        }
-      ].filter(p => 
-        p.nome.toLowerCase().includes(termo.toLowerCase()) ||
-        p.codigo_interno?.toLowerCase().includes(termo.toLowerCase()) ||
-        p.codigo_ean?.includes(termo)
-      );
-      
-      setProdutos(produtosMock);
+      const produtos = await buscarProdutosPDV(termo);
+      setProdutos(produtos);
     } catch (error) {
       console.error('Erro ao buscar produtos:', error);
       toast({
@@ -171,6 +255,47 @@ export default function PDVPage() {
       setLoading(false);
     }
   }, []);
+
+  // =====================================================
+  // FUNÇÕES DO CLIENTE
+  // =====================================================
+  
+  const selecionarCliente = (cliente: any) => {
+    // Transformar cliente para o formato ClienteVenda
+    const clienteVenda: ClienteVenda = {
+      id: cliente.id,
+      nome: cliente.nome,
+      cpf: cliente.cpf,
+      cnpj: cliente.cnpj,
+      documento: cliente.cpf || cliente.cnpj || '',
+      telefone: cliente.telefone,
+      email: cliente.email,
+      endereco: cliente.endereco,
+      cidade: cliente.cidade,
+      estado: cliente.estado,
+      cep: cliente.cep,
+      data_nascimento: cliente.data_nascimento,
+      created_at: cliente.created_at,
+      updated_at: cliente.updated_at
+    };
+    
+    setClienteSelecionado(clienteVenda);
+    setModalCliente(false);
+    setTermoBuscaCliente('');
+    
+    toast({
+      title: "Cliente selecionado",
+      description: `${cliente.nome} foi selecionado para a venda`,
+    });
+  };
+
+  const removerCliente = () => {
+    setClienteSelecionado(null);
+    toast({
+      title: "Cliente removido",
+      description: "Cliente foi removido da venda",
+    });
+  };
 
   // =====================================================
   // FUNÇÕES DO CARRINHO
@@ -217,13 +342,20 @@ export default function PDVPage() {
         return calcularTotais(novosItens);
       });
       
+      // Atualizar localmente o estoque do produto para refletir a reserva
+      setProdutos(prev => prev.map(p => 
+        p.id === produto.id 
+          ? { ...p, estoque_atual: p.estoque_atual - 1 }
+          : p
+      ));
+      
       // Limpar busca após adicionar
       setTermoBusca('');
       setProdutos([]);
       
       toast({
         title: "Produto adicionado",
-        description: `${produto.nome} foi adicionado ao carrinho`
+        description: `${produto.nome} foi adicionado ao carrinho`,
       });
     }
   };
@@ -235,6 +367,19 @@ export default function PDVPage() {
     }
     
     setCarrinho(prev => {
+      const itemAtual = prev.itens.find(item => item.produto_id === produtoId);
+      if (!itemAtual) return prev;
+      
+      // Verificar se a nova quantidade não excede o estoque disponível
+      if (novaQuantidade > itemAtual.estoque_disponivel) {
+        toast({
+          title: "Estoque insuficiente",
+          description: `Apenas ${itemAtual.estoque_disponivel} unidades disponíveis`,
+          variant: "destructive"
+        });
+        return prev;
+      }
+      
       const novosItens = prev.itens.map(item => {
         if (item.produto_id === produtoId) {
           const novoPrecoTotal = item.preco_unitario * novaQuantidade - (item.desconto_valor || 0);
@@ -251,10 +396,21 @@ export default function PDVPage() {
   };
   
   const removerItem = (produtoId: UUID) => {
+    const itemRemovido = carrinho.itens.find(item => item.produto_id === produtoId);
+    
     setCarrinho(prev => {
       const novosItens = prev.itens.filter(item => item.produto_id !== produtoId);
       return calcularTotais(novosItens);
     });
+    
+    // Restaurar estoque localmente quando remover item
+    if (itemRemovido) {
+      setProdutos(prev => prev.map(p => 
+        p.id === produtoId 
+          ? { ...p, estoque_atual: p.estoque_atual + itemRemovido.quantidade }
+          : p
+      ));
+    }
   };
   
   const calcularTotais = (itens: ItemCarrinho[]): CarrinhoCompras => {
@@ -326,29 +482,106 @@ export default function PDVPage() {
       });
       return;
     }
+
+    if (pagamentos.length === 0) {
+      toast({
+        title: "Pagamento necessário",
+        description: "Adicione pelo menos uma forma de pagamento",
+        variant: "destructive"
+      });
+      return;
+    }
     
     try {
-      // Aqui seria a chamada para o serviço de vendas
-      console.log('Finalizando venda:', {
-        carrinho,
-        cliente: clienteSelecionado,
-        pagamentos,
-        observacoes,
-        troco
+      setIsProcessando(true);
+
+      // 1. Primeiro criar a venda em rascunho
+      const criarVendaResponse = await fetch(`${supabaseUrl}/functions/v1/vendas-operations?action=criar-venda`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${supabaseAnonKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          cliente_id: clienteSelecionado?.id,
+          cliente_nome: clienteSelecionado?.nome || 'Cliente não informado',
+          cliente_documento: clienteSelecionado?.cpf || clienteSelecionado?.cnpj,
+          cliente_telefone: clienteSelecionado?.telefone,
+          itens: carrinho.itens.map(item => ({
+            produto_id: item.produto_id,
+            produto_codigo: item.produto_codigo,
+            produto_nome: item.produto_nome,
+            quantidade: item.quantidade,
+            preco_unitario: item.preco_unitario,
+            preco_total: item.preco_total,
+            lote_id: item.lote_id,
+          })),
+          subtotal: carrinho.subtotal,
+          desconto_valor: carrinho.desconto_valor,
+          desconto_percentual: carrinho.desconto_percentual,
+          total: carrinho.total,
+          observacoes: observacoes
+        })
       });
+
+      if (!criarVendaResponse.ok) {
+        const errorData = await criarVendaResponse.json();
+        throw new Error(errorData.error || 'Erro ao criar venda');
+      }
+
+      const { venda } = await criarVendaResponse.json();
+
+      // 2. Finalizar a venda com os pagamentos
+      const finalizarResponse = await fetch(`${supabaseUrl}/functions/v1/vendas-operations?action=finalizar-venda`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${supabaseAnonKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          venda_id: venda.id,
+          pagamentos: pagamentos.map(pagamento => ({
+            forma_pagamento: pagamento.forma_pagamento,
+            valor: pagamento.valor,
+            bandeira_cartao: pagamento.bandeira_cartao,
+            numero_autorizacao: pagamento.numero_autorizacao,
+            codigo_transacao: pagamento.codigo_transacao,
+            observacoes: pagamento.observacoes
+          })),
+          troco: troco
+        })
+      });
+
+      if (!finalizarResponse.ok) {
+        const errorData = await finalizarResponse.json();
+        throw new Error(errorData.error || 'Erro ao finalizar venda');
+      }
+
+      const resultadoFinalizacao = await finalizarResponse.json();
       
       toast({
         title: "Venda finalizada!",
-        description: `Venda realizada com sucesso. Troco: R$ ${troco.toFixed(2)}`,
+        description: `Venda ${resultadoFinalizacao.numero_venda} realizada com sucesso. Troco: R$ ${troco.toFixed(2)}`,
       });
       
+      // Limpar tudo após sucesso
       limparCarrinho();
+      setPagamentos([]);
+      setClienteSelecionado(null);
+      setObservacoes('');
+      
+      // Refresh dos dados
+      await refetchVendas();
+      
     } catch (error) {
+      console.error('Erro ao finalizar venda:', error);
       toast({
         title: "Erro",
-        description: "Erro ao finalizar venda",
+        description: error instanceof Error ? error.message : "Erro ao finalizar venda",
         variant: "destructive"
       });
+    } finally {
+      setIsProcessando(false);
     }
   };
 
@@ -443,16 +676,175 @@ export default function PDVPage() {
                   {clienteSelecionado ? clienteSelecionado.nome : 'Selecionar Cliente'}
                 </Button>
                 
+                {/* Botões de Pagamento Rápido */}
+                <div className="flex gap-2">
+                  <Button 
+                    size="lg" 
+                    className="h-12 px-6"
+                    onClick={() => {
+                      const valorRestante = Math.max(0, carrinho.total - totalPago);
+                      if (valorRestante > 0) {
+                        adicionarPagamento({
+                          forma_pagamento: 'DINHEIRO',
+                          valor: valorRestante
+                        });
+                        toast({
+                          title: "Pagamento em dinheiro",
+                          description: `${formatarDinheiro(valorRestante)} adicionado`,
+                        });
+                      }
+                    }}
+                    variant="outline"
+                    disabled={carrinho.itens.length === 0 || restante <= 0}
+                  >
+                    <Banknote className="h-5 w-5 mr-2" />
+                    Dinheiro
+                  </Button>
+                  
+                  <Button 
+                    size="lg" 
+                    className="h-12 px-6"
+                    onClick={() => {
+                      const valorRestante = Math.max(0, carrinho.total - totalPago);
+                      if (valorRestante > 0) {
+                        adicionarPagamento({
+                          forma_pagamento: 'PIX',
+                          valor: valorRestante
+                        });
+                        toast({
+                          title: "Pagamento PIX",
+                          description: `${formatarDinheiro(valorRestante)} adicionado`,
+                        });
+                      }
+                    }}
+                    variant="outline"
+                    disabled={carrinho.itens.length === 0 || restante <= 0}
+                  >
+                    <Smartphone className="h-5 w-5 mr-2" />
+                    PIX
+                  </Button>
+                  
+                  <Button 
+                    size="lg" 
+                    className="h-12 px-6"
+                    onClick={() => setModalPagamento(true)}
+                    variant="outline"
+                    disabled={carrinho.itens.length === 0}
+                  >
+                    <CreditCard className="h-5 w-5 mr-2" />
+                    Cartão ({pagamentos.length})
+                  </Button>
+                </div>
+
                 <Button 
                   size="lg" 
                   className="h-12 px-8"
-                  onClick={() => setModalPagamento(true)}
-                  disabled={carrinho.total === 0}
+                  onClick={() => setModalDesconto(true)}
                   variant="outline"
+                  disabled={carrinho.itens.length === 0}
                 >
-                  <CreditCard className="h-5 w-5 mr-2" />
-                  Adicionar Pagamento
+                  <Percent className="h-5 w-5 mr-2" />
+                  Aplicar Desconto
                 </Button>
+
+                {/* Botões de Desconto Rápido */}
+                <div className="flex gap-1">
+                  <Button 
+                    size="sm" 
+                    className="h-12 px-3"
+                    onClick={() => {
+                      if (carrinho.subtotal > 0) {
+                        const desconto = { valor: (carrinho.subtotal * 5) / 100, percentual: 5 };
+                        setDescontoGeral(desconto);
+                        setCarrinho(prev => {
+                          const subtotal = prev.itens.reduce((acc, item) => acc + (item.preco_unitario * item.quantidade), 0);
+                          const desconto_total = prev.itens.reduce((acc, item) => acc + (item.desconto_valor || 0), 0) + desconto.valor;
+                          const total = subtotal - desconto_total;
+                          
+                          return {
+                            ...prev,
+                            subtotal,
+                            desconto_total,
+                            total: Math.max(0, total)
+                          };
+                        });
+                        toast({
+                          title: "Desconto aplicado",
+                          description: "5% de desconto aplicado",
+                        });
+                      }
+                    }}
+                    variant="outline"
+                    disabled={carrinho.itens.length === 0}
+                    title="Aplicar 5% de desconto"
+                  >
+                    5%
+                  </Button>
+                  
+                  <Button 
+                    size="sm" 
+                    className="h-12 px-3"
+                    onClick={() => {
+                      if (carrinho.subtotal > 0) {
+                        const desconto = { valor: (carrinho.subtotal * 10) / 100, percentual: 10 };
+                        setDescontoGeral(desconto);
+                        setCarrinho(prev => {
+                          const subtotal = prev.itens.reduce((acc, item) => acc + (item.preco_unitario * item.quantidade), 0);
+                          const desconto_total = prev.itens.reduce((acc, item) => acc + (item.desconto_valor || 0), 0) + desconto.valor;
+                          const total = subtotal - desconto_total;
+                          
+                          return {
+                            ...prev,
+                            subtotal,
+                            desconto_total,
+                            total: Math.max(0, total)
+                          };
+                        });
+                        toast({
+                          title: "Desconto aplicado",
+                          description: "10% de desconto aplicado",
+                        });
+                      }
+                    }}
+                    variant="outline"
+                    disabled={carrinho.itens.length === 0}
+                    title="Aplicar 10% de desconto"
+                  >
+                    10%
+                  </Button>
+                  
+                  <Button 
+                    size="sm" 
+                    className="h-12 px-3"
+                    onClick={() => {
+                      if (carrinho.subtotal > 0) {
+                        const desconto = { valor: (carrinho.subtotal * 15) / 100, percentual: 15 };
+                        setDescontoGeral(desconto);
+                        setCarrinho(prev => {
+                          const subtotal = prev.itens.reduce((acc, item) => acc + (item.preco_unitario * item.quantidade), 0);
+                          const desconto_total = prev.itens.reduce((acc, item) => acc + (item.desconto_valor || 0), 0) + desconto.valor;
+                          const total = subtotal - desconto_total;
+                          
+                          return {
+                            ...prev,
+                            subtotal,
+                            desconto_total,
+                            total: Math.max(0, total)
+                          };
+                        });
+                        toast({
+                          title: "Desconto aplicado",
+                          description: "15% de desconto aplicado",
+                        });
+                      }
+                    }}
+                    variant="outline"
+                    disabled={carrinho.itens.length === 0}
+                    title="Aplicar 15% de desconto"
+                  >
+                    15%
+                  </Button>
+                </div>
 
                 <Button 
                   size="lg" 
@@ -469,10 +861,15 @@ export default function PDVPage() {
                   size="lg" 
                   className="h-12 px-8 ml-auto"
                   onClick={finalizarVenda}
-                  disabled={carrinho.itens.length === 0 || restante > 0}
+                  disabled={carrinho.itens.length === 0 || isProcessando || restante > 0}
+                  variant={restante <= 0 && carrinho.itens.length > 0 ? 'default' : 'outline'}
                 >
                   <CheckCircle className="h-5 w-5 mr-2" />
-                  Finalizar Venda
+                  {isProcessando ? 'Processando...' : 
+                   restante > 0 && carrinho.itens.length > 0 ? 
+                    `Faltam ${formatarDinheiro(restante)}` : 
+                    'Finalizar Venda'
+                  }
                 </Button>
               </div>
 
@@ -578,9 +975,16 @@ export default function PDVPage() {
                                 </div>
                                 <div className="text-sm text-muted-foreground flex items-center gap-2 mt-1">
                                   <span>Código: {produto.codigo_interno}</span>
-                                  <Badge variant="outline" className="text-xs">
-                                    {produto.categoria_nome}
-                                  </Badge>
+                                  {produto.categoria_nome && (
+                                    <Badge variant="outline" className="text-xs">
+                                      {produto.categoria_nome}
+                                    </Badge>
+                                  )}
+                                  {produto.forma_farmaceutica_nome && (
+                                    <Badge variant="secondary" className="text-xs">
+                                      {produto.forma_farmaceutica_nome}
+                                    </Badge>
+                                  )}
                                   {produto.controlado && (
                                     <Badge variant="destructive" className="text-xs">
                                       Controlado
@@ -592,10 +996,13 @@ export default function PDVPage() {
                                     </Badge>
                                   )}
                                 </div>
-                                <div className="text-sm text-muted-foreground mt-1">
+                                <div className="text-sm text-muted-foreground mt-1 flex items-center gap-3">
                                   <span className={`${produto.estoque_atual <= 10 ? 'text-red-600 font-medium' : ''}`}>
                                     Estoque: {produto.estoque_atual} unidades
                                   </span>
+                                  {produto.codigo_ean && (
+                                    <span>EAN: {produto.codigo_ean}</span>
+                                  )}
                                 </div>
                               </div>
                               <div className="text-right ml-4">
@@ -617,7 +1024,7 @@ export default function PDVPage() {
                       <div className="text-center py-8 text-muted-foreground">
                         <Package className="h-8 w-8 mx-auto mb-2 opacity-50" />
                         <p>Nenhum produto encontrado</p>
-                        <p className="text-sm">Tente buscar por outro termo</p>
+                        <p className="text-sm">Tente buscar por outro termo ou verifique o estoque</p>
                       </div>
                     )}
                   </CardContent>
@@ -745,62 +1152,150 @@ export default function PDVPage() {
                       <div>
                         <CardTitle>Cliente</CardTitle>
                         <CardDescription>
-                          Selecione um cliente
+                          {clienteSelecionado ? 'Cliente selecionado' : 'Selecione um cliente'}
                         </CardDescription>
                       </div>
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-center py-6">
-                      <User className="h-12 w-12 mx-auto mb-3 opacity-30" />
-                      <p className="text-muted-foreground mb-4">Nenhum cliente selecionado</p>
-                      <Dialog open={modalCliente} onOpenChange={setModalCliente}>
-                        <DialogTrigger asChild>
-                          <Button variant="outline" className="w-full">
-                            <Plus className="h-4 w-4 mr-2" />
-                            Selecionar Cliente
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Selecionar Cliente</DialogTitle>
-                          </DialogHeader>
-                          <div className="space-y-4">
-                            <Input placeholder="Buscar por nome, CPF ou telefone..." />
-                            <div className="text-center py-8 text-muted-foreground">
-                              <User className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                              <p>Digite para buscar clientes</p>
-                            </div>
-                            <Button 
-                              onClick={() => setModalCliente(false)} 
-                              className="w-full"
-                              variant="outline"
-                            >
-                              Venda sem Cliente
-                            </Button>
+                    {clienteSelecionado ? (
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-medium">{clienteSelecionado.nome}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {clienteSelecionado.documento}
+                            </p>
+                            {clienteSelecionado.telefone && (
+                              <p className="text-sm text-muted-foreground">
+                                {clienteSelecionado.telefone}
+                              </p>
+                            )}
                           </div>
-                        </DialogContent>
-                      </Dialog>
-                    </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={removerCliente}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-6">
+                        <User className="h-12 w-12 mx-auto mb-3 opacity-30" />
+                        <p className="text-muted-foreground mb-4">Nenhum cliente selecionado</p>
+                        <Button 
+                          variant="outline" 
+                          className="w-full"
+                          onClick={() => setModalCliente(true)}
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Selecionar Cliente
+                        </Button>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
 
                 {/* Resumo Financeiro */}
                 <Card className="group hover:shadow-lg transition-all duration-300">
                   <CardHeader>
-                    <div className="flex items-center gap-4">
-                      <div className="p-2 rounded-lg bg-gradient-to-br from-green-500 to-emerald-500 text-white">
-                        <Calculator className="h-5 w-5" />
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="p-2 rounded-lg bg-gradient-to-br from-green-500 to-emerald-500 text-white">
+                          <Calculator className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <CardTitle>Resumo da Venda</CardTitle>
+                          <CardDescription>
+                            Valores e totais da transação
+                          </CardDescription>
+                        </div>
                       </div>
-                      <div>
-                        <CardTitle>Resumo da Venda</CardTitle>
-                        <CardDescription>
-                          Valores e totais da transação
-                        </CardDescription>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setModalPagamento(true)}
+                        >
+                          <CreditCard className="h-4 w-4 mr-1" />
+                          Pagar
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setModalDesconto(true)}
+                          disabled={carrinho.itens.length === 0}
+                        >
+                          <Percent className="h-4 w-4 mr-1" />
+                          Desconto
+                        </Button>
                       </div>
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-4">
+                    {/* Botões de Pagamento Rápido */}
+                    {carrinho.total > 0 && restante > 0 && (
+                      <div className="grid grid-cols-2 gap-2 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 rounded-lg border">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            adicionarPagamento({
+                              forma_pagamento: 'DINHEIRO',
+                              valor: restante
+                            });
+                            toast({
+                              title: "Pagamento adicionado",
+                              description: `Dinheiro: ${formatarDinheiro(restante)}`,
+                            });
+                          }}
+                          className="w-full"
+                        >
+                          <Banknote className="h-4 w-4 mr-1" />
+                          Dinheiro
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            adicionarPagamento({
+                              forma_pagamento: 'PIX',
+                              valor: restante
+                            });
+                            toast({
+                              title: "Pagamento adicionado",
+                              description: `PIX: ${formatarDinheiro(restante)}`,
+                            });
+                          }}
+                          className="w-full"
+                        >
+                          <Smartphone className="h-4 w-4 mr-1" />
+                          PIX
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setModalPagamento(true)}
+                          className="w-full"
+                        >
+                          <CreditCard className="h-4 w-4 mr-1" />
+                          Cartão
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setModalDesconto(true)}
+                          disabled={carrinho.itens.length === 0}
+                          className="w-full"
+                        >
+                          <Percent className="h-4 w-4 mr-1" />
+                          Desconto
+                        </Button>
+                      </div>
+                    )}
+                    
                     <div className="space-y-3">
                       <div className="flex justify-between">
                         <span>Subtotal:</span>
@@ -896,11 +1391,12 @@ export default function PDVPage() {
                     <Button 
                       onClick={finalizarVenda}
                       className="w-full h-14 text-lg font-medium group-hover:scale-[1.02] transition-transform"
-                      disabled={carrinho.itens.length === 0 || restante > 0}
+                      disabled={carrinho.itens.length === 0 || isProcessando || restante > 0}
                       size="lg"
                     >
                       <CheckCircle className="h-6 w-6 mr-3" />
-                      {restante > 0 && carrinho.itens.length > 0 ? 
+                      {isProcessando ? 'Processando...' : 
+                       restante > 0 && carrinho.itens.length > 0 ? 
                         `Faltam ${formatarDinheiro(restante)}` : 
                         'Finalizar Venda'
                       }
@@ -930,6 +1426,2358 @@ export default function PDVPage() {
           </div>
         </div>
       </div>
+
+      {/* Modal de Seleção de Cliente */}
+      <Dialog open={modalCliente} onOpenChange={setModalCliente}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Selecionar Cliente</DialogTitle>
+            <DialogDescription>
+              Busque e selecione o cliente para esta venda
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input 
+                placeholder="Buscar por nome, CPF, CNPJ ou telefone..." 
+                value={termoBuscaCliente}
+                onChange={(e) => setTermoBuscaCliente(e.target.value)}
+                className="pl-10"
+                autoFocus
+                aria-label="Campo de busca de clientes"
+              />
+            </div>
+            
+            {/* Lista de clientes */}
+            <div 
+              className="max-h-96 overflow-y-auto" 
+              role="listbox" 
+              aria-label="Lista de clientes disponíveis"
+            >
+              {isLoadingClientes ? (
+                <div className="space-y-2" aria-label="Carregando clientes">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="flex items-center space-x-3 p-3">
+                      <Skeleton className="h-10 w-10 rounded-full" />
+                      <div className="space-y-1 flex-1">
+                        <Skeleton className="h-4 w-40" />
+                        <Skeleton className="h-3 w-24" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : clientes.length === 0 && termoBuscaCliente ? (
+                <div className="text-center py-8 text-muted-foreground" role="status">
+                  <User className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p>Nenhum cliente encontrado</p>
+                  <p className="text-sm">Tente ajustar o termo de busca</p>
+                </div>
+              ) : (termoBuscaCliente ? clientes : todosClientes).length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground" role="status">
+                  <User className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p>Digite para buscar clientes</p>
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  {(termoBuscaCliente ? clientes : todosClientes).map((cliente) => (
+                    <button
+                      key={cliente.id}
+                      onClick={() => selecionarCliente(cliente)}
+                      className="w-full text-left p-3 rounded-lg hover:bg-muted transition-colors focus:outline-none focus:ring-2 focus:ring-ring"
+                      role="option"
+                      aria-label={`Selecionar cliente ${cliente.nome}`}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <div className="flex-shrink-0">
+                          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-medium">
+                            {cliente.nome.charAt(0).toUpperCase()}
+                          </div>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm">{cliente.nome}</p>
+                          <div className="flex items-center space-x-2 text-xs text-muted-foreground">
+                            {(cliente.cpf || cliente.cnpj) && (
+                              <span>{cliente.cpf || cliente.cnpj}</span>
+                            )}
+                            {cliente.telefone && (
+                              <span>• {cliente.telefone}</span>
+                            )}
+                          </div>
+                          {cliente.email && (
+                            <p className="text-xs text-muted-foreground truncate">
+                              {cliente.email}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            
+            <div className="border-t pt-4">
+              <Button 
+                onClick={() => setModalCliente(false)} 
+                className="w-full"
+                variant="outline"
+                aria-label="Continuar venda sem selecionar cliente"
+              >
+                Venda sem Cliente
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Adicionar Pagamento */}
+      <Dialog open={modalPagamento} onOpenChange={setModalPagamento}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Adicionar Pagamento</DialogTitle>
+            <DialogDescription>
+              Escolha a forma de pagamento e informe o valor
+            </DialogDescription>
+          </DialogHeader>
+          <FormPagamento 
+            onAdicionarPagamento={(pagamento) => {
+              adicionarPagamento(pagamento);
+              setModalPagamento(false);
+            }}
+            valorSugerido={Math.max(0, carrinho.total - totalPago)}
+            onCancelar={() => setModalPagamento(false)}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Aplicar Desconto */}
+      <Dialog open={modalDesconto} onOpenChange={setModalDesconto}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Aplicar Desconto</DialogTitle>
+            <DialogDescription>
+              Escolha o tipo de desconto e informe o valor
+            </DialogDescription>
+          </DialogHeader>
+          <FormDesconto 
+            subtotal={carrinho.subtotal}
+            onAplicarDesconto={(desconto) => {
+              setDescontoGeral(desconto);
+              // Recalcular totais com o novo desconto
+              setCarrinho(prev => {
+                const subtotal = prev.itens.reduce((acc, item) => acc + (item.preco_unitario * item.quantidade), 0);
+                const desconto_total = prev.itens.reduce((acc, item) => acc + (item.desconto_valor || 0), 0) + desconto.valor;
+                const total = subtotal - desconto_total;
+                
+                return {
+                  ...prev,
+                  subtotal,
+                  desconto_total,
+                  total: Math.max(0, total)
+                };
+              });
+              setModalDesconto(false);
+            }}
+            descontoAtual={descontoGeral}
+            onCancelar={() => setModalDesconto(false)}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Lista de Pagamentos Adicionados */}
+      {pagamentos.length > 0 && (
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CreditCard className="h-5 w-5" aria-hidden="true" />
+              Pagamentos Adicionados ({pagamentos.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3" role="list" aria-label="Lista de pagamentos adicionados">
+              {pagamentos.map((pagamento, index) => (
+                <div 
+                  key={index} 
+                  className="flex items-center justify-between p-3 border rounded-lg"
+                  role="listitem"
+                  aria-label={`Pagamento ${index + 1}: ${pagamento.forma_pagamento.replace('_', ' ')} no valor de ${formatarDinheiro(pagamento.valor)}`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded bg-muted" aria-hidden="true">
+                      {pagamento.forma_pagamento === 'DINHEIRO' && <Banknote className="h-4 w-4" />}
+                      {pagamento.forma_pagamento === 'CARTAO_CREDITO' && <CreditCard className="h-4 w-4" />}
+                      {pagamento.forma_pagamento === 'CARTAO_DEBITO' && <CreditCard className="h-4 w-4" />}
+                      {pagamento.forma_pagamento === 'PIX' && <Smartphone className="h-4 w-4" />}
+                    </div>
+                    <div>
+                      <p className="font-medium">
+                        {pagamento.forma_pagamento.replace('_', ' ')}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {formatarDinheiro(pagamento.valor)}
+                      </p>
+                      {pagamento.bandeira_cartao && (
+                        <p className="text-xs text-muted-foreground">
+                          {pagamento.bandeira_cartao}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => removerPagamento(index)}
+                    aria-label={`Remover pagamento ${index + 1}: ${pagamento.forma_pagamento.replace('_', ' ')}`}
+                  >
+                    <Trash2 className="h-4 w-4" aria-hidden="true" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </AdminLayout>
   );
+}
+
+// =====================================================
+// COMPONENTE FORMULÁRIO DE PAGAMENTO
+// =====================================================
+
+interface FormPagamentoProps {
+  onAdicionarPagamento: (pagamento: PagamentoPDV) => void;
+  valorSugerido: number;
+  onCancelar: () => void;
+}
+
+function FormPagamento({ onAdicionarPagamento, valorSugerido, onCancelar }: FormPagamentoProps) {
+  const [formaPagamento, setFormaPagamento] = useState<FormaPagamento>('DINHEIRO');
+  const [valor, setValor] = useState('');
+  const [numeroAutorizacao, setNumeroAutorizacao] = useState('');
+  const [bandeiraCartao, setBandeiraCartao] = useState('');
+
+  // Atualizar valor quando valorSugerido mudar
+  useEffect(() => {
+    if (valorSugerido > 0) {
+      setValor(valorSugerido.toFixed(2));
+    }
+  }, [valorSugerido]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const valorNumerico = parseFloat(valor);
+    if (valorNumerico <= 0) {
+      toast({
+        title: "Valor inválido",
+        description: "O valor deve ser maior que zero",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const pagamento: PagamentoPDV = {
+      forma_pagamento: formaPagamento,
+      valor: valorNumerico,
+      numero_autorizacao: numeroAutorizacao || undefined,
+      bandeira_cartao: bandeiraCartao || undefined,
+    };
+
+    onAdicionarPagamento(pagamento);
+    
+    toast({
+      title: "Pagamento adicionado",
+      description: `${formaPagamento.replace('_', ' ')} - R$ ${valorNumerico.toFixed(2)}`,
+    });
+    
+    // Limpar formulário
+    setValor('');
+    setNumeroAutorizacao('');
+    setBandeiraCartao('');
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4" aria-label="Formulário de pagamento">
+      <div>
+        <Label htmlFor="forma-pagamento">Forma de Pagamento</Label>
+        <Select value={formaPagamento} onValueChange={(value: FormaPagamento) => setFormaPagamento(value)}>
+          <SelectTrigger id="forma-pagamento" aria-label="Selecionar forma de pagamento">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="DINHEIRO">💵 Dinheiro</SelectItem>
+            <SelectItem value="CARTAO_CREDITO">💳 Cartão de Crédito</SelectItem>
+            <SelectItem value="CARTAO_DEBITO">💳 Cartão de Débito</SelectItem>
+            <SelectItem value="PIX">📱 PIX</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div>
+        <Label htmlFor="valor">Valor</Label>
+        <div className="relative">
+          <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" aria-hidden="true">R$</span>
+          <Input
+            id="valor"
+            type="number"
+            step="0.01"
+            min="0"
+            value={valor}
+            onChange={(e) => setValor(e.target.value)}
+            className="pl-10"
+            placeholder="0,00"
+            aria-label="Valor do pagamento em reais"
+            aria-describedby="valor-help"
+            autoFocus
+          />
+        </div>
+        <p id="valor-help" className="text-xs text-muted-foreground mt-1">
+          Digite o valor a ser pago nesta forma de pagamento
+        </p>
+      </div>
+
+      {(formaPagamento === 'CARTAO_CREDITO' || formaPagamento === 'CARTAO_DEBITO') && (
+        <>
+          <div>
+            <Label htmlFor="bandeira">Bandeira do Cartão</Label>
+            <Select value={bandeiraCartao} onValueChange={setBandeiraCartao}>
+              <SelectTrigger id="bandeira" aria-label="Selecionar bandeira do cartão">
+                <SelectValue placeholder="Selecione a bandeira" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="VISA">Visa</SelectItem>
+                <SelectItem value="MASTERCARD">Mastercard</SelectItem>
+                <SelectItem value="ELO">Elo</SelectItem>
+                <SelectItem value="AMEX">American Express</SelectItem>
+                <SelectItem value="HIPERCARD">Hipercard</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label htmlFor="autorizacao">Número de Autorização (opcional)</Label>
+            <Input
+              id="autorizacao"
+              value={numeroAutorizacao}
+              onChange={(e) => setNumeroAutorizacao(e.target.value)}
+              placeholder="Número da autorização"
+              aria-label="Número de autorização da transação (opcional)"
+            />
+          </div>
+        </>
+      )}
+
+      <div className="flex gap-2 pt-4">
+        <Button 
+          type="button" 
+          variant="outline" 
+          onClick={onCancelar} 
+          className="flex-1"
+          aria-label="Cancelar adição de pagamento"
+        >
+          Cancelar
+        </Button>
+        <Button 
+          type="submit" 
+          className="flex-1"
+          aria-label="Confirmar adição do pagamento"
+        >
+          <Plus className="h-4 w-4 mr-2" aria-hidden="true" />
+          Adicionar
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+// =====================================================
+// COMPONENTE FORMULÁRIO DE DESCONTO
+// =====================================================
+
+interface FormDescontoProps {
+  onAplicarDesconto: (desconto: { valor: number; percentual: number }) => void;
+  subtotal: number;
+  descontoAtual: { valor: number; percentual: number };
+  onCancelar: () => void;
+}
+
+function FormDesconto({ onAplicarDesconto, subtotal, descontoAtual, onCancelar }: FormDescontoProps) {
+  const [tipoDesconto, setTipoDesconto] = useState<'valor' | 'percentual'>('percentual');
+  const [valor, setValor] = useState(descontoAtual.valor.toString());
+  const [percentual, setPercentual] = useState(descontoAtual.percentual.toString());
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    let descontoCalculado = { valor: 0, percentual: 0 };
+    
+    if (tipoDesconto === 'valor') {
+      const valorDesconto = parseFloat(valor);
+      if (valorDesconto < 0 || valorDesconto > subtotal) {
+        toast({
+          title: "Valor inválido",
+          description: "O desconto não pode ser negativo ou maior que o subtotal",
+          variant: "destructive"
+        });
+        return;
+      }
+      descontoCalculado = {
+        valor: valorDesconto,
+        percentual: subtotal > 0 ? (valorDesconto / subtotal) * 100 : 0
+      };
+    } else {
+      const percentualDesconto = parseFloat(percentual);
+      if (percentualDesconto < 0 || percentualDesconto > 100) {
+        toast({
+          title: "Percentual inválido",
+          description: "O desconto deve estar entre 0% e 100%",
+          variant: "destructive"
+        });
+        return;
+      }
+      const valorDesconto = (subtotal * percentualDesconto) / 100;
+      descontoCalculado = {
+        valor: valorDesconto,
+        percentual: percentualDesconto
+      };
+    }
+
+    onAplicarDesconto(descontoCalculado);
+    
+    toast({
+      title: "Desconto aplicado",
+      description: `Desconto de ${descontoCalculado.percentual.toFixed(1)}% aplicado`,
+    });
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4" aria-label="Formulário de desconto">
+      <div>
+        <Label>Tipo de Desconto</Label>
+        <div className="flex gap-2 mt-2" role="radiogroup" aria-label="Escolher tipo de desconto">
+          <Button
+            type="button"
+            variant={tipoDesconto === 'percentual' ? 'default' : 'outline'}
+            onClick={() => setTipoDesconto('percentual')}
+            className="flex-1"
+            role="radio"
+            aria-checked={tipoDesconto === 'percentual'}
+            aria-label="Desconto por percentual"
+          >
+            <Percent className="h-4 w-4 mr-2" aria-hidden="true" />
+            Percentual
+          </Button>
+          <Button
+            type="button"
+            variant={tipoDesconto === 'valor' ? 'default' : 'outline'}
+            onClick={() => setTipoDesconto('valor')}
+            className="flex-1"
+            role="radio"
+            aria-checked={tipoDesconto === 'valor'}
+            aria-label="Desconto por valor fixo"
+          >
+            <DollarSign className="h-4 w-4 mr-2" aria-hidden="true" />
+            Valor
+          </Button>
+        </div>
+      </div>
+
+      {tipoDesconto === 'percentual' ? (
+        <div>
+          <Label htmlFor="percentual">Percentual de Desconto</Label>
+          <div className="relative">
+            <Input
+              id="percentual"
+              type="number"
+              step="0.1"
+              min="0"
+              max="100"
+              value={percentual}
+              onChange={(e) => setPercentual(e.target.value)}
+              className="pr-8"
+              placeholder="0"
+              aria-label="Percentual de desconto de 0 a 100"
+              aria-describedby="percentual-help"
+              autoFocus
+            />
+            <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" aria-hidden="true">%</span>
+          </div>
+          {parseFloat(percentual) > 0 && (
+            <p id="percentual-help" className="text-sm text-muted-foreground mt-1">
+              Desconto: {((subtotal * parseFloat(percentual)) / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+            </p>
+          )}
+        </div>
+      ) : (
+        <div>
+          <Label htmlFor="valor-desconto">Valor do Desconto</Label>
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" aria-hidden="true">R$</span>
+            <Input
+              id="valor-desconto"
+              type="number"
+              step="0.01"
+              min="0"
+              max={subtotal}
+              value={valor}
+              onChange={(e) => setValor(e.target.value)}
+              className="pl-10"
+              placeholder="0,00"
+              aria-label="Valor do desconto em reais"
+              aria-describedby="valor-desconto-help"
+              autoFocus
+            />
+          </div>
+          {parseFloat(valor) > 0 && (
+            <p id="valor-desconto-help" className="text-sm text-muted-foreground mt-1">
+              Percentual: {subtotal > 0 ? ((parseFloat(valor) / subtotal) * 100).toFixed(1) : 0}%
+            </p>
+          )}
+        </div>
+      )}
+
+      <div className="p-3 bg-muted rounded-lg" role="region" aria-label="Resumo do desconto">
+        <div className="flex justify-between text-sm">
+          <span>Subtotal:</span>
+          <span>{subtotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+        </div>
+        <div className="flex justify-between text-sm text-red-600">
+          <span>Desconto:</span>
+          <span>
+            - {(tipoDesconto === 'valor' ? parseFloat(valor) || 0 : (subtotal * (parseFloat(percentual) || 0)) / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+          </span>
+        </div>
+        <div className="flex justify-between font-medium border-t pt-2 mt-2">
+          <span>Total:</span>
+          <span className="text-green-600">
+            {(subtotal - (tipoDesconto === 'valor' ? parseFloat(valor) || 0 : (subtotal * (parseFloat(percentual) || 0)) / 100)).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+          </span>
+        </div>
+      </div>
+
+      <div className="flex gap-2 pt-4">
+        <Button 
+          type="button" 
+          variant="outline" 
+          onClick={onCancelar} 
+          className="flex-1"
+          aria-label="Cancelar aplicação de desconto"
+        >
+          Cancelar
+        </Button>
+        <Button 
+          type="submit" 
+          className="flex-1"
+          aria-label="Confirmar aplicação do desconto"
+        >
+          <Percent className="h-4 w-4 mr-2" aria-hidden="true" />
+          Aplicar Desconto
+        </Button>
+      </div>
+    </form>
+  );
 } 
+
+// =====================================================
+// FUNÇÕES DO CAIXA
+// =====================================================
+
+const verificarCaixaAberto = useCallback(async () => {
+  try {
+    const response = await fetch(`${supabaseUrl}/functions/v1/caixa-operations?action=obter-caixa-ativo`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${supabaseAnonKey}`,
+        'Content-Type': 'application/json',
+      }
+    });
+
+    if (response.ok) {
+      const { caixa } = await response.json();
+      setCaixaAberto(caixa);
+      
+      // Se não há caixa aberto, mostrar modal
+      if (!caixa) {
+        setModalAbrirCaixa(true);
+      }
+    }
+  } catch (error) {
+    console.error('Erro ao verificar caixa:', error);
+    toast({
+      title: "Aviso",
+      description: "Não foi possível verificar o status do caixa",
+      variant: "destructive"
+    });
+  }
+}, [supabaseUrl, supabaseAnonKey]);
+
+const abrirCaixa = async () => {
+  if (!valorInicialCaixa || parseFloat(valorInicialCaixa) < 0) {
+    toast({
+      title: "Valor inválido",
+      description: "Informe um valor inicial válido",
+      variant: "destructive"
+    });
+    return;
+  }
+
+  try {
+    const response = await fetch(`${supabaseUrl}/functions/v1/caixa-operations?action=abrir-caixa`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${supabaseAnonKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        valor_inicial: parseFloat(valorInicialCaixa),
+        observacoes: observacoesCaixa
+      })
+    });
+
+    if (response.ok) {
+      const { caixa } = await response.json();
+      setCaixaAberto(caixa);
+      setModalAbrirCaixa(false);
+      setValorInicialCaixa('');
+      setObservacoesCaixa('');
+      
+      toast({
+        title: "Caixa aberto",
+        description: `Caixa aberto com valor inicial de ${formatarDinheiro(parseFloat(valorInicialCaixa))}`,
+      });
+    } else {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Erro ao abrir caixa');
+    }
+  } catch (error) {
+    console.error('Erro ao abrir caixa:', error);
+    toast({
+      title: "Erro",
+      description: error instanceof Error ? error.message : "Erro ao abrir caixa",
+      variant: "destructive"
+    });
+  }
+};
+
+// Verificar caixa aberto na inicialização
+useEffect(() => {
+  verificarCaixaAberto();
+}, [verificarCaixaAberto]);
+
+// =====================================================
+// FUNÇÕES DE BUSCA
+  // =====================================================
+  
+  const buscarProdutos = useCallback(async (termo: string) => {
+    if (!termo || termo.length < 2) {
+      setProdutos([]);
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      const produtos = await buscarProdutosPDV(termo);
+      setProdutos(produtos);
+    } catch (error) {
+      console.error('Erro ao buscar produtos:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao buscar produtos",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+  
+  const buscarProdutosPDV = async (termo: string): Promise<ProdutoPDV[]> => {
+    try {
+      const { data, error } = await supabase
+        .from('produtos')
+        .select(`
+          id,
+          nome,
+          codigo_interno,
+          codigo_ean,
+          preco_venda,
+          estoque_atual,
+          controlado,
+          requer_receita,
+          categoria_produto:categoria_produto_id(nome),
+          forma_farmaceutica:forma_farmaceutica_id(nome)
+        `)
+        .or(`nome.ilike.%${termo}%,codigo_interno.ilike.%${termo}%,codigo_ean.ilike.%${termo}%`)
+        .eq('ativo', true)
+        .gt('estoque_atual', 0) // Apenas produtos com estoque
+        .order('nome')
+        .limit(20);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return data?.map(produto => ({
+        id: produto.id,
+        nome: produto.nome,
+        codigo_interno: produto.codigo_interno,
+        codigo_ean: produto.codigo_ean,
+        preco_venda: parseFloat(produto.preco_venda?.toString() || '0'),
+        estoque_atual: parseFloat(produto.estoque_atual?.toString() || '0'),
+        categoria_nome: produto.categoria_produto?.nome || '',
+        controlado: produto.controlado || false,
+        requer_receita: produto.requer_receita || false,
+        forma_farmaceutica_nome: produto.forma_farmaceutica?.nome || ''
+      })) || [];
+
+    } catch (error) {
+      console.error('Erro ao buscar produtos PDV:', error);
+      throw error;
+    }
+  };
+  
+  const buscarClientes = useCallback(async (termo: string) => {
+    if (!termo || termo.length < 2) {
+      setClientes([]);
+      return;
+    }
+    
+    setLoadingClientes(true);
+    try {
+      const clientes = await buscarClientesPDV(termo);
+      setClientes(clientes);
+    } catch (error) {
+      console.error('Erro ao buscar clientes:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao buscar clientes",
+        variant: "destructive"
+      });
+    } finally {
+      setLoadingClientes(false);
+    }
+  }, []);
+  
+  const buscarClientesPDV = async (termo: string): Promise<ClienteVenda[]> => {
+    try {
+      const { data, error } = await supabase
+        .from('clientes')
+        .select(`
+          id,
+          nome,
+          cpf,
+          cnpj,
+          documento,
+          telefone,
+          email,
+          endereco,
+          cidade,
+          estado,
+          cep,
+          data_nascimento,
+          created_at,
+          updated_at
+        `)
+        .or(`nome.ilike.%${termo}%,cpf.ilike.%${termo}%,cnpj.ilike.%${termo}%,telefone.ilike.%${termo}%,email.ilike.%${termo}%,documento.ilike.%${termo}%`)
+        .eq('ativo', true)
+        .order('nome')
+        .limit(20);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return data?.map(cliente => ({
+        id: cliente.id,
+        nome: cliente.nome,
+        cpf: cliente.cpf,
+        cnpj: cliente.cnpj,
+        documento: cliente.documento,
+        telefone: cliente.telefone,
+        email: cliente.email,
+        endereco: cliente.endereco,
+        cidade: cliente.cidade,
+        estado: cliente.estado,
+        cep: cliente.cep,
+        data_nascimento: cliente.data_nascimento,
+        created_at: cliente.created_at,
+        updated_at: cliente.updated_at
+      })) || [];
+
+    } catch (error) {
+      console.error('Erro ao buscar clientes PDV:', error);
+      throw error;
+    }
+  };
+  
+  const buscarTodosClientes = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('clientes')
+        .select(`
+          id,
+          nome,
+          cpf,
+          cnpj,
+          documento,
+          telefone,
+          email,
+          endereco,
+          cidade,
+          estado,
+          cep,
+          data_nascimento,
+          created_at,
+          updated_at
+        `)
+        .eq('ativo', true)
+        .order('nome')
+        .limit(20);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return data?.map(cliente => ({
+        id: cliente.id,
+        nome: cliente.nome,
+        cpf: cliente.cpf,
+        cnpj: cliente.cnpj,
+        documento: cliente.documento,
+        telefone: cliente.telefone,
+        email: cliente.email,
+        endereco: cliente.endereco,
+        cidade: cliente.cidade,
+        estado: cliente.estado,
+        cep: cliente.cep,
+        data_nascimento: cliente.data_nascimento,
+        created_at: cliente.created_at,
+        updated_at: cliente.updated_at
+      })) || [];
+
+    } catch (error) {
+      console.error('Erro ao buscar todos os clientes:', error);
+      throw error;
+    }
+  }, []);
+  
+  const buscarVendas = useCallback(async (termo: string) => {
+    if (!termo || termo.length < 2) {
+      setVendas([]);
+      return;
+    }
+    
+    setLoadingVendas(true);
+    try {
+      const vendas = await buscarVendasPDV(termo);
+      setVendas(vendas);
+    } catch (error) {
+      console.error('Erro ao buscar vendas:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao buscar vendas",
+        variant: "destructive"
+      });
+    } finally {
+      setLoadingVendas(false);
+    }
+  }, []);
+  
+  const buscarVendasPDV = async (termo: string): Promise<Venda[]> => {
+    try {
+      const { data, error } = await supabase
+        .from('vendas')
+        .select(`
+          id,
+          numero_venda,
+          cliente_id,
+          cliente_nome,
+          cliente_documento,
+          cliente_telefone,
+          itens,
+          subtotal,
+          desconto_valor,
+          desconto_percentual,
+          total,
+          observacoes,
+          created_at,
+          updated_at
+        `)
+        .or(`numero_venda.ilike.%${termo}%,cliente_nome.ilike.%${termo}%,cliente_documento.ilike.%${termo}%,cliente_telefone.ilike.%${termo}%,observacoes.ilike.%${termo}%`)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return data?.map(venda => ({
+        id: venda.id,
+        numero_venda: venda.numero_venda,
+        cliente_id: venda.cliente_id,
+        cliente_nome: venda.cliente_nome,
+        cliente_documento: venda.cliente_documento,
+        cliente_telefone: venda.cliente_telefone,
+        itens: venda.itens,
+        subtotal: parseFloat(venda.subtotal?.toString() || '0'),
+        desconto_valor: parseFloat(venda.desconto_valor?.toString() || '0'),
+        desconto_percentual: parseFloat(venda.desconto_percentual?.toString() || '0'),
+        total: parseFloat(venda.total?.toString() || '0'),
+        observacoes: venda.observacoes,
+        created_at: venda.created_at,
+        updated_at: venda.updated_at
+      })) || [];
+
+    } catch (error) {
+      console.error('Erro ao buscar vendas PDV:', error);
+      throw error;
+    }
+  };
+  
+  const buscarPagamentos = useCallback(async (vendaId: UUID) => {
+    try {
+      const { data, error } = await supabase
+        .from('pagamentos')
+        .select(`
+          id,
+          forma_pagamento,
+          valor,
+          numero_autorizacao,
+          bandeira_cartao,
+          codigo_transacao,
+          observacoes
+        `)
+        .eq('venda_id', vendaId);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return data?.map(pagamento => ({
+        id: pagamento.id,
+        forma_pagamento: pagamento.forma_pagamento,
+        valor: parseFloat(pagamento.valor?.toString() || '0'),
+        numero_autorizacao: pagamento.numero_autorizacao,
+        bandeira_cartao: pagamento.bandeira_cartao,
+        codigo_transacao: pagamento.codigo_transacao,
+        observacoes: pagamento.observacoes
+      })) || [];
+
+    } catch (error) {
+      console.error('Erro ao buscar pagamentos:', error);
+      throw error;
+    }
+  }, []);
+  
+  const buscarDescontos = useCallback(async (vendaId: UUID) => {
+    try {
+      const { data, error } = await supabase
+        .from('descontos')
+        .select(`
+          id,
+          valor,
+          percentual,
+          observacoes
+        `)
+        .eq('venda_id', vendaId);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return data?.map(desconto => ({
+        id: desconto.id,
+        valor: parseFloat(desconto.valor?.toString() || '0'),
+        percentual: parseFloat(desconto.percentual?.toString() || '0'),
+        observacoes: desconto.observacoes
+      })) || [];
+
+    } catch (error) {
+      console.error('Erro ao buscar descontos:', error);
+      throw error;
+    }
+  }, []);
+  
+  const buscarItens = useCallback(async (vendaId: UUID) => {
+    try {
+      const { data, error } = await supabase
+        .from('itens_venda')
+        .select(`
+          id,
+          produto_id,
+          produto_nome,
+          produto_codigo,
+          quantidade,
+          preco_unitario,
+          preco_total,
+          lote_id,
+          desconto_valor,
+          desconto_percentual
+        `)
+        .eq('venda_id', vendaId);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return data?.map(item => ({
+        id: item.id,
+        produto_id: item.produto_id,
+        produto_nome: item.produto_nome,
+        produto_codigo: item.produto_codigo,
+        quantidade: parseFloat(item.quantidade?.toString() || '0'),
+        preco_unitario: parseFloat(item.preco_unitario?.toString() || '0'),
+        preco_total: parseFloat(item.preco_total?.toString() || '0'),
+        lote_id: item.lote_id,
+        desconto_valor: parseFloat(item.desconto_valor?.toString() || '0'),
+        desconto_percentual: parseFloat(item.desconto_percentual?.toString() || '0')
+      })) || [];
+
+    } catch (error) {
+      console.error('Erro ao buscar itens:', error);
+      throw error;
+    }
+  }, []);
+  
+  const buscarVendas = useCallback(async (termo: string) => {
+    if (!termo || termo.length < 2) {
+      setVendas([]);
+      return;
+    }
+    
+    setLoadingVendas(true);
+    try {
+      const vendas = await buscarVendasPDV(termo);
+      setVendas(vendas);
+    } catch (error) {
+      console.error('Erro ao buscar vendas:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao buscar vendas",
+        variant: "destructive"
+      });
+    } finally {
+      setLoadingVendas(false);
+    }
+  }, []);
+  
+  const buscarVendasPDV = async (termo: string): Promise<Venda[]> => {
+    try {
+      const { data, error } = await supabase
+        .from('vendas')
+        .select(`
+          id,
+          numero_venda,
+          cliente_id,
+          cliente_nome,
+          cliente_documento,
+          cliente_telefone,
+          itens,
+          subtotal,
+          desconto_valor,
+          desconto_percentual,
+          total,
+          observacoes,
+          created_at,
+          updated_at
+        `)
+        .or(`numero_venda.ilike.%${termo}%,cliente_nome.ilike.%${termo}%,cliente_documento.ilike.%${termo}%,cliente_telefone.ilike.%${termo}%,observacoes.ilike.%${termo}%`)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return data?.map(venda => ({
+        id: venda.id,
+        numero_venda: venda.numero_venda,
+        cliente_id: venda.cliente_id,
+        cliente_nome: venda.cliente_nome,
+        cliente_documento: venda.cliente_documento,
+        cliente_telefone: venda.cliente_telefone,
+        itens: venda.itens,
+        subtotal: parseFloat(venda.subtotal?.toString() || '0'),
+        desconto_valor: parseFloat(venda.desconto_valor?.toString() || '0'),
+        desconto_percentual: parseFloat(venda.desconto_percentual?.toString() || '0'),
+        total: parseFloat(venda.total?.toString() || '0'),
+        observacoes: venda.observacoes,
+        created_at: venda.created_at,
+        updated_at: venda.updated_at
+      })) || [];
+
+    } catch (error) {
+      console.error('Erro ao buscar vendas PDV:', error);
+      throw error;
+    }
+  };
+  
+  const buscarPagamentos = useCallback(async (vendaId: UUID) => {
+    try {
+      const { data, error } = await supabase
+        .from('pagamentos')
+        .select(`
+          id,
+          forma_pagamento,
+          valor,
+          numero_autorizacao,
+          bandeira_cartao,
+          codigo_transacao,
+          observacoes
+        `)
+        .eq('venda_id', vendaId);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return data?.map(pagamento => ({
+        id: pagamento.id,
+        forma_pagamento: pagamento.forma_pagamento,
+        valor: parseFloat(pagamento.valor?.toString() || '0'),
+        numero_autorizacao: pagamento.numero_autorizacao,
+        bandeira_cartao: pagamento.bandeira_cartao,
+        codigo_transacao: pagamento.codigo_transacao,
+        observacoes: pagamento.observacoes
+      })) || [];
+
+    } catch (error) {
+      console.error('Erro ao buscar pagamentos:', error);
+      throw error;
+    }
+  }, []);
+  
+  const buscarDescontos = useCallback(async (vendaId: UUID) => {
+    try {
+      const { data, error } = await supabase
+        .from('descontos')
+        .select(`
+          id,
+          valor,
+          percentual,
+          observacoes
+        `)
+        .eq('venda_id', vendaId);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return data?.map(desconto => ({
+        id: desconto.id,
+        valor: parseFloat(desconto.valor?.toString() || '0'),
+        percentual: parseFloat(desconto.percentual?.toString() || '0'),
+        observacoes: desconto.observacoes
+      })) || [];
+
+    } catch (error) {
+      console.error('Erro ao buscar descontos:', error);
+      throw error;
+    }
+  }, []);
+  
+  const buscarItens = useCallback(async (vendaId: UUID) => {
+    try {
+      const { data, error } = await supabase
+        .from('itens_venda')
+        .select(`
+          id,
+          produto_id,
+          produto_nome,
+          produto_codigo,
+          quantidade,
+          preco_unitario,
+          preco_total,
+          lote_id,
+          desconto_valor,
+          desconto_percentual
+        `)
+        .eq('venda_id', vendaId);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return data?.map(item => ({
+        id: item.id,
+        produto_id: item.produto_id,
+        produto_nome: item.produto_nome,
+        produto_codigo: item.produto_codigo,
+        quantidade: parseFloat(item.quantidade?.toString() || '0'),
+        preco_unitario: parseFloat(item.preco_unitario?.toString() || '0'),
+        preco_total: parseFloat(item.preco_total?.toString() || '0'),
+        lote_id: item.lote_id,
+        desconto_valor: parseFloat(item.desconto_valor?.toString() || '0'),
+        desconto_percentual: parseFloat(item.desconto_percentual?.toString() || '0')
+      })) || [];
+
+    } catch (error) {
+      console.error('Erro ao buscar itens:', error);
+      throw error;
+    }
+  }, []);
+  
+  const buscarVendas = useCallback(async (termo: string) => {
+    if (!termo || termo.length < 2) {
+      setVendas([]);
+      return;
+    }
+    
+    setLoadingVendas(true);
+    try {
+      const vendas = await buscarVendasPDV(termo);
+      setVendas(vendas);
+    } catch (error) {
+      console.error('Erro ao buscar vendas:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao buscar vendas",
+        variant: "destructive"
+      });
+    } finally {
+      setLoadingVendas(false);
+    }
+  }, []);
+  
+  const buscarVendasPDV = async (termo: string): Promise<Venda[]> => {
+    try {
+      const { data, error } = await supabase
+        .from('vendas')
+        .select(`
+          id,
+          numero_venda,
+          cliente_id,
+          cliente_nome,
+          cliente_documento,
+          cliente_telefone,
+          itens,
+          subtotal,
+          desconto_valor,
+          desconto_percentual,
+          total,
+          observacoes,
+          created_at,
+          updated_at
+        `)
+        .or(`numero_venda.ilike.%${termo}%,cliente_nome.ilike.%${termo}%,cliente_documento.ilike.%${termo}%,cliente_telefone.ilike.%${termo}%,observacoes.ilike.%${termo}%`)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return data?.map(venda => ({
+        id: venda.id,
+        numero_venda: venda.numero_venda,
+        cliente_id: venda.cliente_id,
+        cliente_nome: venda.cliente_nome,
+        cliente_documento: venda.cliente_documento,
+        cliente_telefone: venda.cliente_telefone,
+        itens: venda.itens,
+        subtotal: parseFloat(venda.subtotal?.toString() || '0'),
+        desconto_valor: parseFloat(venda.desconto_valor?.toString() || '0'),
+        desconto_percentual: parseFloat(venda.desconto_percentual?.toString() || '0'),
+        total: parseFloat(venda.total?.toString() || '0'),
+        observacoes: venda.observacoes,
+        created_at: venda.created_at,
+        updated_at: venda.updated_at
+      })) || [];
+
+    } catch (error) {
+      console.error('Erro ao buscar vendas PDV:', error);
+      throw error;
+    }
+  };
+  
+  const buscarPagamentos = useCallback(async (vendaId: UUID) => {
+    try {
+      const { data, error } = await supabase
+        .from('pagamentos')
+        .select(`
+          id,
+          forma_pagamento,
+          valor,
+          numero_autorizacao,
+          bandeira_cartao,
+          codigo_transacao,
+          observacoes
+        `)
+        .eq('venda_id', vendaId);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return data?.map(pagamento => ({
+        id: pagamento.id,
+        forma_pagamento: pagamento.forma_pagamento,
+        valor: parseFloat(pagamento.valor?.toString() || '0'),
+        numero_autorizacao: pagamento.numero_autorizacao,
+        bandeira_cartao: pagamento.bandeira_cartao,
+        codigo_transacao: pagamento.codigo_transacao,
+        observacoes: pagamento.observacoes
+      })) || [];
+
+    } catch (error) {
+      console.error('Erro ao buscar pagamentos:', error);
+      throw error;
+    }
+  }, []);
+  
+  const buscarDescontos = useCallback(async (vendaId: UUID) => {
+    try {
+      const { data, error } = await supabase
+        .from('descontos')
+        .select(`
+          id,
+          valor,
+          percentual,
+          observacoes
+        `)
+        .eq('venda_id', vendaId);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return data?.map(desconto => ({
+        id: desconto.id,
+        valor: parseFloat(desconto.valor?.toString() || '0'),
+        percentual: parseFloat(desconto.percentual?.toString() || '0'),
+        observacoes: desconto.observacoes
+      })) || [];
+
+    } catch (error) {
+      console.error('Erro ao buscar descontos:', error);
+      throw error;
+    }
+  }, []);
+  
+  const buscarItens = useCallback(async (vendaId: UUID) => {
+    try {
+      const { data, error } = await supabase
+        .from('itens_venda')
+        .select(`
+          id,
+          produto_id,
+          produto_nome,
+          produto_codigo,
+          quantidade,
+          preco_unitario,
+          preco_total,
+          lote_id,
+          desconto_valor,
+          desconto_percentual
+        `)
+        .eq('venda_id', vendaId);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return data?.map(item => ({
+        id: item.id,
+        produto_id: item.produto_id,
+        produto_nome: item.produto_nome,
+        produto_codigo: item.produto_codigo,
+        quantidade: parseFloat(item.quantidade?.toString() || '0'),
+        preco_unitario: parseFloat(item.preco_unitario?.toString() || '0'),
+        preco_total: parseFloat(item.preco_total?.toString() || '0'),
+        lote_id: item.lote_id,
+        desconto_valor: parseFloat(item.desconto_valor?.toString() || '0'),
+        desconto_percentual: parseFloat(item.desconto_percentual?.toString() || '0')
+      })) || [];
+
+    } catch (error) {
+      console.error('Erro ao buscar itens:', error);
+      throw error;
+    }
+  }, []);
+  
+  const buscarVendas = useCallback(async (termo: string) => {
+    if (!termo || termo.length < 2) {
+      setVendas([]);
+      return;
+    }
+    
+    setLoadingVendas(true);
+    try {
+      const vendas = await buscarVendasPDV(termo);
+      setVendas(vendas);
+    } catch (error) {
+      console.error('Erro ao buscar vendas:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao buscar vendas",
+        variant: "destructive"
+      });
+    } finally {
+      setLoadingVendas(false);
+    }
+  }, []);
+  
+  const buscarVendasPDV = async (termo: string): Promise<Venda[]> => {
+    try {
+      const { data, error } = await supabase
+        .from('vendas')
+        .select(`
+          id,
+          numero_venda,
+          cliente_id,
+          cliente_nome,
+          cliente_documento,
+          cliente_telefone,
+          itens,
+          subtotal,
+          desconto_valor,
+          desconto_percentual,
+          total,
+          observacoes,
+          created_at,
+          updated_at
+        `)
+        .or(`numero_venda.ilike.%${termo}%,cliente_nome.ilike.%${termo}%,cliente_documento.ilike.%${termo}%,cliente_telefone.ilike.%${termo}%,observacoes.ilike.%${termo}%`)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return data?.map(venda => ({
+        id: venda.id,
+        numero_venda: venda.numero_venda,
+        cliente_id: venda.cliente_id,
+        cliente_nome: venda.cliente_nome,
+        cliente_documento: venda.cliente_documento,
+        cliente_telefone: venda.cliente_telefone,
+        itens: venda.itens,
+        subtotal: parseFloat(venda.subtotal?.toString() || '0'),
+        desconto_valor: parseFloat(venda.desconto_valor?.toString() || '0'),
+        desconto_percentual: parseFloat(venda.desconto_percentual?.toString() || '0'),
+        total: parseFloat(venda.total?.toString() || '0'),
+        observacoes: venda.observacoes,
+        created_at: venda.created_at,
+        updated_at: venda.updated_at
+      })) || [];
+
+    } catch (error) {
+      console.error('Erro ao buscar vendas PDV:', error);
+      throw error;
+    }
+  };
+  
+  const buscarPagamentos = useCallback(async (vendaId: UUID) => {
+    try {
+      const { data, error } = await supabase
+        .from('pagamentos')
+        .select(`
+          id,
+          forma_pagamento,
+          valor,
+          numero_autorizacao,
+          bandeira_cartao,
+          codigo_transacao,
+          observacoes
+        `)
+        .eq('venda_id', vendaId);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return data?.map(pagamento => ({
+        id: pagamento.id,
+        forma_pagamento: pagamento.forma_pagamento,
+        valor: parseFloat(pagamento.valor?.toString() || '0'),
+        numero_autorizacao: pagamento.numero_autorizacao,
+        bandeira_cartao: pagamento.bandeira_cartao,
+        codigo_transacao: pagamento.codigo_transacao,
+        observacoes: pagamento.observacoes
+      })) || [];
+
+    } catch (error) {
+      console.error('Erro ao buscar pagamentos:', error);
+      throw error;
+    }
+  }, []);
+  
+  const buscarDescontos = useCallback(async (vendaId: UUID) => {
+    try {
+      const { data, error } = await supabase
+        .from('descontos')
+        .select(`
+          id,
+          valor,
+          percentual,
+          observacoes
+        `)
+        .eq('venda_id', vendaId);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return data?.map(desconto => ({
+        id: desconto.id,
+        valor: parseFloat(desconto.valor?.toString() || '0'),
+        percentual: parseFloat(desconto.percentual?.toString() || '0'),
+        observacoes: desconto.observacoes
+      })) || [];
+
+    } catch (error) {
+      console.error('Erro ao buscar descontos:', error);
+      throw error;
+    }
+  }, []);
+  
+  const buscarItens = useCallback(async (vendaId: UUID) => {
+    try {
+      const { data, error } = await supabase
+        .from('itens_venda')
+        .select(`
+          id,
+          produto_id,
+          produto_nome,
+          produto_codigo,
+          quantidade,
+          preco_unitario,
+          preco_total,
+          lote_id,
+          desconto_valor,
+          desconto_percentual
+        `)
+        .eq('venda_id', vendaId);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return data?.map(item => ({
+        id: item.id,
+        produto_id: item.produto_id,
+        produto_nome: item.produto_nome,
+        produto_codigo: item.produto_codigo,
+        quantidade: parseFloat(item.quantidade?.toString() || '0'),
+        preco_unitario: parseFloat(item.preco_unitario?.toString() || '0'),
+        preco_total: parseFloat(item.preco_total?.toString() || '0'),
+        lote_id: item.lote_id,
+        desconto_valor: parseFloat(item.desconto_valor?.toString() || '0'),
+        desconto_percentual: parseFloat(item.desconto_percentual?.toString() || '0')
+      })) || [];
+
+    } catch (error) {
+      console.error('Erro ao buscar itens:', error);
+      throw error;
+    }
+  }, []);
+  
+  const buscarVendas = useCallback(async (termo: string) => {
+    if (!termo || termo.length < 2) {
+      setVendas([]);
+      return;
+    }
+    
+    setLoadingVendas(true);
+    try {
+      const vendas = await buscarVendasPDV(termo);
+      setVendas(vendas);
+    } catch (error) {
+      console.error('Erro ao buscar vendas:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao buscar vendas",
+        variant: "destructive"
+      });
+    } finally {
+      setLoadingVendas(false);
+    }
+  }, []);
+  
+  const buscarVendasPDV = async (termo: string): Promise<Venda[]> => {
+    try {
+      const { data, error } = await supabase
+        .from('vendas')
+        .select(`
+          id,
+          numero_venda,
+          cliente_id,
+          cliente_nome,
+          cliente_documento,
+          cliente_telefone,
+          itens,
+          subtotal,
+          desconto_valor,
+          desconto_percentual,
+          total,
+          observacoes,
+          created_at,
+          updated_at
+        `)
+        .or(`numero_venda.ilike.%${termo}%,cliente_nome.ilike.%${termo}%,cliente_documento.ilike.%${termo}%,cliente_telefone.ilike.%${termo}%,observacoes.ilike.%${termo}%`)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return data?.map(venda => ({
+        id: venda.id,
+        numero_venda: venda.numero_venda,
+        cliente_id: venda.cliente_id,
+        cliente_nome: venda.cliente_nome,
+        cliente_documento: venda.cliente_documento,
+        cliente_telefone: venda.cliente_telefone,
+        itens: venda.itens,
+        subtotal: parseFloat(venda.subtotal?.toString() || '0'),
+        desconto_valor: parseFloat(venda.desconto_valor?.toString() || '0'),
+        desconto_percentual: parseFloat(venda.desconto_percentual?.toString() || '0'),
+        total: parseFloat(venda.total?.toString() || '0'),
+        observacoes: venda.observacoes,
+        created_at: venda.created_at,
+        updated_at: venda.updated_at
+      })) || [];
+
+    } catch (error) {
+      console.error('Erro ao buscar vendas PDV:', error);
+      throw error;
+    }
+  };
+  
+  const buscarPagamentos = useCallback(async (vendaId: UUID) => {
+    try {
+      const { data, error } = await supabase
+        .from('pagamentos')
+        .select(`
+          id,
+          forma_pagamento,
+          valor,
+          numero_autorizacao,
+          bandeira_cartao,
+          codigo_transacao,
+          observacoes
+        `)
+        .eq('venda_id', vendaId);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return data?.map(pagamento => ({
+        id: pagamento.id,
+        forma_pagamento: pagamento.forma_pagamento,
+        valor: parseFloat(pagamento.valor?.toString() || '0'),
+        numero_autorizacao: pagamento.numero_autorizacao,
+        bandeira_cartao: pagamento.bandeira_cartao,
+        codigo_transacao: pagamento.codigo_transacao,
+        observacoes: pagamento.observacoes
+      })) || [];
+
+    } catch (error) {
+      console.error('Erro ao buscar pagamentos:', error);
+      throw error;
+    }
+  }, []);
+  
+  const buscarDescontos = useCallback(async (vendaId: UUID) => {
+    try {
+      const { data, error } = await supabase
+        .from('descontos')
+        .select(`
+          id,
+          valor,
+          percentual,
+          observacoes
+        `)
+        .eq('venda_id', vendaId);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return data?.map(desconto => ({
+        id: desconto.id,
+        valor: parseFloat(desconto.valor?.toString() || '0'),
+        percentual: parseFloat(desconto.percentual?.toString() || '0'),
+        observacoes: desconto.observacoes
+      })) || [];
+
+    } catch (error) {
+      console.error('Erro ao buscar descontos:', error);
+      throw error;
+    }
+  }, []);
+  
+  const buscarItens = useCallback(async (vendaId: UUID) => {
+    try {
+      const { data, error } = await supabase
+        .from('itens_venda')
+        .select(`
+          id,
+          produto_id,
+          produto_nome,
+          produto_codigo,
+          quantidade,
+          preco_unitario,
+          preco_total,
+          lote_id,
+          desconto_valor,
+          desconto_percentual
+        `)
+        .eq('venda_id', vendaId);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return data?.map(item => ({
+        id: item.id,
+        produto_id: item.produto_id,
+        produto_nome: item.produto_nome,
+        produto_codigo: item.produto_codigo,
+        quantidade: parseFloat(item.quantidade?.toString() || '0'),
+        preco_unitario: parseFloat(item.preco_unitario?.toString() || '0'),
+        preco_total: parseFloat(item.preco_total?.toString() || '0'),
+        lote_id: item.lote_id,
+        desconto_valor: parseFloat(item.desconto_valor?.toString() || '0'),
+        desconto_percentual: parseFloat(item.desconto_percentual?.toString() || '0')
+      })) || [];
+
+    } catch (error) {
+      console.error('Erro ao buscar itens:', error);
+      throw error;
+    }
+  }, []);
+  
+  const buscarVendas = useCallback(async (termo: string) => {
+    if (!termo || termo.length < 2) {
+      setVendas([]);
+      return;
+    }
+    
+    setLoadingVendas(true);
+    try {
+      const vendas = await buscarVendasPDV(termo);
+      setVendas(vendas);
+    } catch (error) {
+      console.error('Erro ao buscar vendas:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao buscar vendas",
+        variant: "destructive"
+      });
+    } finally {
+      setLoadingVendas(false);
+    }
+  }, []);
+  
+  const buscarVendasPDV = async (termo: string): Promise<Venda[]> => {
+    try {
+      const { data, error } = await supabase
+        .from('vendas')
+        .select(`
+          id,
+          numero_venda,
+          cliente_id,
+          cliente_nome,
+          cliente_documento,
+          cliente_telefone,
+          itens,
+          subtotal,
+          desconto_valor,
+          desconto_percentual,
+          total,
+          observacoes,
+          created_at,
+          updated_at
+        `)
+        .or(`numero_venda.ilike.%${termo}%,cliente_nome.ilike.%${termo}%,cliente_documento.ilike.%${termo}%,cliente_telefone.ilike.%${termo}%,observacoes.ilike.%${termo}%`)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return data?.map(venda => ({
+        id: venda.id,
+        numero_venda: venda.numero_venda,
+        cliente_id: venda.cliente_id,
+        cliente_nome: venda.cliente_nome,
+        cliente_documento: venda.cliente_documento,
+        cliente_telefone: venda.cliente_telefone,
+        itens: venda.itens,
+        subtotal: parseFloat(venda.subtotal?.toString() || '0'),
+        desconto_valor: parseFloat(venda.desconto_valor?.toString() || '0'),
+        desconto_percentual: parseFloat(venda.desconto_percentual?.toString() || '0'),
+        total: parseFloat(venda.total?.toString() || '0'),
+        observacoes: venda.observacoes,
+        created_at: venda.created_at,
+        updated_at: venda.updated_at
+      })) || [];
+
+    } catch (error) {
+      console.error('Erro ao buscar vendas PDV:', error);
+      throw error;
+    }
+  };
+  
+  const buscarPagamentos = useCallback(async (vendaId: UUID) => {
+    try {
+      const { data, error } = await supabase
+        .from('pagamentos')
+        .select(`
+          id,
+          forma_pagamento,
+          valor,
+          numero_autorizacao,
+          bandeira_cartao,
+          codigo_transacao,
+          observacoes
+        `)
+        .eq('venda_id', vendaId);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return data?.map(pagamento => ({
+        id: pagamento.id,
+        forma_pagamento: pagamento.forma_pagamento,
+        valor: parseFloat(pagamento.valor?.toString() || '0'),
+        numero_autorizacao: pagamento.numero_autorizacao,
+        bandeira_cartao: pagamento.bandeira_cartao,
+        codigo_transacao: pagamento.codigo_transacao,
+        observacoes: pagamento.observacoes
+      })) || [];
+
+    } catch (error) {
+      console.error('Erro ao buscar pagamentos:', error);
+      throw error;
+    }
+  }, []);
+  
+  const buscarDescontos = useCallback(async (vendaId: UUID) => {
+    try {
+      const { data, error } = await supabase
+        .from('descontos')
+        .select(`
+          id,
+          valor,
+          percentual,
+          observacoes
+        `)
+        .eq('venda_id', vendaId);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return data?.map(desconto => ({
+        id: desconto.id,
+        valor: parseFloat(desconto.valor?.toString() || '0'),
+        percentual: parseFloat(desconto.percentual?.toString() || '0'),
+        observacoes: desconto.observacoes
+      })) || [];
+
+    } catch (error) {
+      console.error('Erro ao buscar descontos:', error);
+      throw error;
+    }
+  }, []);
+  
+  const buscarItens = useCallback(async (vendaId: UUID) => {
+    try {
+      const { data, error } = await supabase
+        .from('itens_venda')
+        .select(`
+          id,
+          produto_id,
+          produto_nome,
+          produto_codigo,
+          quantidade,
+          preco_unitario,
+          preco_total,
+          lote_id,
+          desconto_valor,
+          desconto_percentual
+        `)
+        .eq('venda_id', vendaId);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return data?.map(item => ({
+        id: item.id,
+        produto_id: item.produto_id,
+        produto_nome: item.produto_nome,
+        produto_codigo: item.produto_codigo,
+        quantidade: parseFloat(item.quantidade?.toString() || '0'),
+        preco_unitario: parseFloat(item.preco_unitario?.toString() || '0'),
+        preco_total: parseFloat(item.preco_total?.toString() || '0'),
+        lote_id: item.lote_id,
+        desconto_valor: parseFloat(item.desconto_valor?.toString() || '0'),
+        desconto_percentual: parseFloat(item.desconto_percentual?.toString() || '0')
+      })) || [];
+
+    } catch (error) {
+      console.error('Erro ao buscar itens:', error);
+      throw error;
+    }
+  }, []);
+  
+  const buscarVendas = useCallback(async (termo: string) => {
+    if (!termo || termo.length < 2) {
+      setVendas([]);
+      return;
+    }
+    
+    setLoadingVendas(true);
+    try {
+      const vendas = await buscarVendasPDV(termo);
+      setVendas(vendas);
+    } catch (error) {
+      console.error('Erro ao buscar vendas:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao buscar vendas",
+        variant: "destructive"
+      });
+    } finally {
+      setLoadingVendas(false);
+    }
+  }, []);
+  
+  const buscarVendasPDV = async (termo: string): Promise<Venda[]> => {
+    try {
+      const { data, error } = await supabase
+        .from('vendas')
+        .select(`
+          id,
+          numero_venda,
+          cliente_id,
+          cliente_nome,
+          cliente_documento,
+          cliente_telefone,
+          itens,
+          subtotal,
+          desconto_valor,
+          desconto_percentual,
+          total,
+          observacoes,
+          created_at,
+          updated_at
+        `)
+        .or(`numero_venda.ilike.%${termo}%,cliente_nome.ilike.%${termo}%,cliente_documento.ilike.%${termo}%,cliente_telefone.ilike.%${termo}%,observacoes.ilike.%${termo}%`)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return data?.map(venda => ({
+        id: venda.id,
+        numero_venda: venda.numero_venda,
+        cliente_id: venda.cliente_id,
+        cliente_nome: venda.cliente_nome,
+        cliente_documento: venda.cliente_documento,
+        cliente_telefone: venda.cliente_telefone,
+        itens: venda.itens,
+        subtotal: parseFloat(venda.subtotal?.toString() || '0'),
+        desconto_valor: parseFloat(venda.desconto_valor?.toString() || '0'),
+        desconto_percentual: parseFloat(venda.desconto_percentual?.toString() || '0'),
+        total: parseFloat(venda.total?.toString() || '0'),
+        observacoes: venda.observacoes,
+        created_at: venda.created_at,
+        updated_at: venda.updated_at
+      })) || [];
+
+    } catch (error) {
+      console.error('Erro ao buscar vendas PDV:', error);
+      throw error;
+    }
+  };
+  
+  const buscarPagamentos = useCallback(async (vendaId: UUID) => {
+    try {
+      const { data, error } = await supabase
+        .from('pagamentos')
+        .select(`
+          id,
+          forma_pagamento,
+          valor,
+          numero_autorizacao,
+          bandeira_cartao,
+          codigo_transacao,
+          observacoes
+        `)
+        .eq('venda_id', vendaId);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return data?.map(pagamento => ({
+        id: pagamento.id,
+        forma_pagamento: pagamento.forma_pagamento,
+        valor: parseFloat(pagamento.valor?.toString() || '0'),
+        numero_autorizacao: pagamento.numero_autorizacao,
+        bandeira_cartao: pagamento.bandeira_cartao,
+        codigo_transacao: pagamento.codigo_transacao,
+        observacoes: pagamento.observacoes
+      })) || [];
+
+    } catch (error) {
+      console.error('Erro ao buscar pagamentos:', error);
+      throw error;
+    }
+  }, []);
+  
+  const buscarDescontos = useCallback(async (vendaId: UUID) => {
+    try {
+      const { data, error } = await supabase
+        .from('descontos')
+        .select(`
+          id,
+          valor,
+          percentual,
+          observacoes
+        `)
+        .eq('venda_id', vendaId);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return data?.map(desconto => ({
+        id: desconto.id,
+        valor: parseFloat(desconto.valor?.toString() || '0'),
+        percentual: parseFloat(desconto.percentual?.toString() || '0'),
+        observacoes: desconto.observacoes
+      })) || [];
+
+    } catch (error) {
+      console.error('Erro ao buscar descontos:', error);
+      throw error;
+    }
+  }, []);
+  
+  const buscarItens = useCallback(async (vendaId: UUID) => {
+    try {
+      const { data, error } = await supabase
+        .from('itens_venda')
+        .select(`
+          id,
+          produto_id,
+          produto_nome,
+          produto_codigo,
+          quantidade,
+          preco_unitario,
+          preco_total,
+          lote_id,
+          desconto_valor,
+          desconto_percentual
+        `)
+        .eq('venda_id', vendaId);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return data?.map(item => ({
+        id: item.id,
+        produto_id: item.produto_id,
+        produto_nome: item.produto_nome,
+        produto_codigo: item.produto_codigo,
+        quantidade: parseFloat(item.quantidade?.toString() || '0'),
+        preco_unitario: parseFloat(item.preco_unitario?.toString() || '0'),
+        preco_total: parseFloat(item.preco_total?.toString() || '0'),
+        lote_id: item.lote_id,
+        desconto_valor: parseFloat(item.desconto_valor?.toString() || '0'),
+        desconto_percentual: parseFloat(item.desconto_percentual?.toString() || '0')
+      })) || [];
+
+    } catch (error) {
+      console.error('Erro ao buscar itens:', error);
+      throw error;
+    }
+  }, []);
+  
+  const buscarVendas = useCallback(async (termo: string) => {
+    if (!termo || termo.length < 2) {
+      setVendas([]);
+      return;
+    }
+    
+    setLoadingVendas(true);
+    try {
+      const vendas = await buscarVendasPDV(termo);
+      setVendas(vendas);
+    } catch (error) {
+      console.error('Erro ao buscar vendas:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao buscar vendas",
+        variant: "destructive"
+      });
+    } finally {
+      setLoadingVendas(false);
+    }
+  }, []);
+  
+  const buscarVendasPDV = async (termo: string): Promise<Venda[]> => {
+    try {
+      const { data, error } = await supabase
+        .from('vendas')
+        .select(`
+          id,
+          numero_venda,
+          cliente_id,
+          cliente_nome,
+          cliente_documento,
+          cliente_telefone,
+          itens,
+          subtotal,
+          desconto_valor,
+          desconto_percentual,
+          total,
+          observacoes,
+          created_at,
+          updated_at
+        `)
+        .or(`numero_venda.ilike.%${termo}%,cliente_nome.ilike.%${termo}%,cliente_documento.ilike.%${termo}%,cliente_telefone.ilike.%${termo}%,observacoes.ilike.%${termo}%`)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return data?.map(venda => ({
+        id: venda.id,
+        numero_venda: venda.numero_venda,
+        cliente_id: venda.cliente_id,
+        cliente_nome: venda.cliente_nome,
+        cliente_documento: venda.cliente_documento,
+        cliente_telefone: venda.cliente_telefone,
+        itens: venda.itens,
+        subtotal: parseFloat(venda.subtotal?.toString() || '0'),
+        desconto_valor: parseFloat(venda.desconto_valor?.toString() || '0'),
+        desconto_percentual: parseFloat(venda.desconto_percentual?.toString() || '0'),
+        total: parseFloat(venda.total?.toString() || '0'),
+        observacoes: venda.observacoes,
+        created_at: venda.created_at,
+        updated_at: venda.updated_at
+      })) || [];
+
+    } catch (error) {
+      console.error('Erro ao buscar vendas PDV:', error);
+      throw error;
+    }
+  };
+  
+  const buscarPagamentos = useCallback(async (vendaId: UUID) => {
+    try {
+      const { data, error } = await supabase
+        .from('pagamentos')
+        .select(`
+          id,
+          forma_pagamento,
+          valor,
+          numero_autorizacao,
+          bandeira_cartao,
+          codigo_transacao,
+          observacoes
+        `)
+        .eq('venda_id', vendaId);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return data?.map(pagamento => ({
+        id: pagamento.id,
+        forma_pagamento: pagamento.forma_pagamento,
+        valor: parseFloat(pagamento.valor?.toString() || '0'),
+        numero_autorizacao: pagamento.numero_autorizacao,
+        bandeira_cartao: pagamento.bandeira_cartao,
+        codigo_transacao: pagamento.codigo_transacao,
+        observacoes: pagamento.observacoes
+      })) || [];
+
+    } catch (error) {
+      console.error('Erro ao buscar pagamentos:', error);
+      throw error;
+    }
+  }, []);
+  
+  const buscarDescontos = useCallback(async (vendaId: UUID) => {
+    try {
+      const { data, error } = await supabase
+        .from('descontos')
+        .select(`
+          id,
+          valor,
+          percentual,
+          observacoes
+        `)
+        .eq('venda_id', vendaId);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return data?.map(desconto => ({
+        id: desconto.id,
+        valor: parseFloat(desconto.valor?.toString() || '0'),
+        percentual: parseFloat(desconto.percentual?.toString() || '0'),
+        observacoes: desconto.observacoes
+      })) || [];
+
+    } catch (error) {
+      console.error('Erro ao buscar descontos:', error);
+      throw error;
+    }
+  }, []);
+  
+  const buscarItens = useCallback(async (vendaId: UUID) => {
+    try {
+      const { data, error } = await supabase
+        .from('itens_venda')
+        .select(`
+          id,
+          produto_id,
+          produto_nome,
+          produto_codigo,
+          quantidade,
+          preco_unitario,
+          preco_total,
+          lote_id,
+          desconto_valor,
+          desconto_percentual
+        `)
+        .eq('venda_id', vendaId);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return data?.map(item => ({
+        id: item.id,
+        produto_id: item.produto_id,
+        produto_nome: item.produto_nome,
+        produto_codigo: item.produto_codigo,
+        quantidade: parseFloat(item.quantidade?.toString() || '0'),
+        preco_unitario: parseFloat(item.preco_unitario?.toString() || '0'),
+        preco_total: parseFloat(item.preco_total?.toString() || '0'),
+        lote_id: item.lote_id,
+        desconto_valor: parseFloat(item.desconto_valor?.toString() || '0'),
+        desconto_percentual: parseFloat(item.desconto_percentual?.toString() || '0')
+      })) || [];
+
+    } catch (error) {
+      console.error('Erro ao buscar itens:', error);
+      throw error;
+    }
+  }, []);
+  
+  const buscarVendas = useCallback(async (termo: string) => {
+    if (!termo || termo.length < 2) {
+      setVendas([]);
+      return;
+    }
+    
+    setLoadingVendas(true);
+    try {
+      const vendas = await buscarVendasPDV(termo);
+      setVendas(vendas);
+    } catch (error) {
+      console.error('Erro ao buscar vendas:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao buscar vendas",
+        variant: "destructive"
+      });
+    } finally {
+      setLoadingVendas(false);
+    }
+  }, []);
+  
+  const buscarVendasPDV = async (termo: string): Promise<Venda[]> => {
+    try {
+      const { data, error } = await supabase
+        .from('vendas')
+        .select(`
+          id,
+          numero_venda,
+          cliente_id,
+          cliente_nome,
+          cliente_documento,
+          cliente_telefone,
+          itens,
+          subtotal,
+          desconto_valor,
+          desconto_percentual,
+          total,
+          observacoes,
+          created_at,
+          updated_at
+        `)
+        .or(`numero_venda.ilike.%${termo}%,cliente_nome.ilike.%${termo}%,cliente_documento.ilike.%${termo}%,cliente_telefone.ilike.%${termo}%,observacoes.ilike.%${termo}%`)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return data?.map(venda => ({
+        id: venda.id,
+        numero_venda: venda.numero_venda,
+        cliente_id: venda.cliente_id,
+        cliente_nome: venda.cliente_nome,
+        cliente_documento: venda.cliente_documento,
+        cliente_telefone: venda.cliente_telefone,
+        itens: venda.itens,
+        subtotal: parseFloat(venda.subtotal?.toString() || '0'),
+        desconto_valor: parseFloat(venda.desconto_valor?.toString() || '0'),
+        desconto_percentual: parseFloat(venda.desconto_percentual?.toString() || '0'),
+        total: parseFloat(venda.total?.toString() || '0'),
+        observacoes: venda.observacoes,
+        created_at: venda.created_at,
+        updated_at: venda.updated_at
+      })) || [];
+
+    } catch (error) {
+      console.error('Erro ao buscar vendas PDV:', error);
+      throw error;
+    }
+  };
+  
+  const buscarPagamentos = useCallback(async (vendaId: UUID) => {
+    try {
+      const { data, error } = await supabase
+        .from('pagamentos')
+        .select(`
+          id,
+          forma_pagamento,
+          valor,
+          numero_autorizacao,
+          bandeira_cartao,
+          codigo_transacao,
+          observacoes
+        `)
+        .eq('venda_id', vendaId);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return data?.map(pagamento => ({
+        id: pagamento.id,
+        forma_pagamento: pagamento.forma_pagamento,

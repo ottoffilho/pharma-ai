@@ -600,6 +600,32 @@ const extrairDadosFornecedor = (emit: Element | null): Record<string, unknown> =
 };
 
 /**
+ * Remove informações fiscais do nome do produto
+ */
+const limparNomeProduto = (nome: string): string => {
+  if (!nome) return nome;
+  
+  // Remove informações fiscais que frequentemente aparecem no final do nome
+  let nomeLimpo = nome;
+  
+  // Remove padrões como: IVA: X.XX% pIcmsSt: XX.XX% BcIcmsSt: XX.XX vIcmsSt: X.XX
+  nomeLimpo = nomeLimpo.replace(/\s+IVA:\s*[\d.,]+%.*$/gi, '');
+  
+  // Remove padrões como: pIcmsSt: XX.XX% BcIcmsSt: XX.XX vIcmsSt: X.XX
+  nomeLimpo = nomeLimpo.replace(/\s+pIcmsSt:.*$/gi, '');
+  
+  // Remove outros padrões fiscais comuns
+  nomeLimpo = nomeLimpo.replace(/\s+ICMS.*$/gi, '');
+  nomeLimpo = nomeLimpo.replace(/\s+ST:.*$/gi, '');
+  nomeLimpo = nomeLimpo.replace(/\s+BC:.*$/gi, '');
+  
+  // Remove espaços extras
+  nomeLimpo = nomeLimpo.trim();
+  
+  return nomeLimpo;
+};
+
+/**
  * Extrai dados de um item do XML
  */
 const extrairDadosItem = (det: Element, numeroItem: number): Record<string, unknown> => {
@@ -609,7 +635,8 @@ const extrairDadosItem = (det: Element, numeroItem: number): Record<string, unkn
   // Dados do produto
   const codigoInterno = getTextContent(prod, 'cProd');
   const codigoEAN = getTextContent(prod, 'cEAN');
-  const nome = getTextContent(prod, 'xProd');
+  const nomeOriginal = getTextContent(prod, 'xProd');
+  const nome = limparNomeProduto(nomeOriginal); // Aplicar limpeza do nome
   const ncm = getTextContent(prod, 'NCM');
   const cfop = getTextContent(prod, 'CFOP');
   const unidadeComercial = getTextContent(prod, 'uCom');

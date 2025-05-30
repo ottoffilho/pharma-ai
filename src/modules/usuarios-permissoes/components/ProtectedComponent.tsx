@@ -3,6 +3,7 @@
 
 import React from 'react';
 import { useAuthSimple } from '../hooks/useAuthSimple';
+import { verificarPermissaoUsuario } from '../utils/permissions';
 import type { ProtecaoProps, ModuloSistema, AcaoPermissao, NivelAcesso } from '../types';
 
 /**
@@ -15,7 +16,7 @@ export const ProtectedComponent: React.FC<ProtecaoProps> = ({
   nivel,
   fallback = null
 }) => {
-  const { autenticado } = useAuthSimple();
+  const { usuario, autenticado } = useAuthSimple();
 
   // Se não está autenticado, não mostra nada
   if (!autenticado) {
@@ -23,7 +24,7 @@ export const ProtectedComponent: React.FC<ProtecaoProps> = ({
   }
 
   // Verifica se tem a permissão necessária
-  const temPermissao = verificarPermissao(modulo, acao, nivel);
+  const temPermissao = verificarPermissaoUsuario(usuario, modulo, acao, nivel);
 
   if (!temPermissao) {
     return <>{fallback}</>;

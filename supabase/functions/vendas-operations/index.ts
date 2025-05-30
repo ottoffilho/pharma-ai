@@ -303,7 +303,14 @@ async function finalizarVenda(req: Request, supabase: any, userId: string) {
   }
 
   return new Response(
-    JSON.stringify({ success: true, message: 'Venda finalizada com sucesso' }),
+    JSON.stringify({ 
+      success: true, 
+      message: 'Venda finalizada com sucesso',
+      numero_venda: venda.numero_venda,
+      venda_id: data.venda_id,
+      total: venda.total,
+      troco: data.troco || 0
+    }),
     { headers: { 'Content-Type': 'application/json' } }
   )
 }

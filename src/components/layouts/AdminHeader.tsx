@@ -32,9 +32,6 @@ interface AdminHeaderProps {
 export function AdminHeader({ user, onLogout, onMenuClick }: AdminHeaderProps) {
   const breadcrumbs = useBreadcrumbs();
 
-  // Debug: verificar se o usuário está sendo passado
-  console.log('AdminHeader - user:', user);
-
   // Função para obter as iniciais do usuário
   const getUserInitials = (nome?: string, email?: string) => {
     if (nome) {

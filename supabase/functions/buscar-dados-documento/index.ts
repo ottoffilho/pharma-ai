@@ -212,7 +212,8 @@ async function buscarDadosCNPJFallback(cnpj: string): Promise<Record<string, unk
       },
       data_abertura: data.abertura || '',
       capital_social: data.capital_social || '',
-      natureza_juridica: data.natureza_juridica || ''
+      natureza_juridica: data.natureza_juridica || '',
+      dados_preenchidos: true // Indica que dados foram preenchidos automaticamente
     };
   } catch (error) {
     console.error(`Erro na API alternativa para CNPJ ${cnpj}:`, error);
@@ -359,7 +360,8 @@ async function buscarDadosCNPJ(cnpj: string): Promise<Record<string, unknown>> {
       },
       data_abertura: data.data_inicio_atividade,
       capital_social: data.capital_social,
-      natureza_juridica: data.codigo_natureza_juridica
+      natureza_juridica: data.codigo_natureza_juridica,
+      dados_preenchidos: true // Indica que dados foram preenchidos automaticamente
     }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
@@ -408,7 +410,8 @@ async function buscarDadosCPF(cpf: string): Promise<Record<string, unknown>> {
     success: true,
     documento: cpf,
     tipo_pessoa: 'PF',
-    message: 'CPF válido. Preencha os dados manualmente.'
+    message: 'CPF válido. Por questões de privacidade, preencha os dados manualmente.',
+    dados_preenchidos: false // Indica que não foram preenchidos dados automaticamente
   }
 }
 

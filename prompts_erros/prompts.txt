@@ -1,234 +1,419 @@
-This XML file does not appear to have any style information associated with it. The document tree is shown below.
-<nfeProc xmlns="http://www.portalfiscal.inf.br/nfe" versao="4.00">
-<NFe xmlns="http://www.portalfiscal.inf.br/nfe">
-<infNFe versao="4.00" Id="NFe35250207850730000120550010001974051648373126">
-<ide>
-<cUF>35</cUF>
-<cNF>64837312</cNF>
-<natOp>Venda de producao do estabelecimento</natOp>
-<mod>55</mod>
-<serie>1</serie>
-<nNF>197405</nNF>
-<dhEmi>2025-02-10T08:31:00-03:00</dhEmi>
-<dhSaiEnt>2025-02-10T08:31:00-03:00</dhSaiEnt>
-<tpNF>1</tpNF>
-<idDest>2</idDest>
-<cMunFG>3540606</cMunFG>
-<tpImp>1</tpImp>
-<tpEmis>1</tpEmis>
-<cDV>6</cDV>
-<tpAmb>1</tpAmb>
-<finNFe>1</finNFe>
-<indFinal>0</indFinal>
-<indPres>3</indPres>
-<indIntermed>0</indIntermed>
-<procEmi>0</procEmi>
-<verProc>1211320271</verProc>
-</ide>
-<emit>
-<CNPJ>07850730000120</CNPJ>
-<xNome>EMPHASYS IMPORTADORA EXPORTADORA E DISTRIBUIDORA LTDA</xNome>
-<enderEmit>
-<xLgr>AVENIDA FLORENT DELEU</xLgr>
-<nro>640</nro>
-<xBairro>CHACARA DELEU</xBairro>
-<cMun>3540606</cMun>
-<xMun>Porto Feliz</xMun>
-<UF>SP</UF>
-<CEP>18540410</CEP>
-<cPais>1058</cPais>
-<xPais>Brasil</xPais>
-<fone>1532628430</fone>
-</enderEmit>
-<IE>554094346111</IE>
-<IM>011423995077</IM>
-<CNAE>2222600</CNAE>
-<CRT>3</CRT>
-</emit>
-<dest>
-<CNPJ>00632810000160</CNPJ>
-<xNome>Botica Laboratorio Farmacotecnico Ltda Epp</xNome>
-<enderDest>
-<xLgr>R Sds Bloco J</xLgr>
-<nro>S/N</nro>
-<xCpl>Loja 16</xCpl>
-<xBairro>Asa Sul</xBairro>
-<cMun>5300108</cMun>
-<xMun>Brasilia</xMun>
-<UF>DF</UF>
-<CEP>70391900</CEP>
-<cPais>1058</cPais>
-<xPais>Brasil</xPais>
-<fone>6132247716</fone>
-</enderDest>
-<indIEDest>1</indIEDest>
-<IE>0733275200141</IE>
-<email>boticabrasilia@gmail.com</email>
-</dest>
-<det nItem="1">
-<prod>
-<cProd>703000122</cProd>
-<cEAN>SEM GTIN</cEAN>
-<xProd>Slim Look 30ml Branco</xProd>
-<NCM>84249090</NCM>
-<CFOP>6101</CFOP>
-<uCom>UN</uCom>
-<qCom>200.0000</qCom>
-<vUnCom>6.4000000000</vUnCom>
-<vProd>1280.00</vProd>
-<cEANTrib>SEM GTIN</cEANTrib>
-<uTrib>UN</uTrib>
-<qTrib>200.0000</qTrib>
-<vUnTrib>6.4000000000</vUnTrib>
-<vFrete>90.00</vFrete>
-<indTot>1</indTot>
-<nFCI>AA0B9783-63E9-456B-98FA-A5E770E43C5D</nFCI>
-</prod>
-<imposto>
-<ICMS>
-<ICMS00>
-<orig>5</orig>
-<CST>00</CST>
-<modBC>3</modBC>
-<vBC>1370.00</vBC>
-<pICMS>7.0000</pICMS>
-<vICMS>95.90</vICMS>
-</ICMS00>
-</ICMS>
-<IPI>
-<cEnq>999</cEnq>
-<IPITrib>
-<CST>50</CST>
-<vBC>1370.00</vBC>
-<pIPI>3.2500</pIPI>
-<vIPI>44.53</vIPI>
-</IPITrib>
-</IPI>
-<PIS>
-<PISAliq>
-<CST>01</CST>
-<vBC>1274.10</vBC>
-<pPIS>1.6500</pPIS>
-<vPIS>21.02</vPIS>
-</PISAliq>
-</PIS>
-<COFINS>
-<COFINSAliq>
-<CST>01</CST>
-<vBC>1274.10</vBC>
-<pCOFINS>7.6000</pCOFINS>
-<vCOFINS>96.83</vCOFINS>
-</COFINSAliq>
-</COFINS>
-</imposto>
-<infAdProd>Lote 21997 Venc. 03/02/2030</infAdProd>
-</det>
-<total>
-<ICMSTot>
-<vBC>1370.00</vBC>
-<vICMS>95.90</vICMS>
-<vICMSDeson>0.00</vICMSDeson>
-<vFCP>0.00</vFCP>
-<vBCST>0.00</vBCST>
-<vST>0.00</vST>
-<vFCPST>0.00</vFCPST>
-<vFCPSTRet>0.00</vFCPSTRet>
-<vProd>1280.00</vProd>
-<vFrete>90.00</vFrete>
-<vSeg>0.00</vSeg>
-<vDesc>0.00</vDesc>
-<vII>0.00</vII>
-<vIPI>44.53</vIPI>
-<vIPIDevol>0.00</vIPIDevol>
-<vPIS>21.02</vPIS>
-<vCOFINS>96.83</vCOFINS>
-<vOutro>0.00</vOutro>
-<vNF>1414.53</vNF>
-</ICMSTot>
-</total>
-<transp>
-<modFrete>0</modFrete>
-<transporta>
-<CNPJ>06321409001320</CNPJ>
-<xNome>Quality Transportes e Entregas Rapidas Ltda.</xNome>
-<IE>122819217110</IE>
-<xEnder>ESTM Jose Sedano 854 Mod. 07/11/12 Techno Park 13069-335</xEnder>
-<xMun>Campinas</xMun>
-<UF>SP</UF>
-</transporta>
-<vol>
-<qVol>1</qVol>
-<esp>caixa</esp>
-<pesoL>5.000</pesoL>
-<pesoB>6.240</pesoB>
-</vol>
-</transp>
-<cobr>
-<fat>
-<nFat>197405</nFat>
-<vOrig>1414.53</vOrig>
-<vDesc>0.00</vDesc>
-<vLiq>1414.53</vLiq>
-</fat>
-<dup>
-<nDup>001</nDup>
-<dVenc>2025-02-24</dVenc>
-<vDup>707.27</vDup>
-</dup>
-<dup>
-<nDup>002</nDup>
-<dVenc>2025-03-10</dVenc>
-<vDup>707.26</vDup>
-</dup>
-</cobr>
-<pag>
-<detPag>
-<indPag>1</indPag>
-<tPag>15</tPag>
-<vPag>1414.53</vPag>
-</detPag>
-</pag>
-<infAdic>
-<infCpl>pedido 59065 1cx02- 6,240</infCpl>
-</infAdic>
-<infRespTec>
-<CNPJ>37878691000130</CNPJ>
-<xContato>Diretoria de Tecnologia da Informacao</xContato>
-<email>faleconosco@gruposkill.com.br</email>
-<fone>1155747770</fone>
-</infRespTec>
-</infNFe>
-<Signature xmlns="http://www.w3.org/2000/09/xmldsig#">
-<SignedInfo xmlns="http://www.w3.org/2000/09/xmldsig#">
-<CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/>
-<SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/>
-<Reference URI="#NFe35250207850730000120550010001974051648373126">
-<Transforms>
-<Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/>
-<Transform Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/>
-</Transforms>
-<DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>
-<DigestValue>PepZwAc2d6QqPZreB9hSKSjCBIY=</DigestValue>
-</Reference>
-</SignedInfo>
-<SignatureValue xmlns="http://www.w3.org/2000/09/xmldsig#">j9HkIfsCXJ7LchuTfUWxHQyvA74B9DI+WAR335/ELh++5yjZKbsdMXel43Pd8VqyGNQgrjjKcO0sJNNtQfL+nOh1LXbsOYdeZKOErt8u27sSGP13n4rggr0nFdxYy8y00xM8tffqUpwEMvhD0rl31HHR7krIQc2peWOFzIcMZmuJJUYVfH0HPn/7hVfGjr2+ZYtn+bCRy4T0gHJhdmQRDOTYD8mgrBisFglPChAKo5J0cPaJw/2v+S/sN3Hvu0OkOHbnDKZXal7nNd2QD04gLemo61TbV9291tVZ7I3iayWZtyQbIC2V4OdFsnkSEHWCju9smWfHwbl8QpXzAFAtuQ==</SignatureValue>
-<KeyInfo xmlns="http://www.w3.org/2000/09/xmldsig#">
-<X509Data>
-<X509Certificate>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</X509Certificate>
-</X509Data>
-</KeyInfo>
-</Signature>
-</NFe>
-<protNFe xmlns="http://www.portalfiscal.inf.br/nfe" versao="4.00">
-<infProt xmlns="http://www.portalfiscal.inf.br/nfe" Id="Id135250370619091">
-<tpAmb>1</tpAmb>
-<verAplic>SP_NFE_PL009_V4</verAplic>
-<chNFe>35250207850730000120550010001974051648373126</chNFe>
-<dhRecbto>2025-02-10T08:31:20-03:00</dhRecbto>
-<nProt>135250370619091</nProt>
-<digVal>PepZwAc2d6QqPZreB9hSKSjCBIY=</digVal>
-<cStat>100</cStat>
-<xMotivo>Autorizado o uso da NF-e</xMotivo>
-</infProt>
-</protNFe>
-</nfeProc>
+Perfeito! Analisei o arquivo prompts.txt que você forneceu, que na verdade é o conteúdo do arquivo de migração supabase/migrations/20250527000000_create_missing_tables.sql.
+
+Confirmação:
+Sim, a tabela public.clientes já foi criada neste arquivo de migração.
+
+Aqui está a estrutura dela, conforme o arquivo:
+
+SQL
+
+-- 2. Criar tabela clientes
+CREATE TABLE IF NOT EXISTS public.clientes (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  nome_completo TEXT NOT NULL,
+  cpf TEXT UNIQUE, -- Considerar remover UNIQUE se clientes podem não ter CPF ou se pode haver duplicidade controlada
+  data_nascimento DATE,
+  telefone TEXT,
+  email TEXT, -- Considerar adicionar UNIQUE se for usado para login ou identificação única
+  endereco_logradouro TEXT,
+  endereco_numero TEXT,
+  endereco_complemento TEXT,
+  endereco_bairro TEXT,
+  endereco_cidade TEXT,
+  endereco_uf CHAR(2),
+  endereco_cep TEXT,
+  ativo BOOLEAN DEFAULT true,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+);
+
+-- Adicionar comentários
+COMMENT ON TABLE public.clientes IS 'Tabela para armazenar informações dos clientes da farmácia';
+
+-- Configurar RLS
+ALTER TABLE public.clientes ENABLE ROW LEVEL SECURITY;
+
+-- Criar políticas RLS
+CREATE POLICY "Usuários autenticados podem visualizar clientes"
+ON public.clientes FOR SELECT
+TO authenticated
+USING (true); -- Ajustar para perfis específicos se necessário
+
+CREATE POLICY "Usuários autenticados podem inserir clientes"
+ON public.clientes FOR INSERT
+TO authenticated
+WITH CHECK (true); -- Ajustar para perfis específicos se necessário
+
+CREATE POLICY "Usuários autenticados podem atualizar clientes"
+ON public.clientes FOR UPDATE
+TO authenticated
+USING (true) -- Permite atualizar o próprio registro ou registros que pode ver
+WITH CHECK (true); -- Ajustar para perfis específicos se necessário
+
+CREATE POLICY "Usuários autenticados podem deletar clientes"
+ON public.clientes FOR DELETE
+TO authenticated
+USING (true); -- Ajustar para perfis específicos se necessário
+
+-- Trigger para atualizar updated_at
+CREATE OR REPLACE FUNCTION public.update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+CREATE TRIGGER update_clientes_updated_at
+BEFORE UPDATE ON public.clientes
+FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+Análise da Estrutura Existente vs. Sugestão Anterior:
+
+A tabela clientes existente é um bom começo e cobre muitos dos campos essenciais. Comparando com a sugestão que fiz anteriormente no prompt (caso a tabela não existisse), temos:
+
+Campos Presentes e Alinhados:
+id, nome_completo, cpf, data_nascimento, telefone (principal), email, endereco_logradouro, endereco_numero, endereco_complemento, endereco_bairro, endereco_cidade, endereco_uf, endereco_cep, ativo, created_at, updated_at.
+Campos da Sugestão Anterior que NÃO Estão na Tabela Atual:
+tenant_id (para multi-tenancy) - Importante considerar se o sistema será multi-tenant no futuro.
+rg
+genero
+telefone_secundario
+preferencias_contato
+observacoes
+Considerações sobre a Tabela Atual:
+cpf TEXT UNIQUE: Se um cliente puder não ter CPF, ou se por algum motivo excepcional puder haver mais de um cadastro sem CPF (ou com CPF em branco/nulo), a constraint UNIQUE pode ser um problema. Se CPF é obrigatório e único, está ok.
+email TEXT: Se o e-mail for um identificador único para o cliente ou usado para login no portal do cliente, adicionar uma constraint UNIQUE seria recomendado.
+Políticas RLS: As políticas atuais são bastante permissivas (USING (true) para authenticated). Seria ideal refinar essas políticas para permitir acesso baseado em perfis específicos (ex: 'atendente', 'farmaceutico', 'administrador') e, se aplicável, tenant_id. Por exemplo, um atendente pode apenas visualizar e criar, enquanto um administrador pode excluir.
+Próximo Passo: Ajuste do Prompt para Cursor AI
+
+Dado que a tabela clientes já existe, não precisamos do Passo 1 (Criação da Migration) do prompt anterior. Vamos focar em criar toda a lógica de frontend e backend para interagir com essa tabela.
+
+Podemos fazer algumas perguntas antes de refinar o prompt:
+
+Campos Faltantes: Você gostaria de adicionar algum dos campos que sugeri e que não estão na tabela atual (como rg, genero, observacoes, preferencias_contato, telefone_secundario)? Se sim, precisaríamos de uma nova migration para adicionar essas colunas.
+Multi-Tenancy: O sistema precisará ser multi-tenant (atender a múltiplas farmácias independentes com dados isolados)? Se sim, a coluna tenant_id seria crucial.
+Constraints UNIQUE: A constraint UNIQUE em cpf está adequada? O e-mail deve ser único?
+Refinamento de RLS: As políticas de RLS atuais são suficientes por agora, ou já queremos definir políticas mais granulares baseadas nos perfis de usuário (administrador, farmaceutico, atendente) que já estão sendo configurados em 20241219000000_sistema_permissoes.sql e 20250101000005_insert_perfis_basicos.sql?
+Assumindo por agora que a estrutura da tabela clientes como está é o ponto de partida e que podemos refinar RLS e adicionar campos depois se necessário, vou ajustar o prompt.
+
+Prompt Ajustado para Cursor AI: Implementação do Módulo de Gestão de Clientes (Tabela Existente)
+
+Objetivo Geral:
+Desenvolver um módulo completo para gestão de clientes (CRUD, listagem, busca e visualização) no sistema Pharma-AI, utilizando a tabela public.clientes existente no Supabase. Este módulo deve ser integrado à arquitetura existente (React, TypeScript, Shadcn/UI, Zod, etc.).
+
+Contexto do Projeto (Lembrete para a IA):
+
+Backend: Supabase (PostgreSQL, Auth, Functions, Storage). A tabela public.clientes já existe com a seguinte estrutura (resumida): id, nome_completo, cpf (unique), data_nascimento, telefone, email, endereco_logradouro, endereco_numero, endereco_complemento, endereco_bairro, endereco_cidade, endereco_uf, endereco_cep, ativo, created_at, updated_at. RLS está habilitada com políticas básicas.
+Frontend: React, TypeScript, Vite.
+UI: Shadcn/UI, TailwindCSS.
+Gerenciamento de Formulários: React Hook Form com Zod para validação.
+Gerenciamento de Estado de Servidor/Caching: TanStack Query (React Query).
+Tabelas de Dados: TanStack Table.
+Estrutura de Pastas:
+Tipos: src/types/ (especialmente database.ts gerado pelo Supabase)
+Serviços (API calls): src/services/
+Componentes: src/components/
+Páginas Admin: src/pages/admin/
+Hooks: src/hooks/
+Validadores: src/lib/validators/
+Passos Detalhados para Implementação:
+
+1. Tipos TypeScript (Verificação e Criação):
+
+Verifique se o arquivo src/types/database.ts (gerado pelo Supabase via supabase gen types typescript --project-id <seu-project-id> --schema public > src/types/database.ts) está atualizado e reflete corretamente a estrutura da tabela public.clientes. Se não estiver, gere-o novamente.
+Crie/Atualize o arquivo src/types/cliente.ts (ou similar) para as interfaces Cliente, ClienteInsert, ClienteUpdate baseadas nos tipos do Supabase:
+TypeScript
+
+// src/types/cliente.ts
+import { Database } from './database'; // Ajuste o caminho se necessário
+
+export type Cliente = Database['public']['Tables']['clientes']['Row'];
+export type ClienteInsert = Database['public']['Tables']['clientes']['Insert'];
+export type ClienteUpdate = Database['public']['Tables']['clientes']['Update'];
+
+// Você pode adicionar outros tipos derivados se necessário, por exemplo, para formulários
+// export type ClienteFormData = Omit<Cliente, 'id' | 'created_at' | 'updated_at' | 'ativo'> & {
+//   data_nascimento?: string | Date | null; // Exemplo de como lidar com tipos de formulário
+// };
+2. Camada de Serviço (src/services/clienteService.ts):
+Crie um novo arquivo para encapsular a lógica de comunicação com a API do Supabase para a entidade clientes.
+
+TypeScript
+
+// src/services/clienteService.ts
+import { supabase } from '@/integrations/supabase/client'; // Ajuste o caminho
+import { Cliente, ClienteInsert, ClienteUpdate } from '@/types/cliente'; // Ajuste o caminho
+
+const TABLE_NAME = 'clientes';
+
+export const getClientes = async (searchTerm?: string, page: number = 1, pageSize: number = 10, showInactive: boolean = false) => {
+  let query = supabase
+    .from(TABLE_NAME)
+    .select('*', { count: 'exact' })
+    .order('nome_completo');
+
+  if (!showInactive) {
+    query = query.eq('ativo', true);
+  }
+
+  if (searchTerm) {
+    query = query.or(`nome_completo.ilike.%<span class="math-inline">\{searchTerm\}%,cpf\.ilike\.%</span>{searchTerm}%,email.ilike.%${searchTerm}%`);
+  }
+
+  const offset = (page - 1) * pageSize;
+  query = query.range(offset, offset + pageSize - 1);
+
+  const { data, error, count } = await query;
+  if (error) {
+    console.error('Erro ao buscar clientes:', error);
+    throw error;
+  }
+  return { data: data as Cliente[], count };
+};
+
+export const getClienteById = async (id: string): Promise<Cliente | null> => {
+  const { data, error } = await supabase.from(TABLE_NAME).select('*').eq('id', id).single();
+  if (error) {
+    if (error.code === 'PGRST116') return null; // Not found
+    console.error(`Erro ao buscar cliente por ID ${id}:`, error);
+    throw error;
+  }
+  return data as Cliente;
+};
+
+export const createCliente = async (clienteData: ClienteInsert): Promise<Cliente> => {
+  const { data, error } = await supabase.from(TABLE_NAME).insert(clienteData).select().single();
+  if (error) {
+     console.error('Erro ao criar cliente:', error);
+     throw error;
+  }
+  return data as Cliente;
+};
+
+export const updateCliente = async (id: string, clienteData: ClienteUpdate): Promise<Cliente> => {
+  const { data, error } = await supabase.from(TABLE_NAME).update(clienteData).eq('id', id).select().single();
+  if (error) {
+    console.error(`Erro ao atualizar cliente ${id}:`, error);
+    throw error;
+  }
+  return data as Cliente;
+};
+
+// Exclusão lógica (recomendado para manter integridade referencial com pedidos, etc.)
+export const deactivateCliente = async (id: string): Promise<void> => {
+  const { error } = await supabase.from(TABLE_NAME).update({ ativo: false, updated_at: new Date().toISOString() }).eq('id', id);
+  if (error) {
+    console.error(`Erro ao desativar cliente ${id}:`, error);
+    throw error;
+  }
+};
+
+ // Reativar cliente
+export const activateCliente = async (id: string): Promise<void> => {
+  const { error } = await supabase.from(TABLE_NAME).update({ ativo: true, updated_at: new Date().toISOString() }).eq('id', id);
+  if (error) {
+    console.error(`Erro ao reativar cliente ${id}:`, error);
+    throw error;
+  }
+};
+
+// Exclusão física (usar com MUITO cuidado, apenas se souber que não há dependências)
+// export const deleteClientePermanently = async (id: string): Promise<void> => {
+//   const { error } = await supabase.from(TABLE_NAME).delete().eq('id', id);
+//   if (error) {
+//     console.error(`Erro ao excluir permanentemente cliente ${id}:`, error);
+//     throw error;
+//   }
+// };
+3. Validação com Zod (src/lib/validators/clienteValidator.ts):
+Crie/Atualize o schema Zod para validar os dados do formulário de cliente, alinhado com os campos da tabela clientes existente.
+
+TypeScript
+
+// src/lib/validators/clienteValidator.ts
+import { z } from 'zod';
+
+// Função para validar CPF (exemplo simples, pode ser mais robusta)
+const isValidCPF = (cpf: string | null | undefined): boolean => {
+  if (!cpf) return true; // Opcional
+  cpf = cpf.replace(/[^\d]+/g, '');
+  if (cpf.length !== 11 || !!cpf.match(/(\d)\1{10}/)) return false;
+  // Adicionar lógica de cálculo dos dígitos verificadores aqui se necessário
+  return true;
+};
+
+export const clienteSchema = z.object({
+  nome_completo: z.string().min(3, { message: "Nome completo é obrigatório e deve ter no mínimo 3 caracteres." }),
+  cpf: z.string().optional().nullable().refine(isValidCPF, { message: "CPF inválido." }),
+  data_nascimento: z.coerce.date().optional().nullable(),
+  telefone: z.string().min(10, { message: "Telefone é obrigatório." }).optional().nullable(), // Ajustar obrigatoriedade se necessário
+  email: z.string().email({ message: "E-mail inválido." }).optional().nullable(),
+  endereco_logradouro: z.string().optional().nullable(),
+  endereco_numero: z.string().optional().nullable(),
+  endereco_complemento: z.string().optional().nullable(),
+  endereco_bairro: z.string().optional().nullable(),
+  endereco_cidade: z.string().optional().nullable(),
+  endereco_uf: z.string().length(2, { message: "UF deve ter 2 caracteres." }).optional().nullable(),
+  endereco_cep: z.string().optional().nullable().refine(val => !val || /^\d{5}-\d{3}$/.test(val), { message: "CEP inválido. Use o formato XXXXX-XXX" }),
+  ativo: z.boolean().default(true).optional(), // Campo 'ativo' do formulário
+  // tenant_id: z.string().uuid().optional() // Se for adicionar no futuro
+  // Adicionar outros campos da tabela se forem editáveis: rg, genero, telefone_secundario, preferencias_contato, observacoes
+});
+
+export type ClienteFormData = z.infer<typeof clienteSchema>;
+4. Componentes de UI (React com Shadcn/UI e TailwindCSS):
+
+src/components/cadastros/ClienteForm.tsx:
+
+Adaptar para usar os campos da tabela clientes existente.
+Inputs para: nome_completo, cpf, data_nascimento (usar DatePicker do Shadcn), telefone, email, e os campos de endereço.
+Usar react-hook-form com zodResolver e clienteSchema.
+Componentes Shadcn/UI: Input, Button, DatePicker, Form, FormField, FormItem, FormLabel, FormControl, FormMessage.
+Tratamento de submissão (chamando createCliente ou updateCliente).
+Botões "Salvar" e "Cancelar".
+Feedback para o usuário (ex: toast do sonner).
+Implementar máscaras para CPF, CEP, telefone (pode usar bibliotecas como react-input-mask ou utilitários).
+src/components/cadastros/ClientesDataTable.tsx:
+
+Usar @tanstack/react-table.
+Colunas: Nome Completo, CPF, Telefone, E-mail, Status (Ativo/Inativo), Ações.
+Ações:
+Botão/Dropdown para "Editar" (navega para ../clientes/[id]).
+Botão para "Desativar"/"Reativar" cliente (usando deactivateCliente/activateCliente e AlertDialog do Shadcn/UI para confirmação).
+(Opcional) Botão para "Excluir Permanentemente" se essa funcionalidade for realmente necessária e implementada.
+Input de busca/filtro global na tabela.
+Opção para "Mostrar inativos" (checkbox/switch que refaz a query).
+Paginação.
+Utilizar TanStack Query (useQuery) com useClientes (hook a ser criado) para buscar os dados.
+5. Páginas (React Router DOM - estrutura de arquivos em pages):
+Crie as seguintes pastas e arquivos de página dentro de src/pages/admin/cadastros/:
+
+src/pages/admin/cadastros/clientes/index.tsx (Página de Listagem):
+
+Título da página (ex: "Gerenciar Clientes").
+Botão "Adicionar Novo Cliente" que navega para a página de criação (../clientes/novo).
+Componente ClientesDataTable para exibir os clientes.
+Layout AdminPageLayout.
+src/pages/admin/cadastros/clientes/novo.tsx (Página de Criação):
+
+Título da página (ex: "Novo Cliente").
+Componente ClienteForm para o formulário de criação.
+Lógica para lidar com a submissão e redirecionamento após sucesso.
+src/pages/admin/cadastros/clientes/[id].tsx (Página de Edição):
+
+Título da página (ex: "Editar Cliente").
+Buscar dados do cliente pelo id da URL (usar useParams do react-router-dom e getClienteById através do hook useGetClienteById).
+Componente ClienteForm pré-preenchido com os dados do cliente.
+Lógica para lidar com a submissão da atualização e redirecionamento.
+6. Hook Customizado (src/hooks/useClientes.ts):
+Crie o arquivo src/hooks/useClientes.ts para gerenciar o estado e as operações de dados dos clientes utilizando TanStack Query, conforme o exemplo do prompt anterior, mas ajustando as funções de serviço chamadas (ex: deactivateCliente).
+
+TypeScript
+
+// src/hooks/useClientes.ts
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  getClientes,
+  getClienteById,
+  createCliente,
+  updateCliente,
+  deactivateCliente,
+  activateCliente,
+  // deleteClientePermanently // Se for implementar
+} from '@/services/clienteService'; // Ajuste o caminho
+import { ClienteInsert, ClienteUpdate, Cliente } from '@/types/cliente'; // Ajuste o caminho
+import { toast } from 'sonner'; // Ou o sistema de toast que estiver usando
+
+const CLIENTES_QUERY_KEY = 'clientes';
+
+export function useGetClientes(searchTerm?: string, page?: number, pageSize?: number, showInactive?: boolean) {
+  return useQuery<({ data: Cliente[], count: number | null }), Error>({ // Especificar tipos de retorno
+    queryKey: [CLIENTES_QUERY_KEY, { searchTerm, page, pageSize, showInactive }],
+    queryFn: () => getClientes(searchTerm, page, pageSize, showInactive),
+  });
+}
+
+export function useGetClienteById(id?: string) {
+  return useQuery<Cliente | null, Error>({ // Especificar tipos de retorno
+    queryKey: [CLIENTES_QUERY_KEY, id],
+    queryFn: () => (id ? getClienteById(id) : null),
+    enabled: !!id,
+  });
+}
+
+export function useCreateCliente() {
+  const queryClient = useQueryClient();
+  return useMutation<Cliente, Error, ClienteInsert>({ // Especificar tipos
+    mutationFn: (clienteData: ClienteInsert) => createCliente(clienteData),
+    onSuccess: ()_ => {
+      queryClient.invalidateQueries({ queryKey: [CLIENTES_QUERY_KEY] });
+      toast.success('Cliente criado com sucesso!');
+    },
+    onError: (error) => {
+      toast.error(`Erro ao criar cliente: ${error.message}`);
+    },
+  });
+}
+
+export function useUpdateCliente() {
+  const queryClient = useQueryClient();
+  return useMutation<Cliente, Error, { id: string; clienteData: ClienteUpdate }>({ // Especificar tipos
+    mutationFn: ({ id, clienteData }) => updateCliente(id, clienteData),
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: [CLIENTES_QUERY_KEY] });
+      queryClient.setQueryData([CLIENTES_QUERY_KEY, variables.id], data); // Atualiza cache específico
+      toast.success('Cliente atualizado com sucesso!');
+    },
+    onError: (error) => {
+      toast.error(`Erro ao atualizar cliente: ${error.message}`);
+    },
+  });
+}
+
+export function useDeactivateCliente() {
+  const queryClient = useQueryClient();
+  return useMutation<void, Error, string>({ // Especificar tipos
+    mutationFn: (id: string) => deactivateCliente(id),
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: [CLIENTES_QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [CLIENTES_QUERY_KEY, id] });
+      toast.success('Cliente desativado com sucesso!');
+    },
+    onError: (error) => {
+      toast.error(`Erro ao desativar cliente: ${error.message}`);
+    },
+  });
+}
+
+export function useActivateCliente() {
+  const queryClient = useQueryClient();
+  return useMutation<void, Error, string>({ // Especificar tipos
+    mutationFn: (id: string) => activateCliente(id),
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: [CLIENTES_QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [CLIENTES_QUERY_KEY, id] });
+      toast.success('Cliente reativado com sucesso!');
+    },
+    onError: (error) => {
+      toast.error(`Erro ao reativar cliente: ${error.message}`);
+    },
+  });
+}
+7. Roteamento:
+Adicione/Verifique as rotas para o módulo de clientes no seu arquivo de roteamento da área administrativa (provavelmente src/App.tsx ou similar), conforme o exemplo do prompt anterior.
+
+8. Considerações Adicionais e Refinamentos:
+
+LGPD: Reforce a importância do tratamento de dados. A exclusão lógica (ativo = false) é uma boa prática inicial.
+Interface e UX:
+Feedback visual para campos obrigatórios e erros de validação.
+Loaders/Spinners durante as operações de carregamento e mutação de dados.
+Permissões (RLS e Frontend):
+Revisar e Refinar Políticas RLS: As políticas RLS no Supabase para a tabela clientes devem ser ajustadas para refletir os perfis de usuário (administrador, farmaceutico, atendente).
+Administradores: CRUD completo.
+Farmacêuticos/Atendentes: Podem precisar de SELECT, INSERT, UPDATE, mas talvez não DELETE (ou apenas desativação).
+Considere se usuários devem poder ver apenas os clientes que eles mesmos cadastraram ou todos os clientes (dependendo da regra de negócio da farmácia).
+Frontend: Usar o useAuth (já existente em src/modules/usuarios-permissoes/hooks/useAuth.ts) para buscar o perfil do usuário logado e condicionar a exibição de botões de ação (ex: Desativar, Editar) e acesso a rotas. Usar o componente ProtectedComponent se aplicável.
+Navegação: Adicionar "Clientes" ao menu lateral (src/components/ui/sidebar.tsx).
+Teste Final:
+Após a implementação, teste todas as funcionalidades: criar, listar (com busca, paginação, filtro de ativos/inativos), editar, desativar, reativar. Valide formulários, permissões e a correta atualização dos dados no Supabase.

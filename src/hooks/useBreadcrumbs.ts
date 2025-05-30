@@ -7,7 +7,39 @@ interface BreadcrumbItem {
   isCurrentPage?: boolean;
 }
 
-const routeLabels: Record<string, string> = {  '/admin': 'Dashboard',  '/admin/ia': 'Inteligência Artificial',  '/admin/ia/processamento-receitas': 'Processamento de Receitas',  '/admin/ia/previsao-demanda': 'Previsão de Demanda',  '/admin/ia/otimizacao-compras': 'Otimização de Compras',  '/admin/ia/analise-clientes': 'Análise de Clientes',  '/admin/ia/monitoramento': 'Monitoramento IA',  '/admin/pedidos': 'Pedidos',  '/admin/pedidos/nova-receita': 'Nova Receita',  '/admin/estoque': 'Estoque',  '/admin/estoque/insumos': 'Insumos',  '/admin/estoque/insumos/novo': 'Novo Insumo',  '/admin/estoque/embalagens': 'Embalagens',  '/admin/estoque/embalagens/novo': 'Nova Embalagem',  '/admin/estoque/lotes/novo': 'Novo Lote',  '/admin/financeiro': 'Financeiro',  '/admin/financeiro/categorias': 'Categorias',  '/admin/financeiro/categorias/novo': 'Nova Categoria',  '/admin/financeiro/caixa': 'Fluxo de Caixa',  '/admin/financeiro/contas-a-pagar': 'Contas a Pagar',  '/admin/financeiro/contas-a-pagar/novo': 'Nova Conta a Pagar',  '/admin/usuarios': 'Usuários',  '/admin/usuarios/novo': 'Novo Usuário',  '/admin/perfil': 'Meu Perfil',  '/admin/configuracoes': 'Configurações',};
+const routeLabels: Record<string, string> = {
+  '/admin': 'Dashboard',
+  '/admin/ia': 'Inteligência Artificial',
+  '/admin/ia/processamento-receitas': 'Processamento de Receitas',
+  '/admin/ia/previsao-demanda': 'Previsão de Demanda',
+  '/admin/ia/otimizacao-compras': 'Otimização de Compras',
+  '/admin/ia/analise-clientes': 'Análise de Clientes',
+  '/admin/ia/monitoramento': 'Monitoramento IA',
+  '/admin/pedidos': 'Pedidos',
+  '/admin/pedidos/nova-receita': 'Nova Receita',
+  '/admin/estoque': 'Estoque',
+  '/admin/estoque/insumos': 'Insumos',
+  '/admin/estoque/insumos/novo': 'Novo Insumo',
+  '/admin/estoque/embalagens': 'Embalagens',
+  '/admin/estoque/embalagens/novo': 'Nova Embalagem',
+  '/admin/estoque/lotes/novo': 'Novo Lote',
+  '/admin/financeiro': 'Financeiro',
+  '/admin/financeiro/categorias': 'Categorias',
+  '/admin/financeiro/categorias/novo': 'Nova Categoria',
+  '/admin/financeiro/caixa': 'Fluxo de Caixa',
+  '/admin/financeiro/contas-a-pagar': 'Contas a Pagar',
+  '/admin/financeiro/contas-a-pagar/novo': 'Nova Conta a Pagar',
+  '/admin/usuarios': 'Usuários',
+  '/admin/usuarios/novo': 'Novo Usuário',
+  '/admin/perfil': 'Meu Perfil',
+  '/admin/configuracoes': 'Configurações',
+  '/admin/cadastros': 'Cadastros',
+  '/admin/cadastros/fornecedores': 'Fornecedores',
+  '/admin/cadastros/fornecedores/novo': 'Novo Fornecedor',
+  // Clientes
+  '/admin/clientes': 'Clientes',
+  '/admin/clientes/novo': 'Novo Cliente',
+};
 
 export function useBreadcrumbs(): BreadcrumbItem[] {
   const location = useLocation();

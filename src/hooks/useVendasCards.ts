@@ -43,6 +43,7 @@ export interface UseVendasCardsReturn {
   formatarDinheiro: (valor: number) => string;
   formatarTempo: (minutos: number) => string;
   refresh: () => Promise<void>;
+  refetch: () => Promise<void>;
 }
 
 export function useVendasCards(): UseVendasCardsReturn {
@@ -232,6 +233,7 @@ export function useVendasCards(): UseVendasCardsReturn {
     error,
     formatarDinheiro,
     formatarTempo,
-    refresh
+    refresh,
+    refetch: refresh
   };
 } 

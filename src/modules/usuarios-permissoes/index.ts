@@ -7,6 +7,9 @@ export * from './types';
 // Serviços
 export { AuthService } from './services/authService';
 
+// Utilitários
+export * from './utils/permissions';
+
 // Hooks
 export {
   useAuth,

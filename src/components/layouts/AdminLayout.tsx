@@ -266,6 +266,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       icon: <Building2 className="h-5 w-5 text-slate-600" />,
       description: 'Dados mestres do sistema',
       submenu: [
+        { title: 'Clientes', href: '/admin/clientes', description: 'Gerenciar clientes' },
         { title: 'Fornecedores', href: '/admin/cadastros/fornecedores', description: 'Gerenciar fornecedores' },
       ],
     },
