@@ -83,7 +83,7 @@ export const CLIENTE_VALIDATION = {
   telefone: {
     min: 10,
     max: 15,
-    pattern: /^[\d\s\(\)\-\+]+$/
+    pattern: /^[\d\s()-+]+$/
   }
 } as const;
 

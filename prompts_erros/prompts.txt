@@ -1,419 +1,78 @@
-Perfeito! Analisei o arquivo prompts.txt que você forneceu, que na verdade é o conteúdo do arquivo de migração supabase/migrations/20250527000000_create_missing_tables.sql.
+# Tarefa: Implementar Funcionalidades Completas para o Dashboard do Proprietário
 
-Confirmação:
-Sim, a tabela public.clientes já foi criada neste arquivo de migração.
+## Contexto
+A Edge Function `supabase/functions/dashboard-proprietario/index.ts` é responsável por consolidar dados para o dashboard do proprietário, mas atualmente utiliza dados mock para as seções de vendas e estoque consolidado, e não possui funcionalidades de cache, filtros por período ou métricas de comparação.
 
-Aqui está a estrutura dela, conforme o arquivo:
+## Objetivo
+Implementar as funcionalidades completas para o dashboard do proprietário, garantindo que os dados sejam reais, performáticos e que o dashboard ofereça mais insights.
 
-SQL
+## Tarefas Detalhadas
 
--- 2. Criar tabela clientes
-CREATE TABLE IF NOT EXISTS public.clientes (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  nome_completo TEXT NOT NULL,
-  cpf TEXT UNIQUE, -- Considerar remover UNIQUE se clientes podem não ter CPF ou se pode haver duplicidade controlada
-  data_nascimento DATE,
-  telefone TEXT,
-  email TEXT, -- Considerar adicionar UNIQUE se for usado para login ou identificação única
-  endereco_logradouro TEXT,
-  endereco_numero TEXT,
-  endereco_complemento TEXT,
-  endereco_bairro TEXT,
-  endereco_cidade TEXT,
-  endereco_uf CHAR(2),
-  endereco_cep TEXT,
-  ativo BOOLEAN DEFAULT true,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
-);
+### 1. Implementar Stored Procedures (RPCs) no Supabase (SQL)
 
--- Adicionar comentários
-COMMENT ON TABLE public.clientes IS 'Tabela para armazenar informações dos clientes da farmácia';
+Crie ou atualize as seguintes funções SQL no Supabase para que a Edge Function possa buscar dados reais:
 
--- Configurar RLS
-ALTER TABLE public.clientes ENABLE ROW LEVEL SECURITY;
+#### a) `get_vendas_por_farmacia_30_dias`
+- **Descrição**: Esta função deve retornar o total de vendas e a quantidade de vendas para cada farmácia associada a um `proprietario_id` específico nos últimos 30 dias.
+- **Parâmetros**: `p_proprietario_id UUID`
+- **Retorno**: Uma tabela com as colunas:
+    - `farmacia_id UUID`
+    - `farmacia_nome TEXT`
+    - `total_vendas NUMERIC` (soma dos valores das vendas)
+    - `quantidade_vendas INTEGER` (contagem de vendas)
+- **Lógica**:
+    - Juntar as tabelas `vendas` e `farmacias`.
+    - Filtrar por `proprietario_id` e vendas realizadas nos últimos 30 dias.
+    - Agrupar por `farmacia_id` e `farmacia_nome`.
 
--- Criar políticas RLS
-CREATE POLICY "Usuários autenticados podem visualizar clientes"
-ON public.clientes FOR SELECT
-TO authenticated
-USING (true); -- Ajustar para perfis específicos se necessário
+#### b) `get_estoque_consolidado_proprietario`
+- **Descrição**: Esta função deve retornar o estoque total consolidado de cada produto e em quantas farmácias ele está disponível, para um `proprietario_id` específico.
+- **Parâmetros**: `p_proprietario_id UUID`
+- **Retorno**: Uma tabela com as colunas:
+    - `produto_id UUID`
+    - `produto_nome TEXT`
+    - `estoque_total INTEGER` (soma do estoque de todas as farmácias do proprietário)
+    - `farmacias_com_estoque INTEGER` (contagem de farmácias que possuem o produto em estoque)
+- **Lógica**:
+    - Juntar as tabelas `estoque`, `produtos` e `farmacias`.
+    - Filtrar por `proprietario_id`.
+    - Agrupar por `produto_id` e `produto_nome`.
 
-CREATE POLICY "Usuários autenticados podem inserir clientes"
-ON public.clientes FOR INSERT
-TO authenticated
-WITH CHECK (true); -- Ajustar para perfis específicos se necessário
+### 2. Adicionar Cache na Edge Function
 
-CREATE POLICY "Usuários autenticados podem atualizar clientes"
-ON public.clientes FOR UPDATE
-TO authenticated
-USING (true) -- Permite atualizar o próprio registro ou registros que pode ver
-WITH CHECK (true); -- Ajustar para perfis específicos se necessário
+Implemente uma estratégia de cache na `dashboard-proprietario/index.ts` para melhorar a performance e reduzir a carga no banco de dados.
 
-CREATE POLICY "Usuários autenticados podem deletar clientes"
-ON public.clientes FOR DELETE
-TO authenticated
-USING (true); -- Ajustar para perfis específicos se necessário
+- **Estratégia Sugerida**: Utilize um mecanismo de cache simples baseado em tempo de vida (TTL), por exemplo, armazenando a resposta em uma variável global ou em um serviço de cache externo (se disponível e justificado). Para começar, um cache em memória com um TTL de 5-10 minutos é suficiente.
+- **Implementação**:
+    - Verifique se os dados estão em cache antes de executar as queries.
+    - Se não estiverem, execute as queries, armazene o resultado no cache e defina um TTL.
+    - Se estiverem, retorne os dados do cache.
 
--- Trigger para atualizar updated_at
-CREATE OR REPLACE FUNCTION public.update_updated_at_column()
-RETURNS TRIGGER AS $$
-BEGIN
-  NEW.updated_at = now();
-  RETURN NEW;
-END;
-$$ language 'plpgsql';
+### 3. Implementar Filtros por Período
 
-CREATE TRIGGER update_clientes_updated_at
-BEFORE UPDATE ON public.clientes
-FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
-Análise da Estrutura Existente vs. Sugestão Anterior:
+Modifique a Edge Function para aceitar parâmetros de filtro de período (data de início e data de fim) para as métricas de vendas e, se aplicável, para outras métricas.
 
-A tabela clientes existente é um bom começo e cobre muitos dos campos essenciais. Comparando com a sugestão que fiz anteriormente no prompt (caso a tabela não existisse), temos:
+- **Parâmetros de Entrada**: Adicione `data_inicio` (string ISO 8601) e `data_fim` (string ISO 8601) ao corpo da requisição.
+- **Lógica**:
+    - Ajuste a query de vendas (`get_vendas_por_farmacia_30_dias` ou uma nova RPC) para usar esses parâmetros.
+    - Se os parâmetros não forem fornecidos, mantenha o padrão de "últimos 30 dias".
 
-Campos Presentes e Alinhados:
-id, nome_completo, cpf, data_nascimento, telefone (principal), email, endereco_logradouro, endereco_numero, endereco_complemento, endereco_bairro, endereco_cidade, endereco_uf, endereco_cep, ativo, created_at, updated_at.
-Campos da Sugestão Anterior que NÃO Estão na Tabela Atual:
-tenant_id (para multi-tenancy) - Importante considerar se o sistema será multi-tenant no futuro.
-rg
-genero
-telefone_secundario
-preferencias_contato
-observacoes
-Considerações sobre a Tabela Atual:
-cpf TEXT UNIQUE: Se um cliente puder não ter CPF, ou se por algum motivo excepcional puder haver mais de um cadastro sem CPF (ou com CPF em branco/nulo), a constraint UNIQUE pode ser um problema. Se CPF é obrigatório e único, está ok.
-email TEXT: Se o e-mail for um identificador único para o cliente ou usado para login no portal do cliente, adicionar uma constraint UNIQUE seria recomendado.
-Políticas RLS: As políticas atuais são bastante permissivas (USING (true) para authenticated). Seria ideal refinar essas políticas para permitir acesso baseado em perfis específicos (ex: 'atendente', 'farmaceutico', 'administrador') e, se aplicável, tenant_id. Por exemplo, um atendente pode apenas visualizar e criar, enquanto um administrador pode excluir.
-Próximo Passo: Ajuste do Prompt para Cursor AI
+### 4. Adicionar Métricas de Comparação
 
-Dado que a tabela clientes já existe, não precisamos do Passo 1 (Criação da Migration) do prompt anterior. Vamos focar em criar toda a lógica de frontend e backend para interagir com essa tabela.
+Inclua novas métricas no dashboard que permitam comparar o desempenho atual com períodos anteriores.
 
-Podemos fazer algumas perguntas antes de refinar o prompt:
+- **Exemplos de Métricas**:
+    - Variação percentual das vendas em relação ao mês anterior.
+    - Variação percentual do número de usuários ativos.
+    - Comparação do estoque atual com a média dos últimos 3 meses.
+- **Implementação**:
+    - Adicione novas queries ou RPCs conforme necessário para calcular essas métricas.
+    - Integre os resultados na estrutura de resposta da Edge Function.
 
-Campos Faltantes: Você gostaria de adicionar algum dos campos que sugeri e que não estão na tabela atual (como rg, genero, observacoes, preferencias_contato, telefone_secundario)? Se sim, precisaríamos de uma nova migration para adicionar essas colunas.
-Multi-Tenancy: O sistema precisará ser multi-tenant (atender a múltiplas farmácias independentes com dados isolados)? Se sim, a coluna tenant_id seria crucial.
-Constraints UNIQUE: A constraint UNIQUE em cpf está adequada? O e-mail deve ser único?
-Refinamento de RLS: As políticas de RLS atuais são suficientes por agora, ou já queremos definir políticas mais granulares baseadas nos perfis de usuário (administrador, farmaceutico, atendente) que já estão sendo configurados em 20241219000000_sistema_permissoes.sql e 20250101000005_insert_perfis_basicos.sql?
-Assumindo por agora que a estrutura da tabela clientes como está é o ponto de partida e que podemos refinar RLS e adicionar campos depois se necessário, vou ajustar o prompt.
+## Considerações Adicionais
 
-Prompt Ajustado para Cursor AI: Implementação do Módulo de Gestão de Clientes (Tabela Existente)
-
-Objetivo Geral:
-Desenvolver um módulo completo para gestão de clientes (CRUD, listagem, busca e visualização) no sistema Pharma-AI, utilizando a tabela public.clientes existente no Supabase. Este módulo deve ser integrado à arquitetura existente (React, TypeScript, Shadcn/UI, Zod, etc.).
-
-Contexto do Projeto (Lembrete para a IA):
-
-Backend: Supabase (PostgreSQL, Auth, Functions, Storage). A tabela public.clientes já existe com a seguinte estrutura (resumida): id, nome_completo, cpf (unique), data_nascimento, telefone, email, endereco_logradouro, endereco_numero, endereco_complemento, endereco_bairro, endereco_cidade, endereco_uf, endereco_cep, ativo, created_at, updated_at. RLS está habilitada com políticas básicas.
-Frontend: React, TypeScript, Vite.
-UI: Shadcn/UI, TailwindCSS.
-Gerenciamento de Formulários: React Hook Form com Zod para validação.
-Gerenciamento de Estado de Servidor/Caching: TanStack Query (React Query).
-Tabelas de Dados: TanStack Table.
-Estrutura de Pastas:
-Tipos: src/types/ (especialmente database.ts gerado pelo Supabase)
-Serviços (API calls): src/services/
-Componentes: src/components/
-Páginas Admin: src/pages/admin/
-Hooks: src/hooks/
-Validadores: src/lib/validators/
-Passos Detalhados para Implementação:
-
-1. Tipos TypeScript (Verificação e Criação):
-
-Verifique se o arquivo src/types/database.ts (gerado pelo Supabase via supabase gen types typescript --project-id <seu-project-id> --schema public > src/types/database.ts) está atualizado e reflete corretamente a estrutura da tabela public.clientes. Se não estiver, gere-o novamente.
-Crie/Atualize o arquivo src/types/cliente.ts (ou similar) para as interfaces Cliente, ClienteInsert, ClienteUpdate baseadas nos tipos do Supabase:
-TypeScript
-
-// src/types/cliente.ts
-import { Database } from './database'; // Ajuste o caminho se necessário
-
-export type Cliente = Database['public']['Tables']['clientes']['Row'];
-export type ClienteInsert = Database['public']['Tables']['clientes']['Insert'];
-export type ClienteUpdate = Database['public']['Tables']['clientes']['Update'];
-
-// Você pode adicionar outros tipos derivados se necessário, por exemplo, para formulários
-// export type ClienteFormData = Omit<Cliente, 'id' | 'created_at' | 'updated_at' | 'ativo'> & {
-//   data_nascimento?: string | Date | null; // Exemplo de como lidar com tipos de formulário
-// };
-2. Camada de Serviço (src/services/clienteService.ts):
-Crie um novo arquivo para encapsular a lógica de comunicação com a API do Supabase para a entidade clientes.
-
-TypeScript
-
-// src/services/clienteService.ts
-import { supabase } from '@/integrations/supabase/client'; // Ajuste o caminho
-import { Cliente, ClienteInsert, ClienteUpdate } from '@/types/cliente'; // Ajuste o caminho
-
-const TABLE_NAME = 'clientes';
-
-export const getClientes = async (searchTerm?: string, page: number = 1, pageSize: number = 10, showInactive: boolean = false) => {
-  let query = supabase
-    .from(TABLE_NAME)
-    .select('*', { count: 'exact' })
-    .order('nome_completo');
-
-  if (!showInactive) {
-    query = query.eq('ativo', true);
-  }
-
-  if (searchTerm) {
-    query = query.or(`nome_completo.ilike.%<span class="math-inline">\{searchTerm\}%,cpf\.ilike\.%</span>{searchTerm}%,email.ilike.%${searchTerm}%`);
-  }
-
-  const offset = (page - 1) * pageSize;
-  query = query.range(offset, offset + pageSize - 1);
-
-  const { data, error, count } = await query;
-  if (error) {
-    console.error('Erro ao buscar clientes:', error);
-    throw error;
-  }
-  return { data: data as Cliente[], count };
-};
-
-export const getClienteById = async (id: string): Promise<Cliente | null> => {
-  const { data, error } = await supabase.from(TABLE_NAME).select('*').eq('id', id).single();
-  if (error) {
-    if (error.code === 'PGRST116') return null; // Not found
-    console.error(`Erro ao buscar cliente por ID ${id}:`, error);
-    throw error;
-  }
-  return data as Cliente;
-};
-
-export const createCliente = async (clienteData: ClienteInsert): Promise<Cliente> => {
-  const { data, error } = await supabase.from(TABLE_NAME).insert(clienteData).select().single();
-  if (error) {
-     console.error('Erro ao criar cliente:', error);
-     throw error;
-  }
-  return data as Cliente;
-};
-
-export const updateCliente = async (id: string, clienteData: ClienteUpdate): Promise<Cliente> => {
-  const { data, error } = await supabase.from(TABLE_NAME).update(clienteData).eq('id', id).select().single();
-  if (error) {
-    console.error(`Erro ao atualizar cliente ${id}:`, error);
-    throw error;
-  }
-  return data as Cliente;
-};
-
-// Exclusão lógica (recomendado para manter integridade referencial com pedidos, etc.)
-export const deactivateCliente = async (id: string): Promise<void> => {
-  const { error } = await supabase.from(TABLE_NAME).update({ ativo: false, updated_at: new Date().toISOString() }).eq('id', id);
-  if (error) {
-    console.error(`Erro ao desativar cliente ${id}:`, error);
-    throw error;
-  }
-};
-
- // Reativar cliente
-export const activateCliente = async (id: string): Promise<void> => {
-  const { error } = await supabase.from(TABLE_NAME).update({ ativo: true, updated_at: new Date().toISOString() }).eq('id', id);
-  if (error) {
-    console.error(`Erro ao reativar cliente ${id}:`, error);
-    throw error;
-  }
-};
-
-// Exclusão física (usar com MUITO cuidado, apenas se souber que não há dependências)
-// export const deleteClientePermanently = async (id: string): Promise<void> => {
-//   const { error } = await supabase.from(TABLE_NAME).delete().eq('id', id);
-//   if (error) {
-//     console.error(`Erro ao excluir permanentemente cliente ${id}:`, error);
-//     throw error;
-//   }
-// };
-3. Validação com Zod (src/lib/validators/clienteValidator.ts):
-Crie/Atualize o schema Zod para validar os dados do formulário de cliente, alinhado com os campos da tabela clientes existente.
-
-TypeScript
-
-// src/lib/validators/clienteValidator.ts
-import { z } from 'zod';
-
-// Função para validar CPF (exemplo simples, pode ser mais robusta)
-const isValidCPF = (cpf: string | null | undefined): boolean => {
-  if (!cpf) return true; // Opcional
-  cpf = cpf.replace(/[^\d]+/g, '');
-  if (cpf.length !== 11 || !!cpf.match(/(\d)\1{10}/)) return false;
-  // Adicionar lógica de cálculo dos dígitos verificadores aqui se necessário
-  return true;
-};
-
-export const clienteSchema = z.object({
-  nome_completo: z.string().min(3, { message: "Nome completo é obrigatório e deve ter no mínimo 3 caracteres." }),
-  cpf: z.string().optional().nullable().refine(isValidCPF, { message: "CPF inválido." }),
-  data_nascimento: z.coerce.date().optional().nullable(),
-  telefone: z.string().min(10, { message: "Telefone é obrigatório." }).optional().nullable(), // Ajustar obrigatoriedade se necessário
-  email: z.string().email({ message: "E-mail inválido." }).optional().nullable(),
-  endereco_logradouro: z.string().optional().nullable(),
-  endereco_numero: z.string().optional().nullable(),
-  endereco_complemento: z.string().optional().nullable(),
-  endereco_bairro: z.string().optional().nullable(),
-  endereco_cidade: z.string().optional().nullable(),
-  endereco_uf: z.string().length(2, { message: "UF deve ter 2 caracteres." }).optional().nullable(),
-  endereco_cep: z.string().optional().nullable().refine(val => !val || /^\d{5}-\d{3}$/.test(val), { message: "CEP inválido. Use o formato XXXXX-XXX" }),
-  ativo: z.boolean().default(true).optional(), // Campo 'ativo' do formulário
-  // tenant_id: z.string().uuid().optional() // Se for adicionar no futuro
-  // Adicionar outros campos da tabela se forem editáveis: rg, genero, telefone_secundario, preferencias_contato, observacoes
-});
-
-export type ClienteFormData = z.infer<typeof clienteSchema>;
-4. Componentes de UI (React com Shadcn/UI e TailwindCSS):
-
-src/components/cadastros/ClienteForm.tsx:
-
-Adaptar para usar os campos da tabela clientes existente.
-Inputs para: nome_completo, cpf, data_nascimento (usar DatePicker do Shadcn), telefone, email, e os campos de endereço.
-Usar react-hook-form com zodResolver e clienteSchema.
-Componentes Shadcn/UI: Input, Button, DatePicker, Form, FormField, FormItem, FormLabel, FormControl, FormMessage.
-Tratamento de submissão (chamando createCliente ou updateCliente).
-Botões "Salvar" e "Cancelar".
-Feedback para o usuário (ex: toast do sonner).
-Implementar máscaras para CPF, CEP, telefone (pode usar bibliotecas como react-input-mask ou utilitários).
-src/components/cadastros/ClientesDataTable.tsx:
-
-Usar @tanstack/react-table.
-Colunas: Nome Completo, CPF, Telefone, E-mail, Status (Ativo/Inativo), Ações.
-Ações:
-Botão/Dropdown para "Editar" (navega para ../clientes/[id]).
-Botão para "Desativar"/"Reativar" cliente (usando deactivateCliente/activateCliente e AlertDialog do Shadcn/UI para confirmação).
-(Opcional) Botão para "Excluir Permanentemente" se essa funcionalidade for realmente necessária e implementada.
-Input de busca/filtro global na tabela.
-Opção para "Mostrar inativos" (checkbox/switch que refaz a query).
-Paginação.
-Utilizar TanStack Query (useQuery) com useClientes (hook a ser criado) para buscar os dados.
-5. Páginas (React Router DOM - estrutura de arquivos em pages):
-Crie as seguintes pastas e arquivos de página dentro de src/pages/admin/cadastros/:
-
-src/pages/admin/cadastros/clientes/index.tsx (Página de Listagem):
-
-Título da página (ex: "Gerenciar Clientes").
-Botão "Adicionar Novo Cliente" que navega para a página de criação (../clientes/novo).
-Componente ClientesDataTable para exibir os clientes.
-Layout AdminPageLayout.
-src/pages/admin/cadastros/clientes/novo.tsx (Página de Criação):
-
-Título da página (ex: "Novo Cliente").
-Componente ClienteForm para o formulário de criação.
-Lógica para lidar com a submissão e redirecionamento após sucesso.
-src/pages/admin/cadastros/clientes/[id].tsx (Página de Edição):
-
-Título da página (ex: "Editar Cliente").
-Buscar dados do cliente pelo id da URL (usar useParams do react-router-dom e getClienteById através do hook useGetClienteById).
-Componente ClienteForm pré-preenchido com os dados do cliente.
-Lógica para lidar com a submissão da atualização e redirecionamento.
-6. Hook Customizado (src/hooks/useClientes.ts):
-Crie o arquivo src/hooks/useClientes.ts para gerenciar o estado e as operações de dados dos clientes utilizando TanStack Query, conforme o exemplo do prompt anterior, mas ajustando as funções de serviço chamadas (ex: deactivateCliente).
-
-TypeScript
-
-// src/hooks/useClientes.ts
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  getClientes,
-  getClienteById,
-  createCliente,
-  updateCliente,
-  deactivateCliente,
-  activateCliente,
-  // deleteClientePermanently // Se for implementar
-} from '@/services/clienteService'; // Ajuste o caminho
-import { ClienteInsert, ClienteUpdate, Cliente } from '@/types/cliente'; // Ajuste o caminho
-import { toast } from 'sonner'; // Ou o sistema de toast que estiver usando
-
-const CLIENTES_QUERY_KEY = 'clientes';
-
-export function useGetClientes(searchTerm?: string, page?: number, pageSize?: number, showInactive?: boolean) {
-  return useQuery<({ data: Cliente[], count: number | null }), Error>({ // Especificar tipos de retorno
-    queryKey: [CLIENTES_QUERY_KEY, { searchTerm, page, pageSize, showInactive }],
-    queryFn: () => getClientes(searchTerm, page, pageSize, showInactive),
-  });
-}
-
-export function useGetClienteById(id?: string) {
-  return useQuery<Cliente | null, Error>({ // Especificar tipos de retorno
-    queryKey: [CLIENTES_QUERY_KEY, id],
-    queryFn: () => (id ? getClienteById(id) : null),
-    enabled: !!id,
-  });
-}
-
-export function useCreateCliente() {
-  const queryClient = useQueryClient();
-  return useMutation<Cliente, Error, ClienteInsert>({ // Especificar tipos
-    mutationFn: (clienteData: ClienteInsert) => createCliente(clienteData),
-    onSuccess: ()_ => {
-      queryClient.invalidateQueries({ queryKey: [CLIENTES_QUERY_KEY] });
-      toast.success('Cliente criado com sucesso!');
-    },
-    onError: (error) => {
-      toast.error(`Erro ao criar cliente: ${error.message}`);
-    },
-  });
-}
-
-export function useUpdateCliente() {
-  const queryClient = useQueryClient();
-  return useMutation<Cliente, Error, { id: string; clienteData: ClienteUpdate }>({ // Especificar tipos
-    mutationFn: ({ id, clienteData }) => updateCliente(id, clienteData),
-    onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: [CLIENTES_QUERY_KEY] });
-      queryClient.setQueryData([CLIENTES_QUERY_KEY, variables.id], data); // Atualiza cache específico
-      toast.success('Cliente atualizado com sucesso!');
-    },
-    onError: (error) => {
-      toast.error(`Erro ao atualizar cliente: ${error.message}`);
-    },
-  });
-}
-
-export function useDeactivateCliente() {
-  const queryClient = useQueryClient();
-  return useMutation<void, Error, string>({ // Especificar tipos
-    mutationFn: (id: string) => deactivateCliente(id),
-    onSuccess: (_, id) => {
-      queryClient.invalidateQueries({ queryKey: [CLIENTES_QUERY_KEY] });
-      queryClient.invalidateQueries({ queryKey: [CLIENTES_QUERY_KEY, id] });
-      toast.success('Cliente desativado com sucesso!');
-    },
-    onError: (error) => {
-      toast.error(`Erro ao desativar cliente: ${error.message}`);
-    },
-  });
-}
-
-export function useActivateCliente() {
-  const queryClient = useQueryClient();
-  return useMutation<void, Error, string>({ // Especificar tipos
-    mutationFn: (id: string) => activateCliente(id),
-    onSuccess: (_, id) => {
-      queryClient.invalidateQueries({ queryKey: [CLIENTES_QUERY_KEY] });
-      queryClient.invalidateQueries({ queryKey: [CLIENTES_QUERY_KEY, id] });
-      toast.success('Cliente reativado com sucesso!');
-    },
-    onError: (error) => {
-      toast.error(`Erro ao reativar cliente: ${error.message}`);
-    },
-  });
-}
-7. Roteamento:
-Adicione/Verifique as rotas para o módulo de clientes no seu arquivo de roteamento da área administrativa (provavelmente src/App.tsx ou similar), conforme o exemplo do prompt anterior.
-
-8. Considerações Adicionais e Refinamentos:
-
-LGPD: Reforce a importância do tratamento de dados. A exclusão lógica (ativo = false) é uma boa prática inicial.
-Interface e UX:
-Feedback visual para campos obrigatórios e erros de validação.
-Loaders/Spinners durante as operações de carregamento e mutação de dados.
-Permissões (RLS e Frontend):
-Revisar e Refinar Políticas RLS: As políticas RLS no Supabase para a tabela clientes devem ser ajustadas para refletir os perfis de usuário (administrador, farmaceutico, atendente).
-Administradores: CRUD completo.
-Farmacêuticos/Atendentes: Podem precisar de SELECT, INSERT, UPDATE, mas talvez não DELETE (ou apenas desativação).
-Considere se usuários devem poder ver apenas os clientes que eles mesmos cadastraram ou todos os clientes (dependendo da regra de negócio da farmácia).
-Frontend: Usar o useAuth (já existente em src/modules/usuarios-permissoes/hooks/useAuth.ts) para buscar o perfil do usuário logado e condicionar a exibição de botões de ação (ex: Desativar, Editar) e acesso a rotas. Usar o componente ProtectedComponent se aplicável.
-Navegação: Adicionar "Clientes" ao menu lateral (src/components/ui/sidebar.tsx).
-Teste Final:
-Após a implementação, teste todas as funcionalidades: criar, listar (com busca, paginação, filtro de ativos/inativos), editar, desativar, reativar. Valide formulários, permissões e a correta atualização dos dados no Supabase.
+- **Padrões de Código**: Siga as regras do projeto Pharma.AI para padrões de código limpo, nomenclatura e estrutura.
+- **Tratamento de Erros**: Mantenha e aprimore o tratamento de erros existente.
+- **Testes**: Pense em como testar essas novas funcionalidades (unitários para as RPCs, integração para a Edge Function).
+- **Documentação**: Atualize os comentários na Edge Function e, se necessário, crie documentação para as novas RPCs.
+- **Segurança**: Garanta que o RLS (Row Level Security) no Supabase esteja configurado corretamente para as tabelas envolvidas nas RPCs.

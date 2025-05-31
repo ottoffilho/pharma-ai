@@ -184,7 +184,7 @@ export const useAuthSimpleState = () => {
     }
   }, []);
 
-  // Função simplificada para carregar usuário
+  // Carregar dados do usuário
   const carregarUsuario = useCallback(async () => {
     if (carregandoRef.current) {
       console.log('⚠️ useAuthSimple - Carregamento já em andamento');
@@ -213,114 +213,105 @@ export const useAuthSimpleState = () => {
       const user = session.user;
       console.log('✅ useAuthSimple - Sessão encontrada:', user.email);
 
-      // Buscar dados do usuário com timeout
-      const userDataPromise = supabase
-        .from('usuarios')
-        .select(`
-          id,
-          email,
-          nome,
-          telefone,
-          perfil_id,
-          ativo,
-          ultimo_acesso,
-          criado_em,
-          atualizado_em,
-          supabase_auth_id,
-          perfis_usuario(
-            id,
-            nome,
-            tipo,
-            dashboard_padrao
-          )
-        `)
-        .eq('supabase_auth_id', user.id)
-        .eq('ativo', true)
-        .single();
+      // Primeiro, buscar apenas dados básicos do usuário usando RPC para evitar recursão RLS
+      console.log('🔍 useAuthSimple - Buscando dados básicos do usuário via RPC...');
+      const { data: userRpcData, error: userRpcError } = await supabase
+        .rpc('get_logged_user_data');
 
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Timeout ao buscar usuário')), 3000);
-      });
+      if (userRpcError || !userRpcData || userRpcData.error) {
+        console.error('❌ useAuthSimple - Erro ao buscar usuário via RPC:', userRpcError || userRpcData?.error);
+        
+        // Se for erro de usuário não encontrado, tentar criar usuário automaticamente
+        if (userRpcData?.error === 'Usuário não encontrado ou inativo') {
+          console.log('🔄 useAuthSimple - Usuário não encontrado, tentando criar...');
+          try {
+            const userName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Usuário';
+            
+            const { data: createResult, error: createRpcError } = await supabase
+              .rpc('create_user_auto', {
+                user_email: user.email,
+                user_name: userName,
+                auth_user_id: user.id
+              });
 
-      let userData, userDataError;
-      try {
-        const result = await Promise.race([
-          userDataPromise,
-          timeoutPromise
-        ]) as { data: unknown; error: unknown };
-        userData = result.data;
-        userDataError = result.error;
-      } catch (timeoutError) {
-        console.error('❌ useAuthSimple - Timeout ao buscar usuário:', timeoutError);
+            if (createRpcError || !createResult?.success) {
+              console.error('❌ useAuthSimple - Erro ao criar usuário via RPC:', createRpcError || createResult?.error);
+              if (isMountedRef.current) {
+                setUltimoErro('Erro ao criar perfil de usuário');
+                setCarregando(false);
+              }
+              carregandoRef.current = false;
+              return;
+            }
+
+            console.log('✅ useAuthSimple - Usuário criado automaticamente via RPC');
+            // Recursivamente chamar a função para carregar o usuário recém-criado
+            carregandoRef.current = false;
+            await carregarUsuario();
+            return;
+          } catch (createError) {
+            console.error('❌ useAuthSimple - Erro ao tentar criar usuário:', createError);
+          }
+        }
+        
         if (isMountedRef.current) {
-          setUltimoErro('Timeout ao carregar usuário');
+          setUltimoErro('Usuário não encontrado ou inativo');
           setCarregando(false);
         }
         carregandoRef.current = false;
         return;
       }
 
-      if (userDataError || !userData) {
-        console.error('❌ useAuthSimple - Erro ao buscar usuário:', userDataError);
-        if (isMountedRef.current) {
-          setUltimoErro('Usuário não encontrado');
-          setCarregando(false);
-        }
-        carregandoRef.current = false;
-        return;
-      }
+      const userData = userRpcData.usuario;
+      const perfilUsuario = userRpcData.perfil;
+      console.log('✅ useAuthSimple - Dados básicos do usuário carregados via RPC');
 
-      // Buscar permissões com timeout
-      const permissoesPromise = supabase
-        .from('permissoes')
-        .select('*')
-        .eq('perfil_id', userData.perfil_id);
-
-      const permissoesTimeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Timeout ao buscar permissões')), 2000);
-      });
-
-      let permissoesData;
+      // Buscar permissões usando RPC
+      let permissoes: any[] = [];
       try {
-        const result = await Promise.race([
-          permissoesPromise,
-          permissoesTimeoutPromise
-        ]) as { data: unknown };
-        permissoesData = result.data;
-      } catch (timeoutError) {
-        console.error('❌ useAuthSimple - Timeout ao buscar permissões:', timeoutError);
-        permissoesData = []; // Usar array vazio como fallback
+        console.log('🔍 useAuthSimple - Buscando permissões via RPC...');
+        const { data: permissoesRpcData, error: permissoesRpcError } = await supabase
+          .rpc('get_user_permissions');
+
+        if (!permissoesRpcError && permissoesRpcData && !permissoesRpcData.error) {
+          permissoes = permissoesRpcData.map((p: any) => ({
+            id: p.id,
+            modulo: p.modulo as ModuloSistema,
+            acao: p.acao as AcaoPermissao,
+            nivel: NivelAcesso.TODOS,
+            perfil_id: p.perfil_id,
+            permitido: p.permitido,
+            criado_em: p.criado_em,
+            condicoes: null
+          }));
+          console.log('✅ useAuthSimple - Permissões carregadas via RPC:', permissoes.length);
+        } else {
+          console.log('⚠️ useAuthSimple - Erro ao carregar permissões via RPC:', permissoesRpcError || permissoesRpcData?.error);
+        }
+      } catch (permissoesError) {
+        console.log('⚠️ useAuthSimple - Exceção ao carregar permissões via RPC:', permissoesError);
       }
 
-      const permissoes = (permissoesData as Array<{ id: string; modulo: string; acao: string; perfil_id: string; permitido: boolean; criado_em: string }> || []).map((p) => ({
-        id: p.id,
-        modulo: p.modulo as ModuloSistema,
-        acao: p.acao as AcaoPermissao,
-        nivel: NivelAcesso.TODOS,
-        perfil_id: p.perfil_id,
-        permitido: p.permitido,
-        criado_em: p.criado_em,
-        condicoes: null
-      }));
-
-      const perfilUsuario = userData.perfis_usuario ? {
-        id: userData.perfis_usuario.id,
-        nome: userData.perfis_usuario.nome,
-        tipo: userData.perfis_usuario.tipo as PerfilUsuario,
-        dashboard: userData.perfis_usuario.dashboard_padrao as TipoDashboard || TipoDashboard.ADMINISTRATIVO,
+      // Montar objeto do perfil
+      const perfilObj = perfilUsuario ? {
+        id: perfilUsuario.id,
+        nome: perfilUsuario.nome,
+        tipo: perfilUsuario.tipo as PerfilUsuario,
+        dashboard: perfilUsuario.dashboard_padrao as TipoDashboard || TipoDashboard.ADMINISTRATIVO,
         permissoes,
         ativo: userData.ativo,
         created_at: '',
         updated_at: ''
       } : undefined;
 
+      // Montar objeto do usuário
       const usuarioObj = {
         id: userData.id,
         email: userData.email,
         nome: userData.nome,
         telefone: userData.telefone || undefined,
         perfil_id: userData.perfil_id,
-        perfil: perfilUsuario,
+        perfil: perfilObj,
         ativo: userData.ativo,
         ultimo_acesso: userData.ultimo_acesso || undefined,
         created_at: userData.criado_em || '',
@@ -328,13 +319,14 @@ export const useAuthSimpleState = () => {
         auth_id: userData.supabase_auth_id || undefined
       };
 
+      // Montar sessão
       const sessao: SessaoUsuario = {
         usuario: usuarioObj,
         permissoes,
-        dashboard: (userData.perfis_usuario?.dashboard_padrao as TipoDashboard) || TipoDashboard.ADMINISTRATIVO
+        dashboard: (perfilUsuario?.dashboard_padrao as TipoDashboard) || TipoDashboard.ADMINISTRATIVO
       };
 
-      console.log('✅ useAuthSimple - Usuário carregado:', userData.nome);
+      console.log('✅ useAuthSimple - Usuário carregado completo:', userData.nome);
       
       salvarCache(sessao);
       
@@ -344,32 +336,26 @@ export const useAuthSimpleState = () => {
         setCarregando(false);
       }
 
-      // Atualizar último acesso em background (usando supabase_auth_id para RLS)
-      // Fazer isso de forma assíncrona para não bloquear o carregamento
+      // Atualizar último acesso em background usando RPC
       setTimeout(async () => {
         try {
-          const { error: updateError } = await supabase
-            .from('usuarios')
-            .update({ ultimo_acesso: new Date().toISOString() })
-            .eq('supabase_auth_id', user.id); // Usar supabase_auth_id em vez de id da tabela
+          const { data: updateResult, error: updateError } = await supabase
+            .rpc('update_last_access');
           
-          if (updateError) {
-            console.log('⚠️ Erro ao atualizar último acesso:', updateError.message);
-            console.log('⚠️ Detalhes do erro:', updateError);
-            // Não interromper o fluxo por causa deste erro
+          if (updateResult) {
+            console.log('✅ Último acesso atualizado via RPC');
           } else {
-            console.log('✅ Último acesso atualizado');
+            console.log('⚠️ Erro ao atualizar último acesso via RPC:', updateError);
           }
         } catch (err) {
           console.log('⚠️ Exceção ao atualizar último acesso:', err);
-          // Não interromper o fluxo por causa deste erro
         }
-      }, 1000); // Aguardar 1 segundo antes de tentar atualizar
+      }, 1000);
 
     } catch (error) {
-      console.error('❌ useAuthSimple - Erro geral:', error);
+      console.error('❌ useAuthSimple - Erro geral ao carregar usuário:', error);
       if (isMountedRef.current) {
-        setUltimoErro('Erro ao carregar usuário');
+        setUltimoErro('Erro ao carregar dados do usuário');
         setCarregando(false);
       }
     } finally {
@@ -397,9 +383,46 @@ export const useAuthSimpleState = () => {
 
       console.log('✅ useAuthSimple - Autenticação bem-sucedida');
       
-      // Aguardar um pouco e carregar usuário
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      await carregarUsuario();
+      // Tentar carregar usuário, mas não falhar se houver problemas
+      try {
+        await carregarUsuario();
+      } catch (loadError) {
+        console.error('⚠️ useAuthSimple - Erro ao carregar usuário após login, criando sessão básica:', loadError);
+        
+        // Criar sessão básica em caso de erro
+        const sessaoBasica: SessaoUsuario = {
+          usuario: {
+            id: data.user.id,
+            email: data.user.email || email,
+            nome: data.user.user_metadata?.full_name || data.user.email?.split('@')[0] || 'Usuário',
+            telefone: undefined,
+            perfil_id: 'basic',
+            perfil: {
+              id: 'basic',
+              nome: 'Usuário Básico',
+              tipo: PerfilUsuario.PROPRIETARIO,
+              dashboard: TipoDashboard.ADMINISTRATIVO,
+              permissoes: [],
+              ativo: true,
+              created_at: '',
+              updated_at: ''
+            },
+            ativo: true,
+            ultimo_acesso: undefined,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            auth_id: data.user.id
+          },
+          permissoes: [],
+          dashboard: TipoDashboard.ADMINISTRATIVO
+        };
+        
+        if (isMountedRef.current) {
+          setUsuario(sessaoBasica);
+          setUltimoErro('Dados parciais carregados - acesso limitado');
+          setCarregando(false);
+        }
+      }
       
       return { sucesso: true };
 

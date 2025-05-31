@@ -65,6 +65,90 @@ export enum NivelAcesso {
 }
 
 /**
+ * Interface para plano de assinatura SaaS
+ */
+export interface PlanoAssinatura {
+  id: string;
+  nome: string;
+  descricao?: string;
+  preco_mensal: number;
+  max_farmacias: number;
+  max_usuarios_por_farmacia: number;
+  recursos_incluidos: string[];
+  ativo: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * Interface para proprietário (multi-farmácia)
+ */
+export interface Proprietario {
+  id: string;
+  nome: string;
+  email: string;
+  cpf: string;
+  telefone?: string;
+  plano_id: string;
+  plano?: PlanoAssinatura;
+  status_assinatura: 'ativo' | 'suspenso' | 'cancelado';
+  data_vencimento?: string;
+  ativo: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * Interface para farmácia
+ */
+export interface Farmacia {
+  id: string;
+  proprietario_id: string;
+  proprietario?: Proprietario;
+  nome_fantasia: string;
+  razao_social: string;
+  cnpj: string;
+  inscricao_estadual?: string;
+  inscricao_municipal?: string;
+  telefone?: string;
+  email?: string;
+  site?: string;
+  
+  // Endereço
+  endereco_cep: string;
+  endereco_logradouro: string;
+  endereco_numero: string;
+  endereco_complemento?: string;
+  endereco_bairro: string;
+  endereco_cidade: string;
+  endereco_uf: string;
+  
+  // Responsável Técnico
+  responsavel_tecnico_nome: string;
+  responsavel_tecnico_crf: string;
+  responsavel_tecnico_telefone?: string;
+  responsavel_tecnico_email?: string;
+  
+  // Configurações
+  matriz: boolean;
+  ativa: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * Interface para contexto multi-farmácia
+ */
+export interface ContextoMultiFarmacia {
+  proprietario: Proprietario;
+  farmacia_atual: Farmacia;
+  farmacias_disponiveis: Farmacia[];
+  pode_trocar_farmacia: boolean;
+  pode_criar_farmacia: boolean;
+  limite_farmacias_atingido: boolean;
+}
+
+/**
  * Interface para uma permissão específica
  */
 export interface Permissao {
@@ -91,7 +175,7 @@ export interface PerfilUsuarioInterface {
 }
 
 /**
- * Interface para usuário do sistema
+ * Interface para usuário do sistema (adaptada para multi-farmácia)
  */
 export interface Usuario {
   id: string;
@@ -100,6 +184,13 @@ export interface Usuario {
   telefone?: string;
   perfil_id: string;
   perfil?: PerfilUsuarioInterface;
+  
+  // Multi-farmácia
+  proprietario_id: string;
+  farmacia_id: string;
+  proprietario?: Proprietario;
+  farmacia?: Farmacia;
+  
   ativo: boolean;
   ultimo_acesso?: string;
   created_at: string;
@@ -111,14 +202,89 @@ export interface Usuario {
 }
 
 /**
- * Interface para sessão do usuário
+ * Interface para sessão do usuário (adaptada para multi-farmácia)
  */
 export interface SessaoUsuario {
   usuario: Usuario;
   permissoes: Permissao[];
   dashboard: TipoDashboard;
+  contexto_multi_farmacia?: ContextoMultiFarmacia;
   token?: string;
   expires_at?: string;
+}
+
+/**
+ * Interface para seleção de farmácia
+ */
+export interface SelecaoFarmacia {
+  farmacia_id: string;
+  farmacia: Farmacia;
+  pode_acessar: boolean;
+  motivo_bloqueio?: string;
+}
+
+/**
+ * Interface para dados de transferência de estoque
+ */
+export interface TransferenciaEstoque {
+  produto_id: string;
+  farmacia_origem_id: string;
+  farmacia_destino_id: string;
+  quantidade: number;
+  observacoes?: string;
+}
+
+/**
+ * Interface para estatísticas consolidadas do proprietário
+ */
+export interface EstatisticasProprietario {
+  total_farmacias: number;
+  total_usuarios: number;
+  total_produtos: number;
+  vendas_30_dias: {
+    farmacia_id: string;
+    farmacia_nome: string;
+    total_vendas: number;
+    quantidade_vendas: number;
+    ticket_medio?: number;
+  }[];
+  estoque_consolidado: {
+    produto_id: string;
+    produto_nome: string;
+    estoque_total: number;
+    farmacias_com_estoque: number;
+    tipo_produto?: string;
+  }[];
+  
+  // Novos campos implementados
+  comparacao_periodo_anterior?: {
+    total_vendas_atual: number;
+    total_vendas_anterior: number;
+    variacao_percentual: number;
+    quantidade_vendas_atual: number;
+    quantidade_vendas_anterior: number;
+    ticket_medio_atual: number;
+    ticket_medio_anterior: number;
+  };
+  
+  usuarios_detalhados?: {
+    total_usuarios: number;
+    usuarios_por_perfil: any;
+    usuarios_por_farmacia: any;
+  };
+  
+  metadata?: {
+    data_atualizacao: string;
+    proprietario_id: string;
+    periodo_customizado: boolean;
+    periodo: {
+      inicio: string;
+      fim: string;
+    };
+    status: string;
+    cached: boolean;
+    cache_key: string;
+  };
 }
 
 /**
@@ -168,15 +334,48 @@ export interface RespostaAuth {
 }
 
 /**
- * Interface para criação/edição de usuário
+ * Interface para criação/edição de usuário (adaptada para multi-farmácia)
  */
 export interface CriarEditarUsuario {
   email: string;
   nome: string;
   telefone?: string;
   perfil_id: string;
+  proprietario_id: string;
+  farmacia_id: string;
   senha?: string;
   ativo: boolean;
+}
+
+/**
+ * Interface para criação de farmácia
+ */
+export interface CriarFarmacia {
+  nome_fantasia: string;
+  razao_social: string;
+  cnpj: string;
+  inscricao_estadual?: string;
+  inscricao_municipal?: string;
+  telefone?: string;
+  email?: string;
+  site?: string;
+  
+  // Endereço
+  endereco_cep: string;
+  endereco_logradouro: string;
+  endereco_numero: string;
+  endereco_complemento?: string;
+  endereco_bairro: string;
+  endereco_cidade: string;
+  endereco_uf: string;
+  
+  // Responsável Técnico
+  responsavel_tecnico_nome: string;
+  responsavel_tecnico_crf: string;
+  responsavel_tecnico_telefone?: string;
+  responsavel_tecnico_email?: string;
+  
+  matriz: boolean;
 }
 
 /**
@@ -188,6 +387,7 @@ export interface FiltrosUsuarios {
   busca?: string;
   data_inicio?: string;
   data_fim?: string;
+  farmacia_id?: string; // Filtro por farmácia
 }
 
 /**
@@ -197,6 +397,7 @@ export interface EstatisticasUsuarios {
   total: number;
   ativos: number;
   por_perfil: Record<PerfilUsuario, number>;
+  por_farmacia: Record<string, number>; // Estatísticas por farmácia
   ultimos_acessos: {
     hoje: number;
     semana: number;
@@ -205,7 +406,7 @@ export interface EstatisticasUsuarios {
 }
 
 /**
- * Utilitários de tipo para verificação de permissões
+ * Função para verificar permissão
  */
 export type VerificarPermissao = (
   modulo: ModuloSistema,
@@ -213,10 +414,13 @@ export type VerificarPermissao = (
   nivel?: NivelAcesso
 ) => boolean;
 
+/**
+ * Função para verificar se tem permissão (alias)
+ */
 export type TemPermissao = (permissao: string) => boolean;
 
 /**
- * Props para componentes de proteção
+ * Props para componentes protegidos
  */
 export interface ProtecaoProps {
   children: React.ReactNode;
@@ -234,6 +438,9 @@ export interface DashboardProps {
   permissoes: Permissao[];
 }
 
+/**
+ * Interface para resposta de operação
+ */
 export interface RespostaOperacao {
   sucesso: boolean;
   erro?: string;

@@ -106,21 +106,8 @@ const AdminDashboard: React.FC = () => {
     }
   });
 
-  // Query to get users count
-  const { data: usuariosCount, isLoading: usuariosLoading } = useQuery({
-    queryKey: ['usuariosCount'],
-    queryFn: async () => {
-      const { count, error } = await supabase
-        .from('usuarios')
-        .select('*', { count: 'exact', head: true });
-      
-      if (error) throw new Error(error.message);
-      return count || 0;
-    }
-  });
-
   // Calculate if any queries are loading
-  const isLoading = receitasLoading || pedidosLoading || insumosLoading || embalagensLoading || usuariosLoading;
+  const isLoading = receitasLoading || pedidosLoading || insumosLoading || embalagensLoading;
 
   // Helper function to format numbers
   const formatNumber = (num: number): string => {

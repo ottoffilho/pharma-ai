@@ -31,25 +31,30 @@ const PrimeiroAcessoGuard: React.FC<PrimeiroAcessoGuardProps> = ({ children }) =
     try {
       console.log('🔍 Verificando se é o primeiro acesso...');
 
-      // Verificação direta e simples com timeout mais curto
+      // Usar a função RPC check_first_access() ao invés de consulta direta
+      // Esta função contorna o problema de RLS sendo SECURITY DEFINER
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 2000); // 2 segundos
 
-      const { count: usuariosExistentes, error: countError } = await supabase
-        .from('usuarios')
-        .select('*', { count: 'exact', head: true })
+      const { data: resultado, error: rpcError } = await supabase
+        .rpc('check_first_access')
         .abortSignal(controller.signal);
 
       clearTimeout(timeoutId);
 
-      if (countError) {
-        console.error('❌ Erro ao verificar usuários:', countError);
+      if (rpcError) {
+        console.error('❌ Erro ao verificar primeiro acesso via RPC:', rpcError);
         // Em caso de erro, assumir que não é primeiro acesso
         setPrimeiroAcesso(false);
         console.log('🔄 Assumindo que não é primeiro acesso devido ao erro');
       } else {
-        const isFirstAccess = !usuariosExistentes || usuariosExistentes === 0;
-        console.log('✅ Verificação direta:', { usuariosExistentes, isFirstAccess });
+        console.log('✅ Resultado da verificação RPC:', resultado);
+        
+        // O resultado da função é um JSON com isFirstAccess e userCount
+        const isFirstAccess = resultado?.isFirstAccess || false;
+        const userCount = resultado?.userCount || 0;
+        
+        console.log('📊 Dados do primeiro acesso:', { isFirstAccess, userCount });
         
         if (isFirstAccess) {
           console.log('🎯 Primeiro acesso detectado - redirecionando para cadastro inicial');

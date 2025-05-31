@@ -39,7 +39,8 @@ import {
   X,
   DollarSign,
   TrendingUp,
-  ShoppingBag
+  ShoppingBag,
+  Check
 } from 'lucide-react';
 import { ItemCarrinho, CarrinhoCompras, ClienteVenda, FormaPagamento } from '@/types/vendas';
 import { UUID } from '@/types/database';
@@ -1972,3 +1973,14 @@ function FormDesconto({ onAplicarDesconto, subtotal, descontoAtual, onCancelar }
           className="flex-1"
           aria-label="Confirmar aplicação do desconto"
         >
+          <Check className="h-4 w-4 mr-2" aria-hidden="true" />
+          Aplicar Desconto
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+// =====================================================
+// EXPORTAÇÃO PRINCIPAL
+// =====================================================

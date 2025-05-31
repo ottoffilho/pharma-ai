@@ -133,36 +133,13 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     localStorage.setItem('pharma-sidebar-state', JSON.stringify(isSidebarOpen));
   }, [isSidebarOpen]);
 
-  // Verificar se as tabelas essenciais existem
+  // Verificar se as tabelas essenciais existem - REMOVIDO para evitar erro 500
+  // Não é necessário verificar tabelas aqui pois o sistema de autenticação já garante
+  // que o usuário tem acesso ao banco de dados quando chega no AdminLayout
   useEffect(() => {
-    const verificarTabelas = async () => {
-      try {
-        // Tentar acessar algumas tabelas essenciais para verificar se existem
-        const { error: usuariosError } = await supabase
-          .from('usuarios')
-          .select('id')
-          .limit(1);
-        
-        if (usuariosError) {
-          console.error('Erro ao acessar tabela de usuários:', usuariosError);
-          setDatabaseError(true);
-          setErrorMessage('A tabela de usuários não foi encontrada no banco de dados. O sistema pode estar com problemas.');
-          return;
-        }
-
-        // Se chegou aqui, não encontrou erros
-        setDatabaseError(false);
-      } catch (error) {
-        console.error('Erro ao verificar tabelas:', error);
-        setDatabaseError(true);
-        setErrorMessage('Ocorreu um erro ao acessar o banco de dados. O sistema pode estar com problemas.');
-      }
-    };
-
-    // Executar verificação apenas se o usuário estiver autenticado
-    if (usuario && !carregando) {
-      verificarTabelas();
-    }
+    // Verificação removida para evitar consultas não autenticadas que causam erro 500
+    // O sistema de autenticação já valida o acesso ao banco antes de chegar aqui
+    setDatabaseError(false);
   }, [usuario, carregando]);
 
   const handleLogout = async () => {

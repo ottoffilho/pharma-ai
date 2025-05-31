@@ -92,6 +92,9 @@ import NovoClientePage from "./pages/admin/clientes/novo";
 import EditarCliente from "./pages/admin/clientes/[id]/editar";
 import DetalhesClientePage from "./pages/admin/clientes/[id]/index";
 
+// TEMPORÁRIO: Dashboard administrativo forçado
+import DashboardAdminPage from "./pages/admin/dashboard-admin";
+
 const queryClient = new QueryClient();
 
 // Componente para controlar qual chatbot mostrar
@@ -322,6 +325,10 @@ const App = (): JSX.Element => {
                             {/* Todas as rotas internas do dashboard/admin */}
                             <Route path="" element={<DashboardRouter />} />
                             <Route path="diagnostico-sistema" element={<DiagnosticoSistemaPage />} />
+                            
+                            {/* TEMPORÁRIO: Rota para forçar dashboard administrativo */}
+                            <Route path="dashboard-admin" element={<DashboardAdminPage />} />
+                            
                             <Route path="pedidos" element={<PedidosPage />} />
                             <Route path="pedidos/listar" element={<ListarPedidosPage />} />
                             <Route path="pedidos/nova-receita" element={<NovaReceitaPage />} />

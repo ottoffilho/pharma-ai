@@ -1,12 +1,1 @@
-client:598 
- GET http://localhost:8080/src/pages/admin/vendas/pdv.tsx?t=1748622542508 net::ERR_ABORTED 500 (Internal Server Error)
-
-client:176 [hmr] Failed to reload /src/pages/admin/vendas/pdv.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
-client:598 
- GET http://localhost:8080/src/pages/admin/vendas/pdv.tsx?t=1748622693984 net::ERR_ABORTED 500 (Internal Server Error)
-client:176 [hmr] Failed to reload /src/pages/admin/vendas/pdv.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
-
-client:598 
- GET http://localhost:8080/src/pages/admin/vendas/pdv.tsx?t=1748622694984 net::ERR_ABORTED 500 (Internal Server Error)
-client:176 [hmr] Failed to reload /src/pages/admin/vendas/pdv.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
-﻿
+GET http://localhost:8080/src/modules/usuarios-permissoes/components/DashboardRouter.tsx?t=1748726018529 net::ERR_ABORTED 500 (Internal Server Error)Understand this error

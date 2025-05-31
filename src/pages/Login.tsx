@@ -156,9 +156,31 @@ const Login: React.FC = () => {
   if (carregando) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Verificando autenticação...</p>
+        <div className="text-center bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
+          <p className="text-gray-600 mb-2">Verificando autenticação...</p>
+          <p className="text-sm text-gray-400">
+            {verificandoAuth ? 'Verificando sessão...' : 'Carregando dados...'}
+          </p>
+          
+          {/* Debug info após 5 segundos */}
+          <div className="mt-4 text-xs text-gray-400">
+            Estados: carregando={carregando.toString()}, autenticado={autenticado.toString()}, verificando={verificandoAuth.toString()}
+          </div>
+          
+          {/* Botão de emergência após 10 segundos */}
+          <div className="mt-6">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => {
+                console.log('🚨 Login - Força reload por causa de carregamento longo');
+                window.location.reload();
+              }}
+            >
+              Recarregar se estiver travado
+            </Button>
+          </div>
         </div>
       </div>
     );
