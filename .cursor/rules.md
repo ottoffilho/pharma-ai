@@ -25,6 +25,7 @@ Este documento estabelece as diretrizes específicas e técnicas para o desenvol
 - Props obrigatoriamente tipadas
 
 ### 1.3. SQL/Supabase
+- **MCP Supabase obrigatório** para todas as interações com banco de dados
 - RLS (Row Level Security) obrigatório para todas as tabelas
 - Views para consultas complexas frequentes
 - Índices para campos de busca e JOIN frequentes
@@ -37,12 +38,13 @@ Este documento estabelece as diretrizes específicas e técnicas para o desenvol
   - PKs: sempre id
   - FKs: {tabela_referenciada}_id
 
-### 1.4. Edge Functions (Deno)
-- Seguir padrão estabelecido com Deno
-- Estrutura consistente com CORS, autenticação e tratamento de erros
-- Tipagem rigorosa para requests e responses
-- Documentação clara de parâmetros e retornos
-- Logs estruturados para debugging
+### 1.4. Python (Microsserviços IA)
+- Seguir PEP 8
+- Type hints obrigatórios
+- Docstrings para todas as funções (formato NumPy/Google)
+- Testes unitários com pytest
+- Configuração de ambientes com Poetry
+- FastAPI para APIs
 
 ## 2. Padrões de Interação e API
 
@@ -142,7 +144,7 @@ Este documento estabelece as diretrizes específicas e técnicas para o desenvol
 ## 6. Estrutura Específica para Módulos
 
 ### 6.1. Entidades e Relações
-- Seguir o modelo de entidades unificado (produtos, lotes, vendas)
+- Seguir o modelo de entidades definido em M01-CADASTROS_ESSENCIAIS
 - Relações normalizadas para evitar redundância de dados
 - Implementar modelo de herança via composição onde aplicável
 - Gerenciar relações muitos-para-muitos com tabelas de junção
@@ -185,13 +187,13 @@ Este documento estabelece as diretrizes específicas e técnicas para o desenvol
 
 ## 8. Especificidades para Fases do Projeto
 
-### 8.1. Fase 1: MVP (90% Concluída)
+### 8.1. Fase 1: MVP
 - Priorizar simplicidade e funcionalidade sobre otimização
 - Evitar over-engineering
 - Garantir fluxos de usuário end-to-end
 - Foco em validação de conceitos
 
-### 8.2. Fase 2: Expansão (Em Andamento)
+### 8.2. Fase 2: Expansão
 - Aprimorar funcionalidades existentes antes de adicionar novas
 - Implementar feedback da Fase 1
 - Introduzir primeiros componentes de IA
@@ -205,17 +207,15 @@ Este documento estabelece as diretrizes específicas e técnicas para o desenvol
 
 ## 9. Padrões Específicos Implementados
 
-### 9.1. Sistema de Autenticação Avançado
+### 9.1. Sistema de Autenticação
 - **Fluxo obrigatório:**
   1. Login via Supabase Auth
   2. Verificação de perfil na tabela `usuarios`
-  3. Carregamento de permissões granulares
-  4. **DashboardRouter** inteligente por perfil
-  5. **ProtectedComponent** para proteção específica
-  6. **Error Boundaries** para tratamento de erros
-  7. Sistema de convites e primeiro acesso
+  3. Carregamento de permissões
+  4. Redirecionamento para dashboard específico
+  5. Proteção de rotas por permissões
 
-### 9.2. Estrutura de Permissões Granulares
+### 9.2. Estrutura de Permissões
 ```typescript
 // Sempre usar esta estrutura para permissões
 interface Permissao {
@@ -234,44 +234,33 @@ interface Permissao {
 </ProtectedComponent>
 ```
 
-### 9.3. Padrão de Rotas Implementado
-- **Rotas públicas:** `/`, `/login`, `/esqueci-senha`, `/primeiro-acesso`, `/aceitar-convite`
-- **Rotas protegidas:** `/admin/*` com ForceAuth
-- **Proteção obrigatória:** Usar `ForceAuth` para todas as rotas admin
-- **Redirecionamento:** **DashboardRouter** baseado no perfil do usuário
-- **Error Boundaries:** Implementados em toda a aplicação
+### 9.3. Padrão de Rotas
+- **Rotas públicas:** `/`, `/login`, `/esqueci-senha`
+- **Rotas protegidas:** `/admin/*`
+- **Proteção obrigatória:** Usar `PrivateRoute` para todas as rotas admin
+- **Redirecionamento:** Baseado no perfil do usuário
 
-### 9.4. Estrutura de Componentes Atual
+### 9.4. Estrutura de Componentes
 ```
 src/
 ├── components/
 │   ├── ui/              # shadcn/ui components
-│   ├── layouts/         # Layout components (AdminLayout)
+│   ├── layouts/         # Layout components
 │   ├── Auth/           # Authentication components
-│   ├── estoque/        # Componentes de estoque
-│   ├── markup/         # Sistema de markup
-│   ├── chatbot/        # Sistema de chatbot
-│   ├── ImportacaoNF/   # Importação de NF-e
-│   ├── cadastros/      # Cadastros gerais
-│   ├── financeiro/     # Componentes financeiros
-│   ├── usuarios/       # Gestão de usuários
-│   └── prescription/   # Processamento de receitas
+│   ├── clientes/       # Cliente components (IMPLEMENTADO)
+│   └── [modulo]/       # Module-specific components
 ├── modules/
-│   └── usuarios-permissoes/  # Módulo completo implementado
+│   └── usuarios-permissoes/  # Complete module structure
 ├── pages/
-│   ├── admin/          # Páginas administrativas protegidas
-│   │   ├── vendas/     # Sistema de vendas completo
-│   │   ├── estoque/    # Gestão de estoque
-│   │   ├── producao/   # Ordens de produção
-│   │   ├── financeiro/ # Módulo financeiro
-│   │   ├── cadastros/  # Cadastros essenciais
-│   │   ├── usuarios/   # Gestão de usuários
-│   │   └── ia/         # Funcionalidades de IA
-│   └── [public]/       # Páginas públicas
+│   ├── admin/          # Protected admin pages
+│   │   ├── vendas/     # Sales system (COMPLETO)
+│   │   ├── clientes/   # Client management (NOVO)
+│   │   └── [outros]/   # Other modules
+│   └── [public]/       # Public pages
 ```
 
 ### 9.5. Padrão de Banco de Dados Unificado
-- **MCP Supabase:** Sempre use MCP para interagir com o banco de dados
+- **MCP Supabase:** Sempre use MCP para interações com banco de dados
 - **RLS obrigatório:** Todas as tabelas devem ter RLS habilitado
 - **Triggers automáticos:** Para updated_at, histórico, cálculos de preço
 - **Nomenclatura:** snake_case para tabelas e colunas
@@ -299,14 +288,13 @@ serve(async (req) => {
   }
 
   try {
-    // Validação de autenticação
+    // Autenticação padrão
     const authHeader = req.headers.get('Authorization')!
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     )
 
-    // Verificar usuário
     const { data: { user }, error: authError } = await supabase.auth.getUser(
       authHeader.replace('Bearer ', '')
     )
@@ -318,7 +306,7 @@ serve(async (req) => {
       )
     }
 
-    // Lógica de negócio
+    // Lógica específica da function
     // Resposta padronizada
     
   } catch (error) {
@@ -331,61 +319,143 @@ serve(async (req) => {
 })
 ```
 
-### 9.7. Sistema de Vendas Implementado
-- **PDV completo:** Interface moderna com busca inteligente
-- **Controle de caixa:** Abertura, fechamento, sangria, conferência
-- **Histórico de vendas:** Filtros avançados e métricas
-- **Fechamento de vendas:** Gestão de vendas pendentes
-- **Hook useVendasCards:** Métricas em tempo real
-- **Edge Function vendas-operations:** Operações completas
+## 10. Módulos Implementados (Status Atualizado - Janeiro 2025)
 
-### 9.8. Sistema de Produtos Unificado
-- **Tabela produtos:** Unifica insumos, embalagens e medicamentos
-- **Sistema de markup:** Automatizado com triggers
-- **Gestão de lotes:** Rastreabilidade completa
-- **Controle fiscal:** NCM, CFOP, CST implementados
-- **Importação NF-e:** Estrutura 80% completa
+### 10.1. Módulos COMPLETOS (Production-Ready)
 
-## 10. Checklist de Qualidade Atualizado
+#### M09 - Usuários e Permissões (100%)
+- ✅ Sistema robusto de autenticação
+- ✅ 4 perfis com dashboards específicos
+- ✅ Permissões granulares por módulo/ação/nível
+- ✅ Error Boundaries implementados
+- ✅ Edge Functions: criar-usuario, excluir-usuario, check-first-access
 
-### 10.1. Antes de Commit
-- [ ] Código TypeScript sem erros (98% tipado)
+#### M04 - Sistema de Vendas (90%)
+- ✅ PDV completo (`src/pages/admin/vendas/pdv.tsx`)
+- ✅ Controle de caixa (`src/pages/admin/vendas/caixa.tsx`)
+- ✅ Histórico de vendas (`src/pages/admin/vendas/historico.tsx`)
+- ✅ Sistema de fechamento (`src/pages/admin/vendas/fechamento.tsx`)
+- ✅ Hook `useVendasCards` para métricas
+- ✅ Edge Functions: vendas-operations, caixa-operations
+- 🔄 Pendente: Relatórios avançados (10%)
+
+#### M02 - Sistema de Estoque (95%)
+- ✅ Produtos unificados (insumos + embalagens + medicamentos)
+- ✅ Sistema de markup automatizado
+- ✅ Gestão completa de lotes
+- ✅ Controle fiscal (NCM, CFOP, CST)
+- ✅ Edge Functions: gerenciar-produtos, gerenciar-lotes
+- 🔄 Pendente: Finalizar importação NF-e (5%)
+
+#### M05 - Sistema de Produção (90%)
+- ✅ Ordens de produção completas
+- ✅ Controle de etapas
+- ✅ Gestão de insumos por ordem
+- ✅ Controle de qualidade
+- 🔄 Pendente: Refinamentos UX (10%)
+
+#### M01 - Cadastros Essenciais (85%)
+- ✅ Fornecedores (CRUD completo)
+- ✅ **Clientes (IMPLEMENTAÇÃO RECENTE - 100%)**
+  - `src/pages/admin/clientes/index.tsx` (509 linhas)
+  - `src/pages/admin/clientes/novo.tsx`
+  - `src/pages/admin/clientes/[id]/index.tsx` (detalhes)
+  - `src/pages/admin/clientes/[id]/editar.tsx`
+  - `src/components/clientes/` (componentes específicos)
+  - Campos: nome, email, telefone, CPF, CNPJ, endereço
+- ✅ Categorias e formas farmacêuticas
+- ✅ Edge Functions: gerenciar-categorias, gerenciar-formas-farmaceuticas
+
+### 10.2. Módulos FUNCIONAIS (70-80%)
+
+#### M06 - Sistema Financeiro (75%)
+- ✅ Categorias financeiras
+- ✅ Contas a pagar
+- ✅ Fluxo de caixa integrado
+- ✅ Sistema de markup configurável
+- 🔄 Pendente: Relatórios financeiros avançados
+
+#### M03 - Sistema de Atendimento (65%)
+- ✅ Sistema de pedidos
+- ✅ Interface de receitas
+- ✅ PrescriptionReviewForm
+- ✅ ChatbotProvider
+- 🔄 Pendente: IA para processamento automático
+
+### 10.3. Módulos EM DESENVOLVIMENTO (20-40%)
+
+#### M08 - Inteligência Artificial (30%)
+- ✅ FloatingChatbotWidget funcional
+- ✅ Edge Function chatbot-ai-agent (DeepSeek API)
+- ✅ Estrutura para processamento de receitas
+- 🔄 Pendente: IA específica farmacêutica
+
+#### M07 - Sistema Fiscal (20%)
+- ✅ Estrutura básica
+- ✅ Campos fiscais configurados
+- 🔄 Pendente: NF-e, integração completa
+
+## 11. Padrões para Gestão de Clientes (NOVO)
+
+### 11.1. Estrutura de Dados
+```typescript
+interface Cliente {
+  id: string;
+  nome: string;
+  email?: string;
+  telefone?: string;
+  cpf?: string;
+  cnpj?: string;
+  endereco?: string;
+  cidade?: string;
+  estado?: string;
+  cep?: string;
+  ativo: boolean;
+  created_at: string;
+  updated_at: string;
+}
+```
+
+### 11.2. Componentes Implementados
+- **Listagem:** `GestaoClientes` com busca, filtros e ações
+- **Cadastro:** `NovoCliente` com validação completa
+- **Edição:** `EditarCliente` com preservação de dados
+- **Detalhes:** `DetalhesCliente` com histórico
+
+### 11.3. Funcionalidades
+- ✅ CRUD completo com validação
+- ✅ Busca por nome, email, telefone, CPF, CNPJ
+- ✅ Filtros por status (ativo/inativo)
+- ✅ Paginação e ordenação
+- ✅ Integração com sistema de vendas
+- ✅ Histórico de alterações
+- ✅ Validação de CPF/CNPJ
+
+## 12. Checklist de Qualidade
+
+### 12.1. Antes de Commit
+- [ ] Código TypeScript sem erros
 - [ ] Componentes tipados corretamente
 - [ ] RLS implementado para novas tabelas
 - [ ] Permissões verificadas para novas rotas
 - [ ] Responsividade testada
 - [ ] Acessibilidade básica verificada
-- [ ] Error boundaries implementados
 
-### 10.2. Antes de Deploy
+### 12.2. Antes de Deploy
 - [ ] Build sem erros
 - [ ] Testes funcionais básicos
 - [ ] Migrações de banco testadas
 - [ ] Variáveis de ambiente configuradas
 - [ ] Performance básica verificada
-- [ ] Edge Functions testadas
-- [ ] RLS policies validadas
 
-### 10.3. Code Review
+### 12.3. Code Review
 - [ ] Padrões de código seguidos
 - [ ] Segurança verificada
 - [ ] Performance considerada
 - [ ] Documentação atualizada
 - [ ] Testes adequados
-- [ ] Integração com módulos existentes
-- [ ] Conformidade com arquitetura unificada
-
-### 10.4. Módulos Específicos
-- [ ] **M09 - Usuários:** Production-ready ✅
-- [ ] **M04 - Vendas:** 90% funcional, pendente relatórios
-- [ ] **M05 - Produção:** 90% funcional, refinamento UI
-- [ ] **M02 - Estoque:** 95% funcional, finalizar NF-e
-- [ ] **M06 - Financeiro:** 75% funcional, relatórios avançados
-- [ ] **M01 - Cadastros:** 80% funcional, clientes avançados
-- [ ] **M03 - Atendimento:** 60% funcional, IA processamento
-- [ ] **M08 - IA:** 25% funcional, expandir funcionalidades
 
 ---
 
 *Última atualização: 2025-01-28*
-*Versão: 3.0.0 - Reflete estado real do projeto* 
+*Versão: 2.1.0 - Inclui padrões para clientes e status atualizado* 

@@ -1,7 +1,7 @@
 # Contexto do Projeto Pharma.AI
 
 ## Visão Geral
-O **Pharma.AI** é um sistema completo para gestão de farmácias de manipulação, desenvolvido com arquitetura híbrida (monólito modular + microsserviços de IA). O projeto está em estado **muito avançado** de desenvolvimento, próximo à conclusão do MVP, com sistema de vendas funcional e 15+ Edge Functions implementadas.
+O **Pharma.AI** é um sistema completo para gestão de farmácias de manipulação, desenvolvido com arquitetura híbrida (monólito modular + microsserviços de IA). O projeto está em estado **muito avançado** de desenvolvimento, próximo à conclusão do MVP, com sistema de vendas funcional, gestão de clientes completa e 15+ Edge Functions implementadas.
 
 ## Tecnologias Implementadas
 
@@ -19,6 +19,8 @@ O **Pharma.AI** é um sistema completo para gestão de farmácias de manipulaç�
 - **next-themes** para temas
 - **pdfjs-dist** para manipulação de PDFs
 - **tesseract.js** para OCR
+- **embla-carousel-react** para carrosséis
+- **input-otp** para códigos de verificação
 
 ### Backend e Infraestrutura
 - **Supabase** como BaaS (Backend as a Service)
@@ -28,12 +30,15 @@ O **Pharma.AI** é um sistema completo para gestão de farmácias de manipulaç�
 - **Supabase Auth** para autenticação
 - **Triggers automáticos** para cálculos e auditoria
 - **Políticas RLS** granulares por tabela
+- **MCP Supabase** para interações com banco
 
 ### Ferramentas de Desenvolvimento
 - **ESLint** + **TypeScript ESLint** para linting
-- **Bun** como gerenciador de pacotes principal
+- **Bun** como gerenciador de pacotes principal (com npm fallback)
 - **Git** para versionamento
-- **Lovable** como plataforma de desenvolvimento
+- **Playwright** para testes E2E
+- **Vitest** para testes unitários
+- **Cursor** como IDE principal
 
 ## Estado Atual da Implementação
 
@@ -45,247 +50,290 @@ O **Pharma.AI** é um sistema completo para gestão de farmácias de manipulaç�
 - Sistema de permissões granulares por módulo e ação
 - **DashboardRouter** inteligente por perfil
 - **ProtectedComponent** para proteção granular
-- **Error Boundaries** implementados
-- Edge Functions: `criar-usuario`, `excluir-usuario`, `check-first-access`
-- Sistema completo de convites e primeiro acesso
-- Trigger automático para sincronização auth.users ↔ usuarios
+- Error Boundaries implementados em toda aplicação
+- Sistema de convites e primeiro acesso
+- Sincronização automática auth.users ↔ usuarios
+- Edge Functions: criar-usuario, excluir-usuario, check-first-access
 
-### 🟢 Módulos IMPLEMENTADOS (90%+)
+#### M04 - Sistema de Vendas (90%)
+**DESCOBERTA: Sistema surpreendentemente avançado**
+- **PDV completo** com interface moderna
+  - `src/pages/admin/vendas/pdv.tsx` - Interface completa
+  - Busca de produtos, cálculo automático
+  - Múltiplas formas de pagamento
+- **Controle de caixa** completo
+  - Abertura/fechamento automático
+  - Sangria e conferência
+  - `src/pages/admin/vendas/caixa.tsx`
+- **Histórico de vendas**
+  - Filtros avançados por período
+  - Detalhes de transações
+- **Sistema de fechamento**
+  - Vendas pendentes e abertas
+  - Finalização automática
+- **Métricas em tempo real**
+  - Hook `useVendasCards` implementado
+  - Dashboard executivo funcional
+- **Edge Functions:** vendas-operations, caixa-operations
 
-#### M04 - PDV e Vendas (90% - SURPRESA!)
-**Sistema muito mais avançado que documentado anteriormente**
-- **PDV completo** com interface moderna (39KB de código)
-- **Controle de caixa** (abertura/fechamento/sangria/conferência)
-- **Histórico de vendas** com filtros avançados
-- **Fechamento de vendas** pendentes
-- **Sistema de pagamentos** múltiplos
-- **Hook useVendasCards** para métricas em tempo real
-- **Edge Function vendas-operations** completa
-- Integração com produtos e estoque
-- Apenas pendente: Relatórios avançados e gestão de clientes
+#### M02 - Sistema de Estoque (95%)
+**DESCOBERTA: Unificação recente muito bem executada**
+- **Produtos unificados** em tabela única
+  - Insumos + Embalagens + Medicamentos
+  - Migração completa implementada
+- **Sistema de markup** automatizado
+  - Triggers para cálculos automáticos
+  - Configuração granular por categoria
+- **Gestão de lotes** completa
+  - Rastreabilidade total
+  - Controle de validade
+  - FIFO automático
+- **Controle fiscal** implementado
+  - NCM, CFOP, CST configurados
+  - Preparado para NF-e
+- **Edge Functions:** gerenciar-produtos, gerenciar-lotes, limpar-nomes-produtos, produtos-com-nf
 
-#### M05 - Manipulação/Produção (90%)
+#### M05 - Sistema de Produção/Manipulação (90%)
 - Sistema completo de ordens de produção
 - Controle de etapas de manipulação
 - Gestão de insumos e embalagens por ordem
 - Controle de qualidade integrado
-- Histórico de status automático
-- Geração automática de números de ordem
-- Interface funcional completa
+- Relatórios de produção
+- Interface funcional em `src/pages/admin/producao/`
 
-#### M02 - Estoque (95% - UNIFICADO!)
-**Recente unificação muito bem executada**
-- **Tabela produtos unificada** (insumos + embalagens + medicamentos)
-- **Sistema de markup** automatizado com triggers
-- **Gestão completa de lotes** com rastreabilidade
-- **Edge Functions:** `gerenciar-produtos`, `gerenciar-lotes`
-- **Triggers automáticos** para cálculos de preço
-- **Importação NF-e** (estrutura 80% completa)
-- **Controle fiscal** (NCM, CFOP, CST implementados)
-- Apenas pendente: Finalizar importação NF-e
+### 🟢 Módulos FUNCIONAIS (70-85%)
 
-### 🟡 Módulos PARCIAIS (60-80%)
-
-#### M06 - Financeiro (75%)
-- **Categorias financeiras** (CRUD completo)
-- **Contas a pagar** (estrutura avançada)
-- **Fluxo de caixa** integrado com vendas
-- **Sistema de markup** com configuração granular
-- Integração com sistema de vendas
-- Pendente: Relatórios financeiros avançados
-
-#### M01 - Cadastros Essenciais (80%)
+#### M01 - Cadastros Essenciais (85%) - ATUALIZADO
+**DESCOBERTA: Módulo de clientes implementado**
 - **Fornecedores** (CRUD completo)
-- **Produtos unificados** (sistema completo)
-- **Categorias de produtos** e **formas farmacêuticas**
-- **Edge Functions:** `gerenciar-categorias`, `gerenciar-formas-farmaceuticas`
-- Pendente: Clientes avançados, outras entidades
+  - Dados fiscais completos
+  - Gestão de contatos e documentos
+  - Integração com importação NF-e
+- **Clientes** (RECÉM IMPLEMENTADO - 100%)
+  - `src/pages/admin/clientes/index.tsx` (509 linhas) - Listagem completa
+  - `src/pages/admin/clientes/novo.tsx` - Cadastro
+  - `src/pages/admin/clientes/[id]/index.tsx` - Detalhes
+  - `src/pages/admin/clientes/[id]/editar.tsx` - Edição
+  - `src/components/clientes/` - Componentes específicos
+  - Campos completos: nome, email, telefone, CPF, CNPJ, endereço
+  - Integração com sistema de vendas
+- **Produtos** (Sistema unificado)
+- **Categorias e Formas Farmacêuticas**
+- **Edge Functions:** gerenciar-categorias, gerenciar-formas-farmaceuticas
 
-#### M03 - Atendimento e Orçamentação (60%)
+#### M06 - Sistema Financeiro (75%)
+- **Categorias financeiras** (CRUD completo)
+- **Contas a pagar** estruturadas
+- **Fluxo de caixa** integrado com vendas
+- **Sistema de markup** configurável
+- Integração com controle de caixa
+
+#### M03 - Sistema de Atendimento (65%)
 - **Sistema de pedidos** estruturado
-- **Interface de nova receita** funcional
-- **Processamento de prescrições** (estrutura criada)
+- **Interface de receitas** funcional
 - **PrescriptionReviewForm** implementado
-- Pendente: IA para processamento automático
+- **ChatbotProvider** configurado
+- Estrutura para processamento IA
 
-### 🔴 Em Desenvolvimento
+### 🔴 Módulos EM DESENVOLVIMENTO (20-40%)
 
-#### M08 - Inteligência Artificial (25%)
-**Estrutura funcional criada**
-- **FloatingChatbotWidget** implementado
-- **Edge Function chatbot-ai-agent** funcional
-- **ChatbotProvider** e contexto completo
-- Páginas de overview IA criadas
-- Pendente: Funcionalidades específicas para farmácia
+#### M08 - Inteligência Artificial (30%)
+- **FloatingChatbotWidget** funcional
+- **Edge Function chatbot-ai-agent** (DeepSeek API)
+- Estrutura para processamento de receitas
+- Páginas administrativas IA
 
-### 📋 Pendentes
-- **M07 - Fiscal e Tributário** (10% - base criada)
-- **M10 - Relatórios Avançados** (5% - estrutura básica)
+#### M07 - Sistema Fiscal (20%)
+- Estrutura básica implementada
+- Campos fiscais configurados
+- Preparado para NF-e
 
 ## Arquitetura do Sistema
 
 ### Estrutura de Pastas
 ```
 src/
-├── components/          # Componentes reutilizáveis
-│   ├── ui/             # Componentes base (shadcn/ui)
-│   ├── layouts/        # Layouts da aplicação
-│   ├── Auth/           # Componentes de autenticação
-│   ├── estoque/        # Componentes de estoque
-│   ├── markup/         # Sistema de markup
-│   ├── chatbot/        # Sistema de chatbot
-│   ├── ImportacaoNF/   # Importação de NF-e
-│   ├── cadastros/      # Cadastros gerais
-│   ├── financeiro/     # Componentes financeiros
-│   ├── usuarios/       # Gestão de usuários
-│   └── prescription/   # Processamento de receitas
-├── modules/            # Módulos do sistema
-│   └── usuarios-permissoes/  # Módulo completo implementado
-├── pages/              # Páginas da aplicação
-│   ├── admin/          # Área administrativa completa
-│   │   ├── vendas/     # Sistema de vendas completo
-│   │   ├── estoque/    # Gestão de estoque
-│   │   ├── producao/   # Ordens de produção
-│   │   ├── financeiro/ # Módulo financeiro
-│   │   ├── cadastros/  # Cadastros essenciais
-│   │   ├── usuarios/   # Gestão de usuários
-│   │   └── ia/         # Funcionalidades de IA
-│   └── [outras]/       # Páginas públicas
-├── services/           # Serviços de integração
-├── hooks/              # Custom hooks
-├── contexts/           # Contextos React
-├── types/              # Definições de tipos TypeScript
-├── utils/              # Funções utilitárias
-└── lib/                # Configurações de bibliotecas
+├── components/
+│   ├── ui/                   # shadcn/ui components
+│   ├── layouts/              # Layout components
+│   ├── Auth/                 # Authentication components
+│   ├── clientes/             # Cliente components (NOVO)
+│   ├── estoque/              # Estoque components
+│   ├── financeiro/           # Financeiro components
+│   ├── chatbot/              # Chatbot components
+│   └── [outros]/             # Module-specific components
+├── modules/
+│   ├── usuarios-permissoes/  # Complete module structure
+│   └── produtos/             # Product management
+├── pages/
+│   ├── admin/                # Protected admin pages
+│   │   ├── vendas/           # Sales system (COMPLETO)
+│   │   ├── clientes/         # Client management (NOVO)
+│   │   ├── estoque/          # Stock management
+│   │   ├── producao/         # Production system
+│   │   ├── financeiro/       # Financial system
+│   │   ├── cadastros/        # Essential registrations
+│   │   ├── usuarios/         # User management
+│   │   └── ia/               # AI features
+│   └── [public]/             # Public pages
+├── hooks/                    # Custom hooks
+├── contexts/                 # React contexts
+├── services/                 # API services
+├── types/                    # TypeScript types
+└── utils/                    # Utility functions
 ```
 
-### Edge Functions Implementadas (15+)
+### Edge Functions (15+ Implementadas)
 ```
 supabase/functions/
-├── vendas-operations/          # Sistema de vendas
-├── produtos-com-nf/           # Importação de produtos
-├── enviar-convite-usuario/    # Sistema de convites
-├── excluir-usuario/           # Gestão de usuários
-├── debug-resend/              # Debug de emails
-├── teste-email/               # Testes de email
-├── gerenciar-lotes/           # Gestão de lotes
-├── gerenciar-produtos/        # Gestão de produtos
-├── gerenciar-formas-farmaceuticas/ # Formas farmacêuticas
-├── gerenciar-categorias/      # Categorias
-├── check-first-access/        # Primeiro acesso
-├── enviar-email-recuperacao/  # Recuperação de senha
-├── criar-usuario/             # Criação de usuários
-├── buscar-dados-documento/    # OCR e documentos
-├── workspace-document-data/   # Processamento de documentos
-└── chatbot-ai-agent/          # Chatbot inteligente
+├── usuarios/
+│   ├── criar-usuario/
+│   ├── excluir-usuario/
+│   ├── check-first-access/
+│   └── verificar-sincronizar-usuario/
+├── produtos/
+│   ├── gerenciar-produtos/
+│   ├── gerenciar-lotes/
+│   ├── limpar-nomes-produtos/
+│   └── produtos-com-nf/
+├── vendas/
+│   ├── vendas-operations/
+│   └── caixa-operations/
+├── categorias/
+│   ├── gerenciar-categorias/
+│   └── gerenciar-formas-farmaceuticas/
+├── ia/
+│   └── chatbot-ai-agent/
+├── documentos/
+│   ├── buscar-dados-documento/
+│   └── workspace-document-data/
+└── email/
+    ├── enviar-convite-usuario/
+    ├── enviar-email-recuperacao/
+    ├── teste-email/
+    └── debug-resend/
 ```
 
-### Banco de Dados (Unificado e Otimizado)
-```sql
--- Tabelas principais implementadas
-usuarios                    -- Perfis e permissões
-produtos                   -- UNIFICADA (insumos + embalagens + medicamentos)
-lote                       -- Controle de lotes
-ordens_producao           -- Sistema completo de produção
-fornecedores              -- Gestão de fornecedores
-categoria_produto         -- Categorias
-forma_farmaceutica        -- Formas farmacêuticas
-vendas                    -- Sistema de vendas
-itens_venda              -- Itens de venda
-abertura_caixa           -- Controle de caixa
-categorias_financeiras   -- Categorias financeiras
-contas_a_pagar           -- Contas a pagar
-```
+### Banco de Dados
+- **PostgreSQL** com Supabase
+- **RLS (Row Level Security)** em todas as tabelas
+- **Triggers automáticos** para:
+  - Atualização de timestamps
+  - Cálculos de markup
+  - Sincronização de dados
+  - Auditoria de alterações
+- **Políticas granulares** por perfil de usuário
+- **Extensões:** pgvector para IA, http para integrações
 
-### Sistema de Autenticação Avançado
-- **Fluxo implementado:**
-  1. Login via Supabase Auth
-  2. Verificação de perfil na tabela `usuarios`
-  3. Carregamento de permissões granulares
-  4. **DashboardRouter** inteligente por perfil
-  5. **ProtectedComponent** para proteção específica
-  6. **Error Boundaries** para tratamento de erros
-  7. Sistema de convites e primeiro acesso
+## Padrões Implementados
 
-### Dashboards Inteligentes por Perfil
-- **Proprietário:** Dashboard administrativo completo com vendas
-- **Farmacêutico:** Foco em produção e controle de qualidade
-- **Atendente:** Foco em atendimento, vendas e PDV
-- **Manipulador:** Foco em ordens de produção e estoque
-
-## Configuração do Ambiente
-
-### Variáveis de Ambiente Necessárias
-```env
-VITE_SUPABASE_URL=sua_url_supabase
-VITE_SUPABASE_ANON_KEY=sua_chave_anonima
-VITE_SUPABASE_SERVICE_ROLE_KEY=sua_chave_service_role
-```
-
-### Scripts Disponíveis
-- `npm run dev` - Servidor de desenvolvimento
-- `npm run build` - Build para produção
-- `npm run build:dev` - Build para desenvolvimento
-- `npm run lint` - Verificação de código
-- `npm run preview` - Preview do build
-
-## Próximos Passos Prioritários
-
-### URGENTE (1-2 semanas)
-1. **Atualizar documentação** - Alinhar com estado real
-2. **Implementar testes** - Cobertura mínima para produção
-3. **Finalizar relatórios de vendas** - Completar M04
-4. **Integrar dashboards** - UX unificada
-
-### Curto Prazo (1-2 meses)
-1. **Expandir IA farmacêutica** - Funcionalidades específicas
-2. **Completar M03** - Sistema de atendimento com IA
-3. **Otimizar performance** - Testes de carga
-4. **Monitoramento** - Métricas de produção
-
-### Médio Prazo (3-6 meses)
-1. **M07 - Fiscal** - Emissão de NFe
-2. **M10 - Relatórios** - Dashboard executivo
-3. **IA avançada** - Análise preditiva
-4. **Integrações** - APIs externas
-
-## Padrões de Desenvolvimento
-
-### Convenções de Código
-- **Componentes:** PascalCase, funcionais com hooks
-- **Edge Functions:** kebab-case com index.ts
-- **Tipos:** Interfaces em PascalCase, enums em UPPER_CASE
-- **Hooks:** camelCase com prefixo "use"
-
-### Estrutura de Edge Functions
+### Autenticação e Autorização
 ```typescript
+// Fluxo implementado:
+1. Login via Supabase Auth
+2. Verificação de perfil na tabela usuarios
+3. Carregamento de permissões
+4. Redirecionamento via DashboardRouter
+5. Proteção granular via ProtectedComponent
+```
+
+### Estrutura de Componentes
+```typescript
+// Padrão de proteção implementado
+<ProtectedComponent
+  modulo={ModuloSistema.CLIENTES}
+  acao={AcaoPermissao.CRIAR}
+  fallback={<Navigate to="/admin" replace />}
+>
+  {/* Conteúdo protegido */}
+</ProtectedComponent>
+```
+
+### Edge Functions
+```typescript
+// Padrão consistente implementado em 15+ functions
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 serve(async (req) => {
-  // CORS headers
+  // CORS Headers
   // Autenticação
-  // Lógica de negócio
+  // Lógica específica
   // Resposta padronizada
 })
 ```
 
-### Segurança Implementada
-- **RLS habilitado** em todas as tabelas
-- **Políticas granulares** por operação
-- **Validação dupla** (frontend + backend)
-- **Sanitização de inputs**
-- **Error boundaries** para estabilidade
-- **Auditoria automática** via triggers
+## Próximos Passos Prioritários
 
-### Qualidade de Código
+### Curto Prazo (2-4 semanas)
+1. **Finalizar integração clientes-vendas**
+   - Vincular clientes às vendas
+   - Histórico de compras por cliente
+   - Relatórios de fidelidade
+
+2. **Implementar testes automatizados**
+   - Cobertura mínima 80%
+   - Testes E2E para fluxos críticos
+   - Testes unitários para Edge Functions
+
+3. **Preparar para produção**
+   - Monitoramento e métricas
+   - Otimizações de performance
+   - Validação de segurança
+
+### Médio Prazo (1-3 meses)
+1. **Expandir IA farmacêutica**
+   - Processamento automático de receitas
+   - Análise de interações medicamentosas
+   - Sugestões inteligentes
+
+2. **Completar importação NF-e**
+   - Parser XML completo
+   - Validação automática
+   - Integração com estoque
+
+3. **Dashboards executivos**
+   - Relatórios avançados de vendas
+   - Análise financeira
+   - KPIs em tempo real
+
+### Longo Prazo (3-6 meses)
+1. **Sistema fiscal completo**
+   - Emissão de NF-e
+   - Integração contábil
+   - Compliance automático
+
+2. **IA avançada**
+   - Previsão de demanda
+   - Otimização de compras
+   - Análise preditiva
+
+3. **Escalabilidade**
+   - Multi-tenancy
+   - APIs públicas
+   - Integrações externas
+
+## Métricas de Qualidade
+
+### Cobertura Funcional Atual
+- **Autenticação:** 100% ✅
+- **Vendas:** 90% 🟢
+- **Estoque:** 95% 🟢
+- **Produção:** 90% 🟢
+- **Clientes:** 85% 🟢 (NOVO)
+- **Financeiro:** 75% 🟡
+- **Atendimento:** 65% 🟡
+- **IA:** 30% 🔴
+
+### Qualidade Técnica
 - **TypeScript:** 98% tipado
-- **ESLint:** Configurado rigorosamente
-- **Componentes:** Modulares e reutilizáveis
-- **Hooks customizados:** Otimizados
-- **Edge Functions:** Padronizadas
+- **Error Boundaries:** 100% implementados
+- **Edge Functions:** 15+ ativas
+- **Responsividade:** Completa
+- **Acessibilidade:** Básica implementada
 
 ---
 
-*Última atualização: 2025-01-28*
-*Status: MVP 90% concluído - Pronto para produção em módulos principais*
+*Última atualização: 2025-01-28*  
+*Status: MVP 90% concluído com clientes implementados*  
+*Próxima milestone: Integração final e preparação para produção*
