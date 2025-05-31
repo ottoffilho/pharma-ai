@@ -15,6 +15,7 @@ Este documento estabelece as diretrizes específicas e técnicas para o desenvol
   - `strictNullChecks: true`
 - Utilizar ES6+ (arrow functions, destructuring, template literals, etc)
 - Evitar `any` e utilizar tipos genéricos quando aplicável
+- **TypeScript coverage obrigatório:** Manter 98% de tipagem
 
 ### 1.2. React
 - Componentes devem ser funcionais (React Hooks)
@@ -23,6 +24,8 @@ Este documento estabelece as diretrizes específicas e técnicas para o desenvol
 - Utilizar Context API para estado global, mas de forma modular (por domínio)
 - Custom hooks para lógica reutilizável
 - Props obrigatoriamente tipadas
+- **Error Boundaries obrigatórios:** Implementar em toda aplicação
+- **ProtectedComponent:** Usar para proteção granular de elementos
 
 ### 1.3. SQL/Supabase
 - **MCP Supabase obrigatório** para todas as interações com banco de dados
@@ -37,6 +40,7 @@ Este documento estabelece as diretrizes específicas e técnicas para o desenvol
   - Colunas: snake_case
   - PKs: sempre id
   - FKs: {tabela_referenciada}_id
+- **Triggers automáticos obrigatórios:** updated_at, auditoria, cálculos
 
 ### 1.4. Python (Microsserviços IA)
 - Seguir PEP 8
@@ -45,6 +49,14 @@ Este documento estabelece as diretrizes específicas e técnicas para o desenvol
 - Testes unitários com pytest
 - Configuração de ambientes com Poetry
 - FastAPI para APIs
+
+### 1.5. Edge Functions (Deno)
+- **Padrão Deno obrigatório** para todas as Edge Functions
+- Estrutura consistente com CORS e autenticação
+- Import maps quando necessário
+- Tratamento robusto de erros
+- Validação de entrada obrigatória
+- Logs estruturados para debugging
 
 ## 2. Padrões de Interação e API
 
@@ -207,13 +219,16 @@ Este documento estabelece as diretrizes específicas e técnicas para o desenvol
 
 ## 9. Padrões Específicos Implementados
 
-### 9.1. Sistema de Autenticação
+### 9.1. Sistema de Autenticação Avançado
 - **Fluxo obrigatório:**
   1. Login via Supabase Auth
   2. Verificação de perfil na tabela `usuarios`
   3. Carregamento de permissões
   4. Redirecionamento para dashboard específico
   5. Proteção de rotas por permissões
+- **ForceAuth:** Proteção robusta de rotas administrativas
+- **DashboardRouter:** Roteamento inteligente por perfil
+- **Sincronização automática:** auth.users ↔ usuarios
 
 ### 9.2. Estrutura de Permissões
 ```typescript
@@ -228,6 +243,7 @@ interface Permissao {
 <ProtectedComponent
   modulo={ModuloSistema.USUARIOS_PERMISSOES}
   acao={AcaoPermissao.CRIAR}
+  nivel={NivelAcesso.TOTAL}
   fallback={<Navigate to="/admin" replace />}
 >
   {/* Conteúdo protegido */}
@@ -237,87 +253,70 @@ interface Permissao {
 ### 9.3. Padrão de Rotas
 - **Rotas públicas:** `/`, `/login`, `/esqueci-senha`
 - **Rotas protegidas:** `/admin/*`
-- **Proteção obrigatória:** Usar `PrivateRoute` para todas as rotas admin
+- **Proteção obrigatória:** Usar `ForceAuth` para todas as rotas admin
 - **Redirecionamento:** Baseado no perfil do usuário
 
 ### 9.4. Estrutura de Componentes
 ```
 src/
 ├── components/
-│   ├── ui/              # shadcn/ui components
+│   ├── ui/              # shadcn/ui components (40+)
 │   ├── layouts/         # Layout components
 │   ├── Auth/           # Authentication components
-│   ├── clientes/       # Cliente components (IMPLEMENTADO)
+│   ├── clientes/       # Cliente components (COMPLETO)
+│   ├── chatbot/        # Chatbot components
 │   └── [modulo]/       # Module-specific components
 ├── modules/
 │   └── usuarios-permissoes/  # Complete module structure
 ├── pages/
-│   ├── admin/          # Protected admin pages
-│   │   ├── vendas/     # Sales system (COMPLETO)
-│   │   ├── clientes/   # Client management (NOVO)
-│   │   └── [outros]/   # Other modules
+│   ├── admin/          # Protected admin pages (50+)
 │   └── [public]/       # Public pages
+├── hooks/              # Custom hooks (15+)
+└── contexts/           # React contexts (8+ modulares)
 ```
 
-### 9.5. Padrão de Banco de Dados Unificado
-- **MCP Supabase:** Sempre use MCP para interações com banco de dados
+### 9.5. Padrão de Banco de Dados
+- **MCP:** Supabase com MCP, sempre use para fazer interatividade com o banco de dados	
 - **RLS obrigatório:** Todas as tabelas devem ter RLS habilitado
-- **Triggers automáticos:** Para updated_at, histórico, cálculos de preço
+- **Triggers automáticos:** Para updated_at, histórico, etc.
 - **Nomenclatura:** snake_case para tabelas e colunas
 - **Relacionamentos:** Sempre com ON DELETE CASCADE ou RESTRICT apropriado
-- **Tabela produtos unificada:** insumos + embalagens + medicamentos
+- **Produtos unificados:** Tabela única para insumos, embalagens e medicamentos
 - **Sistema de markup:** Automatizado com triggers
 
-### 9.6. Padrão de Edge Functions (15+ Implementadas)
+### 9.6. Padrão de Edge Functions
 ```typescript
 // Estrutura padrão para Edge Functions
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 serve(async (req) => {
-  // Configurar CORS
-  const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-    'Access-Control-Allow-Methods': 'POST, GET, OPTIONS, PUT, DELETE',
-  }
-
-  // Tratar requisições OPTIONS
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
-  }
-
   try {
-    // Autenticação padrão
-    const authHeader = req.headers.get('Authorization')!
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    )
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser(
-      authHeader.replace('Bearer ', '')
-    )
-
-    if (authError || !user) {
-      return new Response(
-        JSON.stringify({ error: 'Não autorizado' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    // Lógica específica da function
+    // Headers CORS obrigatórios
+    // Validação de autenticação
+    // Lógica de negócio
     // Resposta padronizada
-    
   } catch (error) {
-    console.error('Erro na function:', error)
     return new Response(
-      JSON.stringify({ error: 'Erro interno do servidor' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ error: error.message }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
     )
   }
 })
 ```
+
+### 9.7. Padrão de Custom Hooks
+- **useVendasCards:** Para métricas de vendas em tempo real
+- **useClientes:** Para gestão completa de clientes
+- **useChatbot:** Para funcionalidades de IA
+- **Nomenclatura:** use + CamelCase
+- **Tipagem:** Interface para return type obrigatória
+
+### 9.8. Gestão de Estado
+- **React Query:** Para estado servidor obrigatório
+- **Context API:** Por domínio, modular
+- **Local State:** useState para UI temporário
+- **Zod:** Validação robusta de formulários
 
 ## 10. Módulos Implementados (Status Atualizado - Janeiro 2025)
 
@@ -434,10 +433,11 @@ interface Cliente {
 ## 12. Checklist de Qualidade
 
 ### 12.1. Antes de Commit
-- [ ] Código TypeScript sem erros
+- [ ] Código TypeScript sem erros (98% tipado)
 - [ ] Componentes tipados corretamente
 - [ ] RLS implementado para novas tabelas
 - [ ] Permissões verificadas para novas rotas
+- [ ] Error Boundaries implementados
 - [ ] Responsividade testada
 - [ ] Acessibilidade básica verificada
 
@@ -447,6 +447,7 @@ interface Cliente {
 - [ ] Migrações de banco testadas
 - [ ] Variáveis de ambiente configuradas
 - [ ] Performance básica verificada
+- [ ] Edge Functions testadas
 
 ### 12.3. Code Review
 - [ ] Padrões de código seguidos
@@ -454,8 +455,9 @@ interface Cliente {
 - [ ] Performance considerada
 - [ ] Documentação atualizada
 - [ ] Testes adequados
+- [ ] MCP Supabase utilizado corretamente
 
 ---
 
-*Última atualização: 2025-01-28*
-*Versão: 2.1.0 - Inclui padrões para clientes e status atualizado* 
+*Última atualização: 2025-05-31*
+*Versão: 3.0.0 - Reflete estado avançado do projeto* 
