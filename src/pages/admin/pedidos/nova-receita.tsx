@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { 
   UploadCloud, 
   FileText, 
@@ -21,7 +21,8 @@ import {
   Upload,
   Scan,
   Bot,
-  Wand2
+  Wand2,
+  ArrowLeft
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -394,18 +395,25 @@ const NovaReceitaPage: React.FC = () => {
     }
   }, [devMode]);
 
+  // Navega de volta para a Central de Pedidos
+  const handleBack = () => navigate('/admin/pedidos');
+
   return (
     <AdminLayout>
       <div className="space-y-8">
         {/* Hero Section */}
         <div className="relative overflow-hidden rounded-2xl">
           <div className="absolute inset-0 bg-gradient-to-br from-violet-50 via-purple-50 to-indigo-50 dark:from-violet-950/20 dark:via-purple-950/20 dark:to-indigo-950/20" />
-          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiM4YjVjZjYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iNCIvPjwvZz48L2c+PC9zdmc+')] opacity-40" />
+          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiM4YjVjZjYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iNCIvPjwvZz48L2c+PC9zdmc+')] opacity-40 dark:opacity-20" />
           
           <div className="relative px-6 py-16">
             <div className="flex items-center justify-between">
               <div className="space-y-6 max-w-3xl">
                 <div className="flex items-center gap-4">
+                  {/* Botão de Voltar (discreto) */}
+                  <Link to="/admin/pedidos" className="bg-white/80 dark:bg-slate-900/70 p-2 rounded-full shadow-sm hover:bg-white dark:hover:bg-slate-800 transition-colors">
+                    <ArrowLeft className="h-5 w-5 text-violet-600" />
+                  </Link>
                   <div className="relative">
                     <div className="absolute inset-0 bg-gradient-to-br from-violet-400 to-purple-500 rounded-2xl blur-xl opacity-20" />
                     <div className="relative p-4 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 text-white shadow-lg">
@@ -423,15 +431,15 @@ const NovaReceitaPage: React.FC = () => {
                 </div>
 
                 <div className="flex flex-wrap gap-3">
-                  <Badge variant="secondary" className="bg-violet-100 text-violet-700 hover:bg-violet-200 px-3 py-1">
+                  <Badge variant="secondary" className="bg-violet-100 text-violet-700 hover:bg-violet-200 dark:bg-violet-900/30 dark:text-violet-300 dark:hover:bg-violet-900/50 px-3 py-1">
                     <Brain className="h-3 w-3 mr-1" />
                     IA Avançada
                   </Badge>
-                  <Badge variant="secondary" className="bg-purple-100 text-purple-700 hover:bg-purple-200 px-3 py-1">
+                  <Badge variant="secondary" className="bg-purple-100 text-purple-700 hover:bg-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:hover:bg-purple-900/50 px-3 py-1">
                     <Scan className="h-3 w-3 mr-1" />
                     OCR Inteligente
                   </Badge>
-                  <Badge variant="secondary" className="bg-indigo-100 text-indigo-700 hover:bg-indigo-200 px-3 py-1">
+                  <Badge variant="secondary" className="bg-indigo-100 text-indigo-700 hover:bg-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-300 dark:hover:bg-indigo-900/50 px-3 py-1">
                     <Target className="h-3 w-3 mr-1" />
                     Validação Humana
                   </Badge>
@@ -440,7 +448,7 @@ const NovaReceitaPage: React.FC = () => {
 
               <div className="hidden lg:block">
                 <div className="relative">
-                  <div className="absolute inset-0 bg-gradient-to-r from-violet-400 via-purple-400 to-indigo-400 blur-3xl opacity-20 animate-pulse" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-violet-400 via-purple-400 to-indigo-400 blur-3xl opacity-20 animate-pulse dark:animate-none dark:opacity-10" />
                   <div className="relative">
                     <FileText className="h-40 w-40 text-violet-600/10" />
                     <div className="absolute inset-0 flex items-center justify-center">
@@ -477,10 +485,10 @@ const NovaReceitaPage: React.FC = () => {
         
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 px-6">
           {/* Left column: Upload area */}
-          <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
+          <Card className="border-0 shadow-lg bg-white/80 dark:bg-slate-900/70 backdrop-blur-sm">
             <CardHeader className="border-b border-gray-100">
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-gradient-to-br from-violet-100 to-purple-100">
+                <div className="p-2 rounded-lg bg-gradient-to-br from-violet-100 to-purple-100 dark:from-violet-900/40 dark:to-purple-900/40">
                   <Upload className="h-5 w-5 text-violet-600" />
                 </div>
                 <div>
@@ -494,15 +502,15 @@ const NovaReceitaPage: React.FC = () => {
             
             <CardContent className="p-6">
               <Tabs defaultValue="upload_arquivo" onValueChange={(value) => setUploadMethod(value as 'upload_arquivo' | 'digitacao')}>
-                <TabsList className="mb-6 bg-gray-100">
-                  <TabsTrigger value="upload_arquivo" className="data-[state=active]:bg-white">Upload de Arquivo</TabsTrigger>
-                  <TabsTrigger value="digitacao" disabled className="opacity-50">Digitação Manual</TabsTrigger>
+                <TabsList className="mb-6 bg-gray-100 dark:bg-slate-800/60 dark:border dark:border-slate-700 rounded-lg">
+                  <TabsTrigger value="upload_arquivo" className="dark:text-gray-300 data-[state=active]:bg-white data-[state=active]:text-gray-900 dark:data-[state=active]:bg-slate-700 dark:data-[state=active]:text-gray-100 rounded-md px-4 py-1">Upload de Arquivo</TabsTrigger>
+                  <TabsTrigger value="digitacao" disabled className="opacity-50 dark:text-gray-400">Digitação Manual</TabsTrigger>
                 </TabsList>
                 
                 <TabsContent value="upload_arquivo">
                   <div className="space-y-6">
                     {/* Simple file upload without dropzone */}
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-emerald-400 hover:bg-emerald-50/50 transition-colors">
+                    <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center hover:border-emerald-400 dark:hover:border-emerald-700 hover:bg-emerald-50/50 dark:hover:bg-emerald-900/10 transition-colors">
                       <input
                         type="file"
                         multiple
@@ -529,7 +537,7 @@ const NovaReceitaPage: React.FC = () => {
                       <div className="space-y-4">
                         <div className="flex items-center gap-2">
                           <CheckCircle className="h-4 w-4 text-emerald-600" />
-                          <h3 className="text-sm font-medium text-gray-900">Arquivos selecionados:</h3>
+                          <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">Arquivos selecionados:</h3>
                         </div>
                         <div className="space-y-3">
                           {files.map((file, index) => (
@@ -547,8 +555,8 @@ const NovaReceitaPage: React.FC = () => {
                                   )}
                                 </div>
                                 <div>
-                                  <p className="font-medium text-gray-900 truncate max-w-xs">{file.name}</p>
-                                  <p className="text-sm text-gray-500">
+                                  <p className="font-medium text-gray-900 dark:text-gray-100 truncate max-w-xs">{file.name}</p>
+                                  <p className="text-sm text-gray-500 dark:text-gray-400">
                                     {(file.size / 1024 / 1024).toFixed(2)} MB
                                   </p>
                                 </div>
@@ -644,7 +652,7 @@ const NovaReceitaPage: React.FC = () => {
               </Tabs>
             </CardContent>
             
-            <CardFooter className="border-t border-gray-100 bg-gray-50/50">
+            <CardFooter className="border-t border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/40">
               {!devMode && (
                 <Button 
                   onClick={handleProcessarReceita} 
@@ -694,11 +702,11 @@ const NovaReceitaPage: React.FC = () => {
           
           {/* Right column: Validation area (visible only after successful processing) */}
           {showValidationArea && extractedData && (
-            <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
+            <Card className="border-0 shadow-lg bg-white/80 dark:bg-slate-900/70 backdrop-blur-sm">
               <CardHeader className="border-b border-gray-100">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-gradient-to-br from-emerald-100 to-teal-100">
+                    <div className="p-2 rounded-lg bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/40 dark:to-teal-900/40">
                       <CheckCircle className="h-5 w-5 text-emerald-600" />
                     </div>
                     <div>
@@ -744,7 +752,7 @@ const NovaReceitaPage: React.FC = () => {
                   {/* Original prescription preview */}
                   {validationView === 'split' && (
                     <div className="space-y-4">
-                      <h3 className="font-medium text-gray-900 flex items-center gap-2">
+                      <h3 className="font-medium text-gray-900 dark:text-gray-100 flex items-center gap-2">
                         <FileText className="h-4 w-4" />
                         Receita Original
                       </h3>
@@ -759,7 +767,7 @@ const NovaReceitaPage: React.FC = () => {
                       ) : (
                         <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
                           <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                          <p className="text-gray-500">Preview não disponível para este tipo de arquivo</p>
+                          <p className="text-gray-500 dark:text-gray-400">Preview não disponível para este tipo de arquivo</p>
                         </div>
                       )}
                     </div>
@@ -770,7 +778,7 @@ const NovaReceitaPage: React.FC = () => {
                     <div className="space-y-6">
                       {/* Patient and Prescriber Information */}
                       <div className="space-y-4">
-                        <h3 className="font-medium text-gray-900 flex items-center gap-2">
+                        <h3 className="font-medium text-gray-900 dark:text-gray-100 flex items-center gap-2">
                           <Target className="h-4 w-4" />
                           Dados Extraídos
                         </h3>
@@ -820,7 +828,7 @@ const NovaReceitaPage: React.FC = () => {
                       {/* Medications */}
                       <div className="space-y-4">
                         <div className="flex items-center justify-between">
-                          <h3 className="font-medium text-gray-900">Medicamentos</h3>
+                          <h3 className="font-medium text-gray-900 dark:text-gray-100">Medicamentos</h3>
                           <Button
                             type="button"
                             variant="outline"
@@ -838,7 +846,7 @@ const NovaReceitaPage: React.FC = () => {
                             <Card key={index} className="border border-gray-200">
                               <CardContent className="p-4">
                                 <div className="flex items-start justify-between mb-4">
-                                  <h4 className="font-medium text-gray-900">Medicamento {index + 1}</h4>
+                                  <h4 className="font-medium text-gray-900 dark:text-gray-100">Medicamento {index + 1}</h4>
                                   {extractedData.medications.length > 1 && (
                                     <Button
                                       type="button"

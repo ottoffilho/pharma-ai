@@ -1,0 +1,22 @@
+Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+Login.tsx:100 Login page - Estado de autenticação: Object
+Login.tsx:100 Login page - Estado de autenticação: Object
+Login.tsx:100 Login page - Estado de autenticação: Object
+Login.tsx:76 🔄 Login - Verificação rápida de sessão: Sem sessão
+Login.tsx:100 Login page - Estado de autenticação: Object
+2Login.tsx:76 🔄 Login - Verificação rápida de sessão: Sem sessão
+Login.tsx:118 🔐 Login - Tentando login: ottof6@gmail.com
+Login.tsx:100 Login page - Estado de autenticação: Object
+Login.tsx:100 Login page - Estado de autenticação: Object
+hjwebmpvaaeogbfqxwub.supabase.co/rest/v1/rpc/get_user_permissions:1 
+            
+            
+           Failed to load resource: the server responded with a status of 400 ()Understand this error
+2Login.tsx:111 🔄 Login - Redirecionamento via Navigate component
+Login.tsx:100 Login page - Estado de autenticação: Object
+Login.tsx:104 ✅ Login - Usuário autenticado, redirecionando para /admin
+hjwebmpvaaeogbfqxwub.supabase.co/rest/v1/rpc/get_user_permissions:1 
+            
+            
+           Failed to load resource: the server responded with a status of 400 ()Understand this error
+Login.tsx:122 ✅ Login - Login bem-sucedido

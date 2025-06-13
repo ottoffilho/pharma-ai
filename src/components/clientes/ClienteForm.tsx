@@ -110,6 +110,8 @@ interface ClienteContato {
   telefone?: string;
 }
 
+const inputCls = "bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:ring-blue-600/40 dark:bg-slate-800/80 dark:border-slate-700 dark:text-gray-100 dark:placeholder-gray-500 dark:focus:ring-blue-600/50 rounded-md";
+
 export default function ClienteForm({
   initialData,
   isEditing = false,
@@ -354,9 +356,9 @@ export default function ClienteForm({
         </h1>
       </div>
 
-      <div className="bg-white rounded-lg shadow-sm border">
+      <div className="bg-white dark:bg-slate-900/70 rounded-lg shadow-lg border dark:border-slate-800 backdrop-blur-sm">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-3 bg-gray-100 dark:bg-slate-800/60 dark:border dark:border-slate-700 rounded-md">
             <TabsTrigger value="geral" className="flex items-center gap-2">
               <User className="h-4 w-4" />
               Informações Gerais
@@ -430,6 +432,7 @@ export default function ClienteForm({
                                   searchDocumentData();
                                 }
                               }}
+                              className={inputCls}
                             />
                           </FormControl>
                           <FormMessage />
@@ -442,7 +445,7 @@ export default function ClienteForm({
                       type="button"
                       onClick={searchDocumentData}
                       disabled={isSearchingDocument}
-                      className="w-full"
+                      className="w-full bg-homeo-green hover:bg-homeo-green/90 text-white"
                     >
                       {isSearchingDocument ? (
                         <>
@@ -473,6 +476,7 @@ export default function ClienteForm({
                           <Input
                             placeholder={tipoPessoa === "PJ" ? "Ex: Empresa ABC Ltda" : "Ex: João Silva"}
                             {...field}
+                            className={inputCls}
                           />
                         </FormControl>
                         <FormMessage />
@@ -491,6 +495,7 @@ export default function ClienteForm({
                             <Input
                               placeholder="Ex: ABC Farmácia"
                               {...field}
+                              className={inputCls}
                             />
                           </FormControl>
                           <FormMessage />
@@ -510,6 +515,7 @@ export default function ClienteForm({
                             <Input
                               placeholder="Ex: 12.345.678-9"
                               {...field}
+                              className={inputCls}
                             />
                           </FormControl>
                           <FormMessage />
@@ -532,6 +538,7 @@ export default function ClienteForm({
                             type="email"
                             placeholder="Ex: cliente@email.com"
                             {...field}
+                            className={inputCls}
                           />
                         </FormControl>
                         <FormMessage />
@@ -549,6 +556,7 @@ export default function ClienteForm({
                           <Input
                             placeholder="Ex: (11) 99999-9999"
                             {...field}
+                            className={inputCls}
                           />
                         </FormControl>
                         <FormMessage />
@@ -570,6 +578,7 @@ export default function ClienteForm({
                             <Input
                               type="date"
                               {...field}
+                              className={inputCls}
                             />
                           </FormControl>
                           <FormMessage />
@@ -592,6 +601,7 @@ export default function ClienteForm({
                             <Input
                               placeholder="Ex: Rua das Flores, 123"
                               {...field}
+                              className={inputCls}
                             />
                           </FormControl>
                           <FormMessage />
@@ -610,6 +620,7 @@ export default function ClienteForm({
                           <Input
                             placeholder="00000-000"
                             {...field}
+                            className={inputCls}
                           />
                         </FormControl>
                         <FormMessage />
@@ -627,6 +638,7 @@ export default function ClienteForm({
                           <Input
                             placeholder="Ex: São Paulo"
                             {...field}
+                            className={inputCls}
                           />
                         </FormControl>
                         <FormMessage />
@@ -647,6 +659,7 @@ export default function ClienteForm({
                           <Input
                             placeholder="Ex: SP"
                             {...field}
+                            className={inputCls}
                           />
                         </FormControl>
                         <FormMessage />
@@ -665,6 +678,7 @@ export default function ClienteForm({
                             placeholder="Observações sobre o cliente..."
                             {...field}
                             rows={3}
+                            className={inputCls}
                           />
                         </FormControl>
                         <FormMessage />
@@ -779,19 +793,20 @@ export default function ClienteForm({
               </TabsContent>
 
               {/* Botões de ação */}
-              <div className="flex justify-end gap-4 p-6 border-t bg-gray-50">
+              <div className="flex justify-end gap-4 p-6 border-t bg-gray-50 dark:bg-slate-800/60 dark:border-slate-700">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => navigate("/admin/clientes")}
                   disabled={isSubmitting}
+                  className="border-gray-300 text-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700/40"
                 >
                   Cancelar
                 </Button>
                 <Button 
                   type="submit" 
                   disabled={isSubmitting} 
-                  className="min-w-[120px]"
+                  className="min-w-[120px] bg-homeo-green hover:bg-homeo-green/90 text-white"
                 >
                   {isSubmitting ? (
                     <>
@@ -825,6 +840,7 @@ export default function ClienteForm({
                 value={contatoForm.nome} 
                 onChange={(e) => setContatoForm({...contatoForm, nome: e.target.value})}
                 required 
+                className={inputCls}
               />
             </div>
             <div>
@@ -833,6 +849,7 @@ export default function ClienteForm({
                 name="cargo" 
                 value={contatoForm.cargo} 
                 onChange={(e) => setContatoForm({...contatoForm, cargo: e.target.value})}
+                className={inputCls}
               />
             </div>
             <div>
@@ -842,6 +859,7 @@ export default function ClienteForm({
                 type="email"
                 value={contatoForm.email} 
                 onChange={(e) => setContatoForm({...contatoForm, email: e.target.value})}
+                className={inputCls}
               />
             </div>
             <div>
@@ -850,6 +868,7 @@ export default function ClienteForm({
                 name="telefone" 
                 value={contatoForm.telefone} 
                 onChange={(e) => setContatoForm({...contatoForm, telefone: e.target.value})}
+                className={inputCls}
               />
             </div>
           </div>

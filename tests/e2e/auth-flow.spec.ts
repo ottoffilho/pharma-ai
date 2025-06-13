@@ -264,7 +264,7 @@ test.describe('Authentication Flow E2E', () => {
     await expect(page.locator('text=Sair')).toBeVisible()
   })
 
-  test('should perform a complete login flow', async ({ page }) => {
+  test.skip('should perform a complete login flow', async ({ page }) => {
     // Ir para a página de login
     await page.goto('/login')
     

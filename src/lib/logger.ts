@@ -81,4 +81,30 @@ const logger: Logger = {
   }
 };
 
-export default logger; 
+export default logger;
+
+export const isDev = import.meta.env.MODE === 'development';
+// Ative para ver logs de debug no console. Desative para manter console limpo mesmo em dev.
+const VERBOSE = false;
+
+// Log simples mostrado apenas em ambiente de desenvolvimento
+export const log = (...args: unknown[]): void => {
+  if (isDev && VERBOSE) {
+    // eslint-disable-next-line no-console
+    console.log(...args);
+  }
+};
+
+// Avisos mostrados apenas em desenvolvimento
+export const warn = (...args: unknown[]): void => {
+  if (isDev && VERBOSE) {
+    // eslint-disable-next-line no-console
+    console.warn(...args);
+  }
+};
+
+// Erros devem aparecer sempre
+export const error = (...args: unknown[]): void => {
+  // eslint-disable-next-line no-console
+  console.error(...args);
+}; 

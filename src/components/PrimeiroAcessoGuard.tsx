@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
+import { log, error as logError } from '@/lib/logger';
 
 interface PrimeiroAcessoGuardProps {
   children: React.ReactNode;
@@ -11,11 +12,12 @@ interface PrimeiroAcessoGuardProps {
 const PrimeiroAcessoGuard: React.FC<PrimeiroAcessoGuardProps> = ({ children }) => {
   const [verificando, setVerificando] = useState(true);
   const [primeiroAcesso, setPrimeiroAcesso] = useState(false);
+  const location = useLocation();
 
   useEffect(() => {
     // Timeout de segurança reduzido para 3 segundos
     const timeoutId = setTimeout(() => {
-      console.log('⏰ Timeout de segurança ativado - assumindo que não é primeiro acesso');
+      log('⏰ Timeout de segurança ativado - assumindo que não é primeiro acesso');
       setVerificando(false);
       setPrimeiroAcesso(false);
     }, 3000); // Reduzido de 5 para 3 segundos
@@ -29,7 +31,24 @@ const PrimeiroAcessoGuard: React.FC<PrimeiroAcessoGuardProps> = ({ children }) =
 
   const verificarPrimeiroAcesso = async () => {
     try {
-      console.log('🔍 Verificando se é o primeiro acesso...');
+      // Se rota pública ou usuário não autenticado, não verificar
+      const rotasPublicas = ['/', '/login', '/esqueci-senha', '/redefinir-senha', '/aceitar-convite'];
+      if (rotasPublicas.includes(location.pathname)) {
+        log('ℹ️ Rota pública detectada, ignorando verificação de primeiro acesso.');
+        setPrimeiroAcesso(false);
+        setVerificando(false);
+        return;
+      }
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        log('ℹ️ Usuário não autenticado, ignorando verificação de primeiro acesso.');
+        setPrimeiroAcesso(false);
+        setVerificando(false);
+        return;
+      }
+
+      log('🔍 Verificando se é o primeiro acesso...');
 
       // Usar a função RPC check_first_access() ao invés de consulta direta
       // Esta função contorna o problema de RLS sendo SECURITY DEFINER
@@ -43,34 +62,34 @@ const PrimeiroAcessoGuard: React.FC<PrimeiroAcessoGuardProps> = ({ children }) =
       clearTimeout(timeoutId);
 
       if (rpcError) {
-        console.error('❌ Erro ao verificar primeiro acesso via RPC:', rpcError);
+        logError('❌ Erro ao verificar primeiro acesso via RPC:', rpcError);
         // Em caso de erro, assumir que não é primeiro acesso
         setPrimeiroAcesso(false);
-        console.log('🔄 Assumindo que não é primeiro acesso devido ao erro');
+        log('🔄 Assumindo que não é primeiro acesso devido ao erro');
       } else {
-        console.log('✅ Resultado da verificação RPC:', resultado);
+        log('✅ Resultado da verificação RPC:', resultado);
         
         // O resultado da função é um JSON com isFirstAccess e userCount
         const isFirstAccess = resultado?.isFirstAccess || false;
         const userCount = resultado?.userCount || 0;
         
-        console.log('📊 Dados do primeiro acesso:', { isFirstAccess, userCount });
+        log('📊 Dados do primeiro acesso:', { isFirstAccess, userCount });
         
         if (isFirstAccess) {
-          console.log('🎯 Primeiro acesso detectado - redirecionando para cadastro inicial');
+          log('🎯 Primeiro acesso detectado - redirecionando para cadastro inicial');
           setPrimeiroAcesso(true);
         } else {
-          console.log('👤 Usuários já existem - permitindo acesso normal');
+          log('👤 Usuários já existem - permitindo acesso normal');
           setPrimeiroAcesso(false);
         }
       }
 
     } catch (error) {
-      console.error('❌ Erro na verificação de primeiro acesso:', error);
+      logError('❌ Erro na verificação de primeiro acesso:', error);
       
       // Se for erro de abort/timeout, assumir que não é primeiro acesso
       if (error instanceof Error && error.name === 'AbortError') {
-        console.log('⏰ Timeout na verificação - assumindo que não é primeiro acesso');
+        log('⏰ Timeout na verificação - assumindo que não é primeiro acesso');
       }
       
       setPrimeiroAcesso(false);
@@ -90,7 +109,7 @@ const PrimeiroAcessoGuard: React.FC<PrimeiroAcessoGuardProps> = ({ children }) =
           <div className="mt-4">
             <button 
               onClick={() => {
-                console.log('🔄 Forçando bypass do primeiro acesso');
+                log('🔄 Forçando bypass do primeiro acesso');
                 setVerificando(false);
                 setPrimeiroAcesso(false);
               }}
@@ -106,12 +125,12 @@ const PrimeiroAcessoGuard: React.FC<PrimeiroAcessoGuardProps> = ({ children }) =
 
   // Se é primeiro acesso, redirecionar para página de cadastro inicial
   if (primeiroAcesso) {
-    console.log('🔀 Redirecionando para /primeiro-acesso');
+    log('🔀 Redirecionando para /primeiro-acesso');
     return <Navigate to="/primeiro-acesso" replace />;
   }
 
   // Caso contrário, renderizar os children normalmente
-  console.log('✅ Renderizando children normalmente');
+  log('✅ Renderizando children normalmente');
   return <>{children}</>;
 };
 

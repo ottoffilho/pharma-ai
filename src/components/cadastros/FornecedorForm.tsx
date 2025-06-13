@@ -12,6 +12,9 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, AlertCircle, Save, X } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
+// Adiciona classe unificada para campos de entrada (modo claro/escuro)
+const inputCls = "bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:ring-emerald-600/40 dark:bg-black/60 dark:border-slate-700 dark:text-white";
+
 // Schema de validação
 const fornecedorSchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório').max(200, 'Nome deve ter no máximo 200 caracteres'),
@@ -156,7 +159,7 @@ export default function FornecedorForm({
   };
 
   return (
-    <Card className="w-full max-w-4xl mx-auto">
+    <Card className="w-full max-w-4xl mx-auto border dark:border-slate-800 bg-white dark:bg-slate-900/70 backdrop-blur-sm mt-8 mb-12">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           {fornecedor ? 'Editar Fornecedor' : 'Novo Fornecedor'}
@@ -172,7 +175,7 @@ export default function FornecedorForm({
                 id="nome"
                 {...register('nome')}
                 placeholder="Nome do fornecedor"
-                className={errors.nome ? 'border-red-500' : ''}
+                className={`${inputCls} ${errors.nome ? 'border-red-500' : ''}`}
               />
               {errors.nome && (
                 <p className="text-sm text-red-500 mt-1">{errors.nome.message}</p>
@@ -185,7 +188,7 @@ export default function FornecedorForm({
                 value={tipoSelecionado} 
                 onValueChange={(value) => setValue('tipo', value as 'juridica' | 'fisica')}
               >
-                <SelectTrigger>
+                <SelectTrigger className={inputCls}>
                   <SelectValue placeholder="Selecione o tipo" />
                 </SelectTrigger>
                 <SelectContent>
@@ -206,7 +209,7 @@ export default function FornecedorForm({
                     const formatted = formatarCNPJ(e.target.value);
                     setValue('cnpj', formatted);
                   }}
-                  className={errors.cnpj ? 'border-red-500' : ''}
+                  className={`${inputCls} ${errors.cnpj ? 'border-red-500' : ''}`}
                 />
                 {errors.cnpj && (
                   <p className="text-sm text-red-500 mt-1">{errors.cnpj.message}</p>
@@ -223,7 +226,7 @@ export default function FornecedorForm({
                     const formatted = formatarCPF(e.target.value);
                     setValue('cpf', formatted);
                   }}
-                  className={errors.cpf ? 'border-red-500' : ''}
+                  className={`${inputCls} ${errors.cpf ? 'border-red-500' : ''}`}
                 />
                 {errors.cpf && (
                   <p className="text-sm text-red-500 mt-1">{errors.cpf.message}</p>
@@ -244,7 +247,7 @@ export default function FornecedorForm({
                   const formatted = formatarTelefone(e.target.value);
                   setValue('telefone', formatted);
                 }}
-                className={errors.telefone ? 'border-red-500' : ''}
+                className={`${inputCls} ${errors.telefone ? 'border-red-500' : ''}`}
               />
               {errors.telefone && (
                 <p className="text-sm text-red-500 mt-1">{errors.telefone.message}</p>
@@ -258,7 +261,7 @@ export default function FornecedorForm({
                 type="email"
                 {...register('email')}
                 placeholder="fornecedor@email.com"
-                className={errors.email ? 'border-red-500' : ''}
+                className={`${inputCls} ${errors.email ? 'border-red-500' : ''}`}
               />
               {errors.email && (
                 <p className="text-sm text-red-500 mt-1">{errors.email.message}</p>
@@ -277,7 +280,7 @@ export default function FornecedorForm({
                   id="endereco"
                   {...register('endereco')}
                   placeholder="Rua, número, bairro"
-                  className={errors.endereco ? 'border-red-500' : ''}
+                  className={`${inputCls} ${errors.endereco ? 'border-red-500' : ''}`}
                 />
                 {errors.endereco && (
                   <p className="text-sm text-red-500 mt-1">{errors.endereco.message}</p>
@@ -294,7 +297,7 @@ export default function FornecedorForm({
                     const formatted = formatarCEP(e.target.value);
                     setValue('cep', formatted);
                   }}
-                  className={errors.cep ? 'border-red-500' : ''}
+                  className={`${inputCls} ${errors.cep ? 'border-red-500' : ''}`}
                 />
                 {errors.cep && (
                   <p className="text-sm text-red-500 mt-1">{errors.cep.message}</p>
@@ -309,7 +312,7 @@ export default function FornecedorForm({
                   id="cidade"
                   {...register('cidade')}
                   placeholder="Nome da cidade"
-                  className={errors.cidade ? 'border-red-500' : ''}
+                  className={`${inputCls} ${errors.cidade ? 'border-red-500' : ''}`}
                 />
                 {errors.cidade && (
                   <p className="text-sm text-red-500 mt-1">{errors.cidade.message}</p>
@@ -323,7 +326,7 @@ export default function FornecedorForm({
                   {...register('estado')}
                   placeholder="UF"
                   maxLength={2}
-                  className={errors.estado ? 'border-red-500' : ''}
+                  className={`${inputCls} ${errors.estado ? 'border-red-500' : ''}`}
                 />
                 {errors.estado && (
                   <p className="text-sm text-red-500 mt-1">{errors.estado.message}</p>
@@ -340,7 +343,7 @@ export default function FornecedorForm({
               {...register('observacoes')}
               placeholder="Observações adicionais sobre o fornecedor"
               rows={3}
-              className={errors.observacoes ? 'border-red-500' : ''}
+              className={`${inputCls} ${errors.observacoes ? 'border-red-500' : ''}`}
             />
             {errors.observacoes && (
               <p className="text-sm text-red-500 mt-1">{errors.observacoes.message}</p>

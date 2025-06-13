@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { validateCriarVenda, validateFinalizarVenda } from '../_shared/validators-vendas.ts'
 
 // Interfaces
 interface CriarVendaRequest {
@@ -108,7 +109,17 @@ serve(async (req) => {
 })
 
 async function criarVenda(req: Request, supabase: any, userId: string) {
-  const data: CriarVendaRequest = await req.json()
+  const payload = await req.json()
+  try {
+    validateCriarVenda(payload)
+  } catch (err) {
+    return new Response(
+      JSON.stringify({ error: 'Payload inválido', detalhes: err instanceof Error ? err.message : err }),
+      { status: 400, headers: { 'Content-Type': 'application/json' } }
+    )
+  }
+
+  const data = payload as CriarVendaRequest
 
   // Gerar número sequencial da venda
   const { data: ultimaVenda } = await supabase
@@ -203,7 +214,17 @@ async function criarVenda(req: Request, supabase: any, userId: string) {
 }
 
 async function finalizarVenda(req: Request, supabase: any, userId: string) {
-  const data: FinalizarVendaRequest = await req.json()
+  const payload = await req.json()
+  try {
+    validateFinalizarVenda(payload)
+  } catch (err) {
+    return new Response(
+      JSON.stringify({ error: 'Payload inválido', detalhes: err instanceof Error ? err.message : err }),
+      { status: 400, headers: { 'Content-Type': 'application/json' } }
+    )
+  }
+
+  const data = payload as FinalizarVendaRequest
 
   // Verificar se a venda existe e está em rascunho
   const { data: venda, error: vendaError } = await supabase

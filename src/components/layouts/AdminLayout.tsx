@@ -12,8 +12,6 @@ import {
   PanelLeftClose,
   Users, 
   FileText, 
-  DatabaseBackup, 
-  Database,
   Box,
   BadgePercent,
   DollarSign,
@@ -168,84 +166,49 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       title: 'Dashboard',
       href: '/admin',
       icon: <LayoutDashboard className="h-5 w-5 text-blue-600" />,
-      description: 'Visão geral do sistema'
+      description: 'Visão geral do sistema',
     },
     {
       title: 'Atendimento',
       href: '/admin/pedidos',
       icon: <Stethoscope className="h-5 w-5 text-emerald-600" />,
       description: 'Gestão de atendimento e receitas',
-      submenu: [
-        { title: 'Listar Pedidos', href: '/admin/pedidos/listar', description: 'Ver todos os pedidos' },
-        { title: 'Nova Receita', href: '/admin/pedidos/nova-receita', description: 'Registrar nova receita' },
-      ],
     },
     {
       title: 'Estoque',
       href: '/admin/estoque',
       icon: <Box className="h-5 w-5 text-orange-600" />,
       description: 'Controle de produtos e lotes',
-      submenu: [
-        { title: 'Produtos', href: '/admin/estoque/produtos', description: 'Gerenciar produtos' },
-        { title: 'Lotes', href: '/admin/estoque/lotes', description: 'Controle de lotes' },
-        { title: 'Importar NF-e', href: '/admin/estoque/importacao-nf', description: 'Importar notas fiscais' },
-        { title: 'Markup', href: '/admin/configuracoes/markup', description: 'Configurar margem de lucro' },
-      ],
     },
     {
       title: 'Produção',
       href: '/admin/producao/overview',
       icon: <Factory className="h-5 w-5 text-purple-600" />,
       description: 'Gestão da produção farmacêutica',
-      submenu: [
-        { title: 'Ordens de Produção', href: '/admin/producao', description: 'Gerenciar produção' },
-        { title: 'Nova Ordem', href: '/admin/producao/nova', description: 'Criar nova ordem' },
-      ],
     },
     {
       title: 'Vendas',
       href: '/admin/vendas',
       icon: <ShoppingCart className="h-5 w-5 text-green-700" />,
       description: 'Ponto de venda e histórico',
-      submenu: [
-        { title: 'PDV - Ponto de Venda', href: '/admin/vendas/pdv', description: 'Sistema de vendas' },
-        { title: 'Histórico de Vendas', href: '/admin/vendas/historico', description: 'Relatórios de vendas' },
-        { title: 'Controle de Caixa', href: '/admin/vendas/caixa', description: 'Gestão do caixa' },
-      ],
     },
     {
       title: 'Financeiro',
       href: '/admin/financeiro',
       icon: <CreditCard className="h-5 w-5 text-amber-600" />,
       description: 'Gestão financeira',
-      submenu: [
-        { title: 'Categorias', href: '/admin/financeiro/categorias', description: 'Categorias financeiras' },
-        { title: 'Fluxo de Caixa', href: '/admin/financeiro/caixa', description: 'Controle de fluxo' },
-        { title: 'Contas a Pagar', href: '/admin/financeiro/contas-a-pagar', description: 'Gestão de pagamentos' },
-      ],
     },
     {
       title: 'Inteligência Artificial',
       href: '/admin/ia',
       icon: <Brain className="h-5 w-5 text-pink-600" />,
       description: 'Recursos de IA do sistema',
-      submenu: [
-        { title: 'Processamento de Receitas', href: '/admin/ia/processamento-receitas', description: 'IA para receitas' },
-        { title: 'Previsão de Demanda', href: '/admin/ia/previsao-demanda', description: 'Análise preditiva' },
-        { title: 'Otimização de Compras', href: '/admin/ia/otimizacao-compras', description: 'Sugestões inteligentes' },
-        { title: 'Análise de Clientes', href: '/admin/ia/analise-clientes', description: 'Insights de clientes' },
-        { title: 'Monitoramento IA', href: '/admin/ia/monitoramento', description: 'Status dos modelos' },
-      ],
     },
     {
       title: 'Cadastros',
       href: '/admin/cadastros',
       icon: <Building2 className="h-5 w-5 text-slate-600" />,
       description: 'Dados mestres do sistema',
-      submenu: [
-        { title: 'Clientes', href: '/admin/clientes', description: 'Gerenciar clientes' },
-        { title: 'Fornecedores', href: '/admin/cadastros/fornecedores', description: 'Gerenciar fornecedores' },
-      ],
     },
     {
       title: 'Usuários',
@@ -253,43 +216,19 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       icon: <Shield className="h-5 w-5 text-indigo-600" />,
       description: 'Gestão de usuários e permissões',
     },
+    {
+      title: 'Configurações',
+      href: '/admin/configuracoes',
+      icon: <Settings className="h-5 w-5 text-gray-600" />,
+      description: 'Configurações gerais do sistema',
+    },
   ];
 
   // Função para renderizar item de menu com tooltip no modo colapsado
   const renderMenuItemWithTooltip = (link: NavigationLink, index: number) => {
-    const isActive = location.pathname === link.href || 
-      (link.submenu && link.submenu.some(sublink => location.pathname === sublink.href));
-
-    if (link.submenu) {
-      return (
-        <SidebarDropdown 
-          key={index}
-          icon={link.icon}
-          label={link.title}
-          isActive={isActive}
-          href={link.href}
-          className="sidebar-item"
-        >
-          {link.submenu.map((sublink, subIndex) => (
-            <SidebarMenuSubButton
-              key={subIndex}
-              asChild
-              isActive={location.pathname === sublink.href}
-              className="sidebar-item sidebar-item-hover"
-            >
-              <Link to={sublink.href} title={sublink.description}>
-                {sublink.title}
-                {sublink.badge && (
-                  <span className="ml-auto text-xs bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full sidebar-badge">
-                    {sublink.badge}
-                  </span>
-                )}
-              </Link>
-            </SidebarMenuSubButton>
-          ))}
-        </SidebarDropdown>
-      );
-    }
+    const isActive = link.href === '/admin'
+      ? location.pathname === '/admin'
+      : (location.pathname === link.href || location.pathname.startsWith(link.href));
 
     const menuButton = (
       <SidebarMenuButton 
@@ -572,10 +511,10 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                     <SidebarMenuItem key={index}>
                       <SidebarMenuButton 
                         asChild
-                        isActive={location.pathname === link.href}
+                        isActive={link.href === '/admin' ? location.pathname === '/admin' : (location.pathname === link.href || location.pathname.startsWith(link.href))}
                         onClick={() => setIsMobileMenuOpen(false)}
                         className="sidebar-item sidebar-item-hover sidebar-menu-button"
-                        aria-current={location.pathname === link.href ? "page" : undefined}
+                        aria-current={(link.href === '/admin' ? location.pathname === '/admin' : (location.pathname === link.href || location.pathname.startsWith(link.href))) ? "page" : undefined}
                       >
                         <Link to={link.href} className="flex items-center gap-3" title={link.description}>
                           <span className="flex-shrink-0">{link.icon}</span>

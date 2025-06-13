@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Loader2, AlertTriangle } from 'lucide-react';
 import { useAuthSimple } from '@/modules/usuarios-permissoes/hooks/useAuthSimple';
 import { Button } from '@/components/ui/button';
+import { log, error as logError } from '@/lib/logger';
 
 // Definir aqui se queremos forçar o acesso (apenas para desenvolvimento)
 const FORCE_AUTH = false;
@@ -54,7 +55,7 @@ function ForceAuth() {
     const verificarAutenticacao = async () => {
       try {
         if (FORCE_AUTH) {
-          console.log('🔓 ACESSO FORÇADO ATIVADO');
+          log('🔓 ACESSO FORÇADO ATIVADO');
           setAuthenticated(true);
           setLoading(false);
           return;
@@ -62,7 +63,7 @@ function ForceAuth() {
 
         // Usar estado do authContext diretamente
         if (!authContext.carregando) {
-          console.log('🔒 ForceAuth - Estado do auth:', authContext.autenticado ? 'Autenticado' : 'Não autenticado');
+          log('🔒 ForceAuth - Estado do auth:', authContext.autenticado ? 'Autenticado' : 'Não autenticado');
           setAuthenticated(authContext.autenticado);
           setLoading(false);
           return;
@@ -72,12 +73,12 @@ function ForceAuth() {
         const { data: { session } } = await supabase.auth.getSession();
         const temSessao = !!session;
         
-        console.log('🔒 ForceAuth - Verificação direta:', temSessao ? 'Autenticado' : 'Não autenticado');
+        log('🔒 ForceAuth - Verificação direta:', temSessao ? 'Autenticado' : 'Não autenticado');
         
         setAuthenticated(temSessao);
         setLoading(false);
       } catch (error) {
-        console.error('❌ ForceAuth - Erro:', error);
+        logError('❌ ForceAuth - Erro:', error);
         setAuthenticated(false);
         setLoading(false);
       }
@@ -88,7 +89,7 @@ function ForceAuth() {
     // Timeout de segurança
     const timeoutId = setTimeout(() => {
       if (loading) {
-        console.log('⏰ ForceAuth - Timeout');
+        log('⏰ ForceAuth - Timeout');
         setLoading(false);
         setAuthenticated(authContext.autenticado);
       }
@@ -117,11 +118,11 @@ function ForceAuth() {
 
   // Verificar autenticação
   if (!authenticated && !FORCE_AUTH) {
-    console.log('⛔ ForceAuth - Redirecionando para login');
+    log('⛔ ForceAuth - Redirecionando para login');
     return <Navigate to="/login" state={{ from: location.pathname }} replace />;
   }
 
-  console.log('✅ ForceAuth - Acesso autorizado');
+  log('✅ ForceAuth - Acesso autorizado');
   return <Outlet />;
 }
 

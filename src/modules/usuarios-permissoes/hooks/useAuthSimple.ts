@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback, createContext, useContext, useRef, us
 import { supabase } from '@/integrations/supabase/client';
 import type { SessaoUsuario, RespostaAuth } from '../types';
 import { NivelAcesso, ModuloSistema, AcaoPermissao, TipoDashboard, PerfilUsuario } from '../types';
+import { log, error as logError } from '@/lib/logger';
 
 interface AuthContextType {
   usuario: SessaoUsuario | null;
@@ -85,17 +86,17 @@ const recuperarCache = (): AuthCache | null => {
       
       // Se o cache ainda é válido
       if (cache.valido && (agora - cache.timestamp) < CACHE_TTL) {
-        console.log('✅ Cache de autenticação válido encontrado');
+        log('✅ Cache de autenticação válido encontrado');
         return cache;
       } else {
-        console.log('⚠️ Cache de autenticação expirado, removendo...');
+        log('⚠️ Cache de autenticação expirado, removendo...');
         // Limpar cache expirado
         sessionStorage.removeItem('auth_cache');
         localStorage.removeItem('auth_cache_backup');
       }
     }
   } catch (error) {
-    console.log('⚠️ Erro ao recuperar cache:', error);
+    log('⚠️ Erro ao recuperar cache:', error);
     // Limpar cache corrompido
     try {
       sessionStorage.removeItem('auth_cache');
@@ -123,9 +124,9 @@ const salvarCache = (usuario: SessaoUsuario | null) => {
     // Backup no localStorage (para persistir entre abas)
     localStorage.setItem('auth_cache_backup', cacheString);
     
-    console.log('✅ Cache de autenticação salvo');
+    log('✅ Cache de autenticação salvo');
   } catch (error) {
-    console.log('⚠️ Erro ao salvar cache:', error);
+    log('⚠️ Erro ao salvar cache:', error);
   }
 };
 
@@ -134,9 +135,9 @@ const invalidarCache = () => {
   try {
     sessionStorage.removeItem('auth_cache');
     localStorage.removeItem('auth_cache_backup');
-    console.log('🗑️ Cache de autenticação invalidado');
+    log('🗑️ Cache de autenticação invalidado');
   } catch (error) {
-    console.log('⚠️ Erro ao invalidar cache:', error);
+    log('⚠️ Erro ao invalidar cache:', error);
   }
 };
 
@@ -169,7 +170,7 @@ export const useAuthSimpleState = () => {
   // Função para forçar logout em emergência
   const forceLogout = useCallback(() => {
     try {
-      console.log('🚨 useAuthSimple - Logout forçado iniciado');
+      log('🚨 useAuthSimple - Logout forçado iniciado');
       supabase.auth.signOut();
       invalidarCache();
       sessionStorage.clear();
@@ -179,7 +180,7 @@ export const useAuthSimpleState = () => {
         window.location.href = '/login';
       }, 100);
     } catch (e) {
-      console.error('❌ useAuthSimple - Erro no logout forçado:', e);
+      logError('❌ useAuthSimple - Erro no logout forçado:', e);
       window.location.href = '/login';
     }
   }, []);
@@ -187,20 +188,20 @@ export const useAuthSimpleState = () => {
   // Carregar dados do usuário
   const carregarUsuario = useCallback(async () => {
     if (carregandoRef.current) {
-      console.log('⚠️ useAuthSimple - Carregamento já em andamento');
+      log('⚠️ useAuthSimple - Carregamento já em andamento');
       return;
     }
 
     carregandoRef.current = true;
     
     try {
-      console.log('🔄 useAuthSimple - Carregando usuário...');
+      log('🔄 useAuthSimple - Carregando usuário...');
       
       // Verificar sessão
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
       if (sessionError || !session?.user) {
-        console.log('⚠️ useAuthSimple - Sem sessão ativa');
+        log('⚠️ useAuthSimple - Sem sessão ativa');
         if (isMountedRef.current) {
           setUsuario(null);
           setCarregando(false);
@@ -211,19 +212,19 @@ export const useAuthSimpleState = () => {
       }
 
       const user = session.user;
-      console.log('✅ useAuthSimple - Sessão encontrada:', user.email);
+      log('✅ useAuthSimple - Sessão encontrada:', user.email);
 
       // Primeiro, buscar apenas dados básicos do usuário usando RPC para evitar recursão RLS
-      console.log('🔍 useAuthSimple - Buscando dados básicos do usuário via RPC...');
+      log('🔍 useAuthSimple - Buscando dados básicos do usuário via RPC...');
       const { data: userRpcData, error: userRpcError } = await supabase
         .rpc('get_logged_user_data');
 
       if (userRpcError || !userRpcData || userRpcData.error) {
-        console.error('❌ useAuthSimple - Erro ao buscar usuário via RPC:', userRpcError || userRpcData?.error);
+        logError('❌ useAuthSimple - Erro ao buscar usuário via RPC:', userRpcError || userRpcData?.error);
         
         // Se for erro de usuário não encontrado, tentar criar usuário automaticamente
         if (userRpcData?.error === 'Usuário não encontrado ou inativo') {
-          console.log('🔄 useAuthSimple - Usuário não encontrado, tentando criar...');
+          log('🔄 useAuthSimple - Usuário não encontrado, tentando criar...');
           try {
             const userName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Usuário';
             
@@ -235,7 +236,7 @@ export const useAuthSimpleState = () => {
               });
 
             if (createRpcError || !createResult?.success) {
-              console.error('❌ useAuthSimple - Erro ao criar usuário via RPC:', createRpcError || createResult?.error);
+              logError('❌ useAuthSimple - Erro ao criar usuário via RPC:', createRpcError || createResult?.error);
               if (isMountedRef.current) {
                 setUltimoErro('Erro ao criar perfil de usuário');
                 setCarregando(false);
@@ -244,13 +245,13 @@ export const useAuthSimpleState = () => {
               return;
             }
 
-            console.log('✅ useAuthSimple - Usuário criado automaticamente via RPC');
+            log('✅ useAuthSimple - Usuário criado automaticamente via RPC');
             // Recursivamente chamar a função para carregar o usuário recém-criado
             carregandoRef.current = false;
             await carregarUsuario();
             return;
           } catch (createError) {
-            console.error('❌ useAuthSimple - Erro ao tentar criar usuário:', createError);
+            logError('❌ useAuthSimple - Erro ao tentar criar usuário:', createError);
           }
         }
         
@@ -264,12 +265,12 @@ export const useAuthSimpleState = () => {
 
       const userData = userRpcData.usuario;
       const perfilUsuario = userRpcData.perfil;
-      console.log('✅ useAuthSimple - Dados básicos do usuário carregados via RPC');
+      log('✅ useAuthSimple - Dados básicos do usuário carregados via RPC');
 
       // Buscar permissões usando RPC
       let permissoes: any[] = [];
       try {
-        console.log('🔍 useAuthSimple - Buscando permissões via RPC...');
+        log('🔍 useAuthSimple - Buscando permissões via RPC...');
         const { data: permissoesRpcData, error: permissoesRpcError } = await supabase
           .rpc('get_user_permissions');
 
@@ -284,12 +285,12 @@ export const useAuthSimpleState = () => {
             criado_em: p.criado_em,
             condicoes: null
           }));
-          console.log('✅ useAuthSimple - Permissões carregadas via RPC:', permissoes.length);
+          log('✅ useAuthSimple - Permissões carregadas via RPC:', permissoes.length);
         } else {
-          console.log('⚠️ useAuthSimple - Erro ao carregar permissões via RPC:', permissoesRpcError || permissoesRpcData?.error);
+          log('⚠️ useAuthSimple - Erro ao carregar permissões via RPC:', permissoesRpcError || permissoesRpcData?.error);
         }
       } catch (permissoesError) {
-        console.log('⚠️ useAuthSimple - Exceção ao carregar permissões via RPC:', permissoesError);
+        log('⚠️ useAuthSimple - Exceção ao carregar permissões via RPC:', permissoesError);
       }
 
       // Montar objeto do perfil
@@ -326,7 +327,7 @@ export const useAuthSimpleState = () => {
         dashboard: (perfilUsuario?.dashboard_padrao as TipoDashboard) || TipoDashboard.ADMINISTRATIVO
       };
 
-      console.log('✅ useAuthSimple - Usuário carregado completo:', userData.nome);
+      log('✅ useAuthSimple - Usuário carregado completo:', userData.nome);
       
       salvarCache(sessao);
       
@@ -343,17 +344,17 @@ export const useAuthSimpleState = () => {
             .rpc('update_last_access');
           
           if (updateResult) {
-            console.log('✅ Último acesso atualizado via RPC');
+            log('✅ Último acesso atualizado via RPC');
           } else {
-            console.log('⚠️ Erro ao atualizar último acesso via RPC:', updateError);
+            log('⚠️ Erro ao atualizar último acesso via RPC:', updateError);
           }
         } catch (err) {
-          console.log('⚠️ Exceção ao atualizar último acesso:', err);
+          log('⚠️ Exceção ao atualizar último acesso:', err);
         }
       }, 1000);
 
     } catch (error) {
-      console.error('❌ useAuthSimple - Erro geral ao carregar usuário:', error);
+      logError('❌ useAuthSimple - Erro geral ao carregar usuário:', error);
       if (isMountedRef.current) {
         setUltimoErro('Erro ao carregar dados do usuário');
         setCarregando(false);
@@ -366,7 +367,7 @@ export const useAuthSimpleState = () => {
   // Login simplificado
   const login = useCallback(async (email: string, senha: string): Promise<RespostaAuth> => {
     try {
-      console.log('🔐 useAuthSimple - Login:', email);
+      log('🔐 useAuthSimple - Login:', email);
       setCarregando(true);
       setUltimoErro(null);
       invalidarCache();
@@ -377,17 +378,17 @@ export const useAuthSimpleState = () => {
       });
 
       if (error || !data.user) {
-        console.error('❌ useAuthSimple - Erro de autenticação:', error);
+        logError('❌ useAuthSimple - Erro de autenticação:', error);
         return { sucesso: false, erro: 'Credenciais inválidas' };
       }
 
-      console.log('✅ useAuthSimple - Autenticação bem-sucedida');
+      log('✅ useAuthSimple - Autenticação bem-sucedida');
       
       // Tentar carregar usuário, mas não falhar se houver problemas
       try {
         await carregarUsuario();
       } catch (loadError) {
-        console.error('⚠️ useAuthSimple - Erro ao carregar usuário após login, criando sessão básica:', loadError);
+        log('⚠️ useAuthSimple - Erro ao carregar usuário após login, criando sessão básica:', loadError);
         
         // Criar sessão básica em caso de erro
         const sessaoBasica: SessaoUsuario = {
@@ -427,7 +428,7 @@ export const useAuthSimpleState = () => {
       return { sucesso: true };
 
     } catch (error) {
-      console.error('❌ useAuthSimple - Erro no login:', error);
+      logError('❌ useAuthSimple - Erro no login:', error);
       return { sucesso: false, erro: 'Erro interno' };
     } finally {
       setCarregando(false);
@@ -442,7 +443,7 @@ export const useAuthSimpleState = () => {
       setUsuario(null);
       window.location.href = '/login';
     } catch (error) {
-      console.error('Erro no logout:', error);
+      logError('Erro no logout:', error);
       throw error instanceof Error ? error : new Error('Erro no logout');
     }
   }, []);
@@ -454,7 +455,7 @@ export const useAuthSimpleState = () => {
     // Verificar cache primeiro
     const cache = recuperarCache();
     if (cache?.usuario) {
-      console.log('🚀 useAuthSimple - Cache válido encontrado');
+      log('🚀 useAuthSimple - Cache válido encontrado');
       setUsuario(cache.usuario);
       setCarregando(false);
       return;
@@ -466,7 +467,7 @@ export const useAuthSimpleState = () => {
     // Timeout de segurança
     const timeoutId = setTimeout(() => {
       if (carregando && isMountedRef.current) {
-        console.log('⏰ useAuthSimple - Timeout de segurança');
+        log('⏰ useAuthSimple - Timeout de segurança');
         setCarregando(false);
       }
     }, SAFETY_TIMEOUT);
@@ -474,7 +475,7 @@ export const useAuthSimpleState = () => {
     // Listener de mudanças de auth
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('🔄 useAuthSimple - Auth change:', event);
+        log('🔄 useAuthSimple - Auth change:', event);
         
         if (event === 'SIGNED_OUT') {
           if (isMountedRef.current) {
@@ -483,7 +484,7 @@ export const useAuthSimpleState = () => {
             invalidarCache();
           }
         } else if (event === 'SIGNED_IN' && session) {
-          console.log('✅ useAuthSimple - Usuário logado');
+          log('✅ useAuthSimple - Usuário logado');
           await carregarUsuario();
         }
       }

@@ -382,60 +382,60 @@ const ProdutosPage: React.FC = () => {
 
             {/* Métricas Rápidas */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-8">
-              <Card className="border-0 shadow-sm bg-white/70 backdrop-blur-sm">
+              <Card className="border-0 shadow-sm bg-white/70 dark:bg-black/60 backdrop-blur-sm">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-muted-foreground">Total de Produtos</p>
-                      <p className="text-2xl font-bold text-blue-600">{totalProdutos}</p>
+                      <p className="text-sm text-muted-foreground dark:text-gray-400">Total de Produtos</p>
+                      <p className="text-2xl font-bold text-blue-600 dark:text-blue-500">{totalProdutos}</p>
                     </div>
                     <Boxes className="h-8 w-8 text-blue-600" />
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="border-0 shadow-sm bg-white/70 backdrop-blur-sm">
+              <Card className="border-0 shadow-sm bg-white/70 dark:bg-black/60 backdrop-blur-sm">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-muted-foreground">Insumos</p>
-                      <p className="text-2xl font-bold text-orange-600">{totalInsumos}</p>
+                      <p className="text-sm text-muted-foreground dark:text-gray-400">Insumos</p>
+                      <p className="text-2xl font-bold text-orange-600 dark:text-orange-500">{totalInsumos}</p>
                     </div>
                     <FlaskConical className="h-8 w-8 text-orange-600" />
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="border-0 shadow-sm bg-white/70 backdrop-blur-sm">
+              <Card className="border-0 shadow-sm bg-white/70 dark:bg-black/60 backdrop-blur-sm">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-muted-foreground">Embalagens</p>
-                      <p className="text-2xl font-bold text-green-600">{totalEmbalagens}</p>
+                      <p className="text-sm text-muted-foreground dark:text-gray-400">Embalagens</p>
+                      <p className="text-2xl font-bold text-green-600 dark:text-green-500">{totalEmbalagens}</p>
                     </div>
                     <Package2 className="h-8 w-8 text-green-600" />
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="border-0 shadow-sm bg-white/70 backdrop-blur-sm">
+              <Card className="border-0 shadow-sm bg-white/70 dark:bg-black/60 backdrop-blur-sm">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-muted-foreground">Cosméticos</p>
-                      <p className="text-2xl font-bold text-purple-600">{totalCosmeticos}</p>
+                      <p className="text-sm text-muted-foreground dark:text-gray-400">Cosméticos</p>
+                      <p className="text-2xl font-bold text-purple-600 dark:text-purple-500">{totalCosmeticos}</p>
                     </div>
                     <Sparkles className="h-8 w-8 text-purple-600" />
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="border-0 shadow-sm bg-white/70 backdrop-blur-sm">
+              <Card className="border-0 shadow-sm bg-white/70 dark:bg-black/60 backdrop-blur-sm">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-muted-foreground">Estoque Baixo</p>
-                      <p className="text-2xl font-bold text-red-600">{lowStockCount}</p>
+                      <p className="text-sm text-muted-foreground dark:text-gray-400">Estoque Baixo</p>
+                      <p className="text-2xl font-bold text-red-600 dark:text-red-500">{lowStockCount}</p>
                     </div>
                     <AlertTriangle className="h-8 w-8 text-red-600" />
                   </div>
@@ -447,7 +447,7 @@ const ProdutosPage: React.FC = () => {
 
         {/* Filtros e Ações */}
         <div className="px-6 w-full">
-          <Card className="border-0 shadow-sm w-full">
+          <Card className="border dark:border-slate-800 border-transparent shadow-lg bg-white dark:bg-slate-900/70 backdrop-blur-sm w-full">
             <CardHeader>
               <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
                 <div className="flex flex-col sm:flex-row gap-4 flex-1">
@@ -519,7 +519,7 @@ const ProdutosPage: React.FC = () => {
             </TabsList>
 
             <TabsContent value={currentTab} className="mt-6">
-              <Card className="border-0 shadow-sm w-full">
+              <Card className="border dark:border-slate-800 border-transparent shadow-lg bg-white dark:bg-slate-900/70 backdrop-blur-sm w-full">
                 <CardHeader>
                   <div className="flex items-center justify-between w-full">
                     <div>

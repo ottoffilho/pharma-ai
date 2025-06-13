@@ -47,11 +47,11 @@ interface Pedido {
 }
 
 const statusConfig = {
-  draft: { label: 'Rascunho', color: 'bg-gray-100 text-gray-700', icon: FileText },
-  in_production: { label: 'Em Produção', color: 'bg-blue-100 text-blue-700', icon: Clock },
-  ready: { label: 'Pronto', color: 'bg-green-100 text-green-700', icon: CheckCircle },
-  delivered: { label: 'Entregue', color: 'bg-emerald-100 text-emerald-700', icon: Truck },
-  cancelled: { label: 'Cancelado', color: 'bg-red-100 text-red-700', icon: XCircle }
+  draft: { label: 'Rascunho', color: 'bg-gray-100 text-gray-700 dark:bg-gray-800/50 dark:text-gray-300', icon: FileText },
+  in_production: { label: 'Em Produção', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300', icon: Clock },
+  ready: { label: 'Pronto', color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300', icon: CheckCircle },
+  delivered: { label: 'Entregue', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300', icon: Truck },
+  cancelled: { label: 'Cancelado', color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300', icon: XCircle }
 };
 
 const ListarPedidosPage: React.FC = () => {
@@ -148,13 +148,13 @@ const ListarPedidosPage: React.FC = () => {
         {/* Hero Section */}
         <div className="relative overflow-hidden rounded-2xl w-full">
           <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 dark:from-emerald-950/20 dark:via-teal-950/20 dark:to-cyan-950/20" />
-          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiMxMGI5ODEiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iNCIvPjwvZz48L2c+PC9zdmc+')] opacity-40" />
+          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiMxMGI5ODEiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iNCIvPjwvZz48L2c+PC9zdmc+')] opacity-40 dark:opacity-20" />
           
           <div className="relative px-6 py-16">
             <div className="flex items-center justify-between">
               <div className="space-y-4 max-w-3xl">
                 <div className="flex items-center gap-3">
-                  <Link to="/admin/pedidos" className="bg-white/80 p-2 rounded-full shadow-sm hover:bg-white transition-colors">
+                  <Link to="/admin/pedidos" className="bg-white/80 dark:bg-slate-900/70 p-2 rounded-full shadow-sm hover:bg-white dark:hover:bg-slate-800 transition-colors">
                     <ArrowLeft className="h-5 w-5 text-emerald-600" />
                   </Link>
                   <div className="relative">
@@ -174,15 +174,15 @@ const ListarPedidosPage: React.FC = () => {
                 </div>
 
                 <div className="flex flex-wrap gap-3">
-                  <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 hover:bg-emerald-200 px-3 py-1">
+                  <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:hover:bg-emerald-900/50 px-3 py-1">
                     <Package className="h-3 w-3 mr-1" />
                     Gestão Completa
                   </Badge>
-                  <Badge variant="secondary" className="bg-teal-100 text-teal-700 hover:bg-teal-200 px-3 py-1">
+                  <Badge variant="secondary" className="bg-teal-100 text-teal-700 hover:bg-teal-200 dark:bg-teal-900/30 dark:text-teal-300 dark:hover:bg-teal-900/50 px-3 py-1">
                     <Clock className="h-3 w-3 mr-1" />
                     Acompanhamento
                   </Badge>
-                  <Badge variant="secondary" className="bg-cyan-100 text-cyan-700 hover:bg-cyan-200 px-3 py-1">
+                  <Badge variant="secondary" className="bg-cyan-100 text-cyan-700 hover:bg-cyan-200 dark:bg-cyan-900/30 dark:text-cyan-300 dark:hover:bg-cyan-900/50 px-3 py-1">
                     <CheckCircle className="h-3 w-3 mr-1" />
                     Controle de Status
                   </Badge>
@@ -194,11 +194,11 @@ const ListarPedidosPage: React.FC = () => {
 
         {/* Controles e Filtros */}
         <div className="px-6 w-full">
-          <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm w-full">
+          <Card className="border-0 shadow-lg bg-white/80 dark:bg-slate-900/70 backdrop-blur-sm w-full">
             <CardHeader className="border-b border-gray-100">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-gradient-to-br from-emerald-100 to-teal-100">
+                  <div className="p-2 rounded-lg bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/40 dark:to-teal-900/40">
                     <Search className="h-5 w-5 text-emerald-600" />
                   </div>
                   <div>
@@ -257,10 +257,10 @@ const ListarPedidosPage: React.FC = () => {
 
         {/* Pedidos List */}
         <div className="px-6 w-full">
-          <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm w-full">
+          <Card className="border-0 shadow-lg bg-white/80 dark:bg-slate-900/70 backdrop-blur-sm w-full">
             <CardHeader className="border-b border-gray-100">
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-gradient-to-br from-emerald-100 to-teal-100">
+                <div className="p-2 rounded-lg bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/40 dark:to-teal-900/40">
                   <Package className="h-5 w-5 text-emerald-600" />
                 </div>
                 <div>
@@ -292,7 +292,7 @@ const ListarPedidosPage: React.FC = () => {
               ) : (
                 <div className="divide-y divide-gray-100">
                   {filteredPedidos.map((pedido) => (
-                    <div key={pedido.id} className="p-6 hover:bg-gray-50/50 transition-colors">
+                    <div key={pedido.id} className="p-6 hover:bg-gray-50/50 dark:hover:bg-slate-800/50 transition-colors">
                       <div className="flex items-center justify-between">
                         <div className="flex-1 space-y-3">
                           <div className="flex items-center gap-4">

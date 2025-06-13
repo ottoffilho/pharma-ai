@@ -148,59 +148,57 @@ export default function IAOverview() {
         <div className="px-6 pb-16">
           <div className="mx-auto max-w-7xl">
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {aiFeatures.map((feature, index) => (
-                <Card 
-                  key={index} 
-                  className="group relative overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
-                >
-                  {/* Gradient Background */}
-                  <div className={`absolute inset-0 bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-300`} />
-                  
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div className={`p-3 rounded-lg bg-gradient-to-br ${feature.gradient} text-white`}>
-                        {feature.icon}
+              {aiFeatures.map((feature, index) => {
+                const card = (
+                  <Card 
+                    key={index} 
+                    className="group relative overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+                  >
+                    {/* Gradient Background */}
+                    <div className={`absolute inset-0 bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-300`} />
+                    <CardHeader>
+                      <div className="flex items-start justify-between">
+                        <div className={`p-3 rounded-lg bg-gradient-to-br ${feature.gradient} text-white`}>
+                          {feature.icon}
+                        </div>
+                        <Badge 
+                          variant={feature.status === 'ativo' ? 'default' : feature.status === 'beta' ? 'secondary' : 'outline'}
+                          className="capitalize"
+                        >
+                          {feature.status}
+                        </Badge>
                       </div>
-                      <Badge 
-                        variant={feature.status === 'ativo' ? 'default' : feature.status === 'beta' ? 'secondary' : 'outline'}
-                        className="capitalize"
-                      >
-                        {feature.status}
-                      </Badge>
-                    </div>
-                    <CardTitle className="mt-4">{feature.title}</CardTitle>
-                    <CardDescription>{feature.description}</CardDescription>
-                  </CardHeader>
-                  
-                  <CardContent>
-                    <div className="space-y-3">
-                      <h4 className="text-sm font-semibold text-muted-foreground">Benefícios principais:</h4>
-                      <ul className="space-y-2">
-                        {feature.benefits.map((benefit, idx) => (
-                          <li key={idx} className="flex items-start gap-2">
-                            <Sparkles className="h-4 w-4 text-yellow-500 shrink-0 mt-0.5" />
-                            <span className="text-sm">{benefit}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
+                      <CardTitle className="mt-4">{feature.title}</CardTitle>
+                      <CardDescription>{feature.description}</CardDescription>
+                    </CardHeader>
                     
-                    <Button 
-                      asChild 
-                      className="w-full mt-6 group"
-                      variant={feature.status === 'em-breve' ? 'outline' : 'default'}
-                      disabled={feature.status === 'em-breve'}
-                    >
-                      <Link to={feature.href}>
-                        {feature.status === 'em-breve' ? 'Em breve' : 'Acessar módulo'}
-                        {feature.status !== 'em-breve' && (
-                          <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-                        )}
-                      </Link>
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
+                    <CardContent>
+                      <div className="space-y-3">
+                        <h4 className="text-sm font-semibold text-muted-foreground">Benefícios principais:</h4>
+                        <ul className="space-y-2">
+                          {feature.benefits.map((benefit, idx) => (
+                            <li key={idx} className="flex items-start gap-2">
+                              <Sparkles className="h-4 w-4 text-yellow-500 shrink-0 mt-0.5" />
+                              <span className="text-sm">{benefit}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                      {feature.status === 'em-breve' && (
+                        <p className="text-center text-xs text-muted-foreground mt-6">Em breve</p>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+
+                return feature.status === 'em-breve' ? (
+                  <div key={index}>{card}</div>
+                ) : (
+                  <Link key={index} to={feature.href} className="block">
+                    {card}
+                  </Link>
+                );
+              })}
             </div>
 
             {/* Info Section */}

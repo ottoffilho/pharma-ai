@@ -183,7 +183,7 @@ export default function CategoriasFinanceirasPage() {
 
             {/* Métricas Rápidas */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
-              <Card className="border-0 shadow-sm bg-white/60 backdrop-blur-sm">
+              <Card className="border-0 shadow-sm bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
@@ -195,7 +195,7 @@ export default function CategoriasFinanceirasPage() {
                 </CardContent>
               </Card>
 
-              <Card className="border-0 shadow-sm bg-white/60 backdrop-blur-sm">
+              <Card className="border-0 shadow-sm bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
@@ -209,7 +209,7 @@ export default function CategoriasFinanceirasPage() {
                 </CardContent>
               </Card>
 
-              <Card className="border-0 shadow-sm bg-white/60 backdrop-blur-sm">
+              <Card className="border-0 shadow-sm bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
@@ -223,7 +223,7 @@ export default function CategoriasFinanceirasPage() {
                 </CardContent>
               </Card>
 
-              <Card className="border-0 shadow-sm bg-white/60 backdrop-blur-sm">
+              <Card className="border-0 shadow-sm bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>

@@ -4,7 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Phone, Mail, Loader2 } from 'lucide-react';
-import PharmaLogo from '@/assets/logo/pharma-image.png';
+import PharmacyLogo from '@/assets/logo/pharma-image.png';
+import contactBg from '@/assets/images/Flux_Dev_Abstract_digital_art_flowing_lines_of_soft_green_and__0.jpg';
 
 // URL da Edge Function para salvar o lead do formulário
 // const SAVE_FORM_LEAD_URL = `${Deno.env.get('SUPABASE_URL')}/functions/v1/save-form-lead`; // Ajuste se SUPABASE_URL não estiver disponível globalmente assim no frontend, pode precisar ser de import.meta.env
@@ -71,15 +72,19 @@ const CTASection = () => {
   };
   
   return (
-    <section id="contato" className="bg-gradient-homeo">
+    <section
+      id="contato"
+      className="bg-cover bg-center"
+      style={{ backgroundImage: `url(${contactBg})` }}
+    >
       <div className="container-section">
         <div className="max-w-4xl mx-auto">
-          <div className="bg-white rounded-xl shadow-xl overflow-hidden">
+          <div className="bg-white/60 backdrop-blur-md rounded-xl shadow-xl overflow-hidden">
             <div className="grid grid-cols-1 lg:grid-cols-2">
               {/* Form */}
               <div className="p-8 md:p-12 flex flex-col items-center">
                 <img 
-                  src={PharmaLogo} 
+                  src={PharmacyLogo} 
                   alt="Pharma.AI Logo" 
                   className="w-32 h-auto mb-6"
                 />

@@ -221,48 +221,48 @@ const EmbalagensListPage: React.FC = () => {
 
             {/* Métricas Rápidas */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
-              <Card className="border-0 shadow-sm bg-white/60 backdrop-blur-sm">
+              <Card className="border-0 shadow-sm bg-white/60 dark:bg-black/60 backdrop-blur-sm">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">Total de Embalagens</p>
-                      <p className="text-2xl font-bold">{totalEmbalagens}</p>
+                      <p className="text-sm font-medium text-muted-foreground dark:text-gray-400">Total de Embalagens</p>
+                      <p className="text-2xl font-bold dark:text-white">{totalEmbalagens}</p>
                     </div>
                     <Package className="h-8 w-8 text-blue-600" />
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="border-0 shadow-sm bg-white/60 backdrop-blur-sm">
+              <Card className="border-0 shadow-sm bg-white/60 dark:bg-black/60 backdrop-blur-sm">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">Estoque Baixo</p>
-                      <p className="text-2xl font-bold text-red-600">{lowStockCount}</p>
+                      <p className="text-sm font-medium text-muted-foreground dark:text-gray-400">Estoque Baixo</p>
+                      <p className="text-2xl font-bold text-red-600 dark:text-red-500">{lowStockCount}</p>
                     </div>
                     <AlertTriangle className="h-8 w-8 text-red-600" />
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="border-0 shadow-sm bg-white/60 backdrop-blur-sm">
+              <Card className="border-0 shadow-sm bg-white/60 dark:bg-black/60 backdrop-blur-sm">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">Valor Total</p>
-                      <p className="text-2xl font-bold">{formatCurrency(totalValue)}</p>
+                      <p className="text-sm font-medium text-muted-foreground dark:text-gray-400">Valor Total</p>
+                      <p className="text-2xl font-bold dark:text-white">{formatCurrency(totalValue)}</p>
                     </div>
                     <DollarSign className="h-8 w-8 text-green-600" />
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="border-0 shadow-sm bg-white/60 backdrop-blur-sm">
+              <Card className="border-0 shadow-sm bg-white/60 dark:bg-black/60 backdrop-blur-sm">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">Custo Médio</p>
-                      <p className="text-2xl font-bold">{formatCurrency(avgCost)}</p>
+                      <p className="text-sm font-medium text-muted-foreground dark:text-gray-400">Custo Médio</p>
+                      <p className="text-2xl font-bold dark:text-white">{formatCurrency(avgCost)}</p>
                     </div>
                     <BarChart3 className="h-8 w-8 text-purple-600" />
                   </div>

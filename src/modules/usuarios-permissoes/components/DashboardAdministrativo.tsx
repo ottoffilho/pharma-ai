@@ -40,22 +40,7 @@ import {
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { 
-  BarChart as RechartsBarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  ResponsiveContainer, 
-  Tooltip as RechartsTooltip,
-  PieChart as RechartsPieChart,
-  Cell,
-  Pie,
-  LineChart as RechartsLineChart,
-  Line,
-  Area,
-  AreaChart
-} from 'recharts';
+import { log, error as logError } from '@/lib/logger';
 import type { DashboardProps } from '../types';
 import { PerfilUsuario } from '../types';
 
@@ -66,60 +51,50 @@ import { PerfilUsuario } from '../types';
 const DashboardAdministrativoComponent: React.FC<DashboardProps> = ({ usuario, permissoes }) => {
   // Verificar se é proprietário
   const isProprietario = usuario.perfil?.tipo === PerfilUsuario.PROPRIETARIO;
-  
-  console.log('🏪 DashboardAdministrativo - Usuário:', usuario.nome, 'Perfil:', usuario.perfil?.tipo, 'É proprietário:', isProprietario);
 
   // Query to get count of inputs (produtos tipo INSUMO) - dados reais
-  const { data: insumosData, isLoading: insumosLoading } = useQuery({
-    queryKey: ['insumosData'],
+  const { data: insumosTotal = 0, isLoading: insumosLoading } = useQuery({
+    queryKey: ['insumosTotal'],
     queryFn: async () => {
       try {
-        const { data, count, error } = await supabase
+        const { count, error } = await supabase
           .from('produtos')
-          .select('nome, tipo, categoria, estoque_atual', { count: 'exact' })
+          .select('*', { count: 'exact', head: true })
           .eq('tipo', 'INSUMO')
           .eq('ativo', true)
           .eq('is_deleted', false);
-        
+
         if (error) throw new Error(error.message);
-        
-        return {
-          total: count || 0,
-          dados: data || []
-        };
+        return count || 0;
       } catch (e) {
-        console.error('Erro ao buscar insumos:', e);
-        return { total: 0, dados: [] };
+        logError('Erro ao buscar insumos:', e);
+        return 0;
       }
     },
-    staleTime: 5 * 60 * 1000, // 5 minutos
+    staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false
   });
 
   // Query to get count of packages (produtos tipo EMBALAGEM) - dados reais
-  const { data: embalagensData, isLoading: embalagensLoading } = useQuery({
-    queryKey: ['embalagensData'],
+  const { data: embalagensTotal = 0, isLoading: embalagensLoading } = useQuery({
+    queryKey: ['embalagensTotal'],
     queryFn: async () => {
       try {
-        const { data, count, error } = await supabase
+        const { count, error } = await supabase
           .from('produtos')
-          .select('nome, tipo, categoria, volume_capacidade', { count: 'exact' })
+          .select('*', { count: 'exact', head: true })
           .eq('tipo', 'EMBALAGEM')
           .eq('ativo', true)
           .eq('is_deleted', false);
-        
+
         if (error) throw new Error(error.message);
-        
-        return {
-          total: count || 0,
-          dados: data || []
-        };
+        return count || 0;
       } catch (e) {
-        console.error('Erro ao buscar embalagens:', e);
-        return { total: 0, dados: [] };
+        logError('Erro ao buscar embalagens:', e);
+        return 0;
       }
     },
-    staleTime: 5 * 60 * 1000, // 5 minutos
+    staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false
   });
 
@@ -139,7 +114,7 @@ const DashboardAdministrativoComponent: React.FC<DashboardProps> = ({ usuario, p
         
         return count || 0;
       } catch (e) {
-        console.error('Erro ao buscar medicamentos:', e);
+        logError('Erro ao buscar medicamentos:', e);
         return 0;
       }
     },
@@ -157,12 +132,12 @@ const DashboardAdministrativoComponent: React.FC<DashboardProps> = ({ usuario, p
           .select('*', { count: 'exact', head: true });
         
         if (error) {
-          console.log('Tabela pedidos não encontrada ou vazia:', error.message);
+          log('Tabela pedidos não encontrada ou vazia:', error.message);
           return 0;
         }
         return count || 0;
       } catch (e) {
-        console.log('Erro ao buscar pedidos:', e);
+        log('Erro ao buscar pedidos:', e);
         return 0;
       }
     },
@@ -210,7 +185,7 @@ const DashboardAdministrativoComponent: React.FC<DashboardProps> = ({ usuario, p
     },
     {
       name: 'Insumos',
-      value: insumosData?.total || 0,
+      value: insumosTotal,
       color: '#f59e0b',
       icon: FlaskConical,
       trend: undefined,
@@ -218,50 +193,13 @@ const DashboardAdministrativoComponent: React.FC<DashboardProps> = ({ usuario, p
     },
     {
       name: 'Embalagens',
-      value: embalagensData?.total || 0,
+      value: embalagensTotal,
       color: '#8b5cf6',
       icon: Box,
       trend: undefined,
       trendUp: null
     }
-  ], [medicamentosData, pedidosCount, insumosData?.total, embalagensData?.total]);
-
-  const pieChartData = useMemo(() => [
-    { name: 'Medicamentos Cadastrados', value: medicamentosData || 0, color: '#10b981' },
-    { name: 'Pedidos Ativos', value: pedidosCount || 0, color: '#3b82f6' },
-    { name: 'Insumos Disponíveis', value: insumosData?.total || 0, color: '#f59e0b' },
-    { name: 'Tipos de Embalagem', value: embalagensData?.total || 0, color: '#8b5cf6' }
-  ], [medicamentosData, pedidosCount, insumosData?.total, embalagensData?.total]);
-
-  // Query para obter dados de tendência real dos últimos 6 meses (memoizado)
-  const { data: trendDataReal } = useQuery({
-    queryKey: ['trendData', insumosData?.dados, embalagensData?.dados, medicamentosData],
-    queryFn: async () => {
-      // Criar dados de tendência baseados nos produtos reais cadastrados
-      const hoje = new Date();
-      const meses = [];
-      
-      // Gerar últimos 6 meses
-      for (let i = 5; i >= 0; i--) {
-        const data = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
-        const nomeMonth = data.toLocaleDateString('pt-BR', { month: 'short' });
-        meses.push({
-          month: nomeMonth,
-          medicamentos: i === 0 ? (medicamentosData || 0) : 0, // Apenas mês atual com dados reais
-          pedidos: 0,  // Pedidos zerados pois não há dados reais
-          insumos: i === 0 ? (insumosData?.total || 0) : 0, // Apenas mês atual com dados reais
-          embalagens: i === 0 ? (embalagensData?.total || 0) : 0 // Apenas mês atual com dados reais
-        });
-      }
-      
-      return meses;
-    },
-    enabled: !!(insumosData || embalagensData || medicamentosData),
-    staleTime: 5 * 60 * 1000
-  });
-
-  // Usar dados reais se disponíveis, caso contrário array vazio
-  const trendData = useMemo(() => trendDataReal || [], [trendDataReal]);
+  ], [medicamentosData, pedidosCount, insumosTotal, embalagensTotal]);
 
   return (
     <AdminLayout>
@@ -336,7 +274,7 @@ const DashboardAdministrativoComponent: React.FC<DashboardProps> = ({ usuario, p
                       <Package className="h-5 w-5" />
                       <span className="text-sm font-medium">Produtos Totais</span>
                     </div>
-                    <p className="text-2xl font-bold">{((insumosData?.total || 0) + (embalagensData?.total || 0) + (medicamentosData || 0))}</p>
+                    <p className="text-2xl font-bold">{((insumosTotal) + (embalagensTotal) + (medicamentosData || 0))}</p>
                   </div>
                   
                   <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
@@ -428,210 +366,6 @@ const DashboardAdministrativoComponent: React.FC<DashboardProps> = ({ usuario, p
             })}
           </div>
 
-          {/* Charts Section */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Bar Chart */}
-            <Card className="p-6">
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h3 className="text-xl font-semibold flex items-center gap-2">
-                    <BarChart className="h-5 w-5 text-homeo-blue" />
-                    Visão Geral dos Dados
-                  </h3>
-                  <p className="text-sm text-muted-foreground">Distribuição atual dos recursos</p>
-                </div>
-                <Button variant="outline" size="sm">
-                  <Calendar className="h-4 w-4 mr-2" />
-                  Este Mês
-                </Button>
-              </div>
-              
-              {!isLoading ? (
-                <div className="h-80">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <RechartsBarChart data={metricsData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                      <XAxis 
-                        dataKey="name" 
-                        tick={{ fontSize: 12 }}
-                        stroke="#64748b"
-                      />
-                      <YAxis 
-                        tick={{ fontSize: 12 }}
-                        stroke="#64748b"
-                      />
-                      <RechartsTooltip 
-                        contentStyle={{ 
-                          backgroundColor: 'white', 
-                          border: '1px solid #e2e8f0', 
-                          borderRadius: '12px',
-                          boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)'
-                        }}
-                      />
-                      <Bar 
-                        dataKey="value" 
-                        fill="#3b82f6" 
-                        radius={[8, 8, 0, 0]}
-                        stroke="#2563eb"
-                        strokeWidth={1}
-                      />
-                    </RechartsBarChart>
-                  </ResponsiveContainer>
-              </div>
-              ) : (
-                <div className="h-80 flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl">
-                  <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-homeo-blue mx-auto mb-4"></div>
-                    <p className="text-gray-500">Carregando dados...</p>
-            </div>
-          </div>
-              )}
-            </Card>
-
-            {/* Pie Chart */}
-            <Card className="p-6">
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h3 className="text-xl font-semibold flex items-center gap-2">
-                    <PieChart className="h-5 w-5 text-homeo-accent" />
-                    Distribuição por Categoria
-                  </h3>
-                  <p className="text-sm text-muted-foreground">Proporção dos recursos cadastrados</p>
-                </div>
-              </div>
-              
-              {!isLoading ? (
-                <div className="h-80">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <RechartsPieChart>
-                      <Pie
-                        data={pieChartData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={120}
-                        paddingAngle={5}
-                        dataKey="value"
-                      >
-                        {pieChartData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <RechartsTooltip 
-                        contentStyle={{ 
-                          backgroundColor: 'white', 
-                          border: '1px solid #e2e8f0', 
-                          borderRadius: '12px',
-                          boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)'
-                        }}
-                      />
-                    </RechartsPieChart>
-                  </ResponsiveContainer>
-                  <div className="grid grid-cols-2 gap-2 mt-4">
-                    {pieChartData.map((item, index) => (
-                      <div key={index} className="flex items-center gap-2">
-                        <div 
-                          className="w-3 h-3 rounded-full" 
-                          style={{ backgroundColor: item.color }}
-                        />
-                        <span className="text-xs text-muted-foreground">{item.name}</span>
-                      </div>
-                    ))}
-              </div>
-            </div>
-              ) : (
-                <div className="h-80 flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl">
-                  <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-homeo-accent mx-auto mb-4"></div>
-                    <p className="text-gray-500">Carregando dados...</p>
-          </div>
-                </div>
-              )}
-            </Card>
-              </div>
-
-          {/* Trend Analysis */}
-          <Card className="p-6">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h3 className="text-xl font-semibold flex items-center gap-2">
-                  <LineChart className="h-5 w-5 text-green-500" />
-                  Tendências dos Últimos 6 Meses
-                </h3>
-                <p className="text-sm text-muted-foreground">Evolução dos principais indicadores</p>
-              </div>
-              <div className="flex gap-2">
-                <Badge variant="outline" className="bg-green-50 text-green-700">
-                  <TrendingUp className="h-3 w-3 mr-1" />
-                  Crescimento
-                </Badge>
-          </div>
-        </div>
-
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={trendData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                  <defs>
-                    <linearGradient id="colorMedicamentos" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                    </linearGradient>
-                    <linearGradient id="colorPedidos" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
-                    </linearGradient>
-                    <linearGradient id="colorInsumos" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="#f59e0b" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                  <XAxis 
-                    dataKey="month" 
-                    tick={{ fontSize: 12 }}
-                    stroke="#64748b"
-                  />
-                  <YAxis 
-                    tick={{ fontSize: 12 }}
-                    stroke="#64748b"
-                  />
-                  <RechartsTooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'white', 
-                      border: '1px solid #e2e8f0', 
-                      borderRadius: '12px',
-                      boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)'
-                    }}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="medicamentos"
-                    stroke="#10b981"
-                    strokeWidth={3}
-                    fillOpacity={1}
-                    fill="url(#colorMedicamentos)"
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="pedidos"
-                    stroke="#3b82f6"
-                    strokeWidth={3}
-                    fillOpacity={1}
-                    fill="url(#colorPedidos)"
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="insumos"
-                    stroke="#f59e0b"
-                    strokeWidth={3}
-                    fillOpacity={1}
-                    fill="url(#colorInsumos)"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </Card>
-
           {/* AI Insights Section */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <Card className="bg-gradient-to-br from-homeo-accent/10 to-white border-homeo-accent/30 hover:shadow-lg transition-all hover:scale-105">
@@ -681,23 +415,11 @@ const DashboardAdministrativoComponent: React.FC<DashboardProps> = ({ usuario, p
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">Total</span>
-                    <span className="text-2xl font-bold text-orange-600">{insumosData?.total || 0}</span>
+                    <span className="text-2xl font-bold text-orange-600">{insumosTotal}</span>
                   </div>
-                  {insumosData?.dados && insumosData.dados.length > 0 ? (
-                    <div className="space-y-2">
-                      <p className="text-xs font-medium text-gray-700">Últimos cadastrados:</p>
-                      {insumosData.dados.slice(0, 3).map((insumo: any, index: number) => (
-                        <div key={index} className="flex items-center gap-2 text-xs">
-                          <CheckCircle className="h-3 w-3 text-green-500" />
-                          <span className="truncate">{insumo.nome}</span>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-xs text-muted-foreground">
-                      Nenhum insumo cadastrado ainda
-                    </p>
-                  )}
+                  <p className="text-xs text-muted-foreground">
+                    Nenhum insumo cadastrado ainda
+                  </p>
                 </div>
               </CardContent>
               <CardFooter>
@@ -724,23 +446,11 @@ const DashboardAdministrativoComponent: React.FC<DashboardProps> = ({ usuario, p
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">Total</span>
-                    <span className="text-2xl font-bold text-purple-600">{embalagensData?.total || 0}</span>
+                    <span className="text-2xl font-bold text-purple-600">{embalagensTotal}</span>
                   </div>
-                  {embalagensData?.dados && embalagensData.dados.length > 0 ? (
-                    <div className="space-y-2">
-                      <p className="text-xs font-medium text-gray-700">Últimas cadastradas:</p>
-                      {embalagensData.dados.slice(0, 3).map((embalagem: any, index: number) => (
-                        <div key={index} className="flex items-center gap-2 text-xs">
-                          <CheckCircle className="h-3 w-3 text-green-500" />
-                          <span className="truncate">{embalagem.nome} - {embalagem.categoria || embalagem.volume_capacidade || 'N/A'}</span>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-xs text-muted-foreground">
-                      Nenhuma embalagem cadastrada ainda
-                    </p>
-                  )}
+                  <p className="text-xs text-muted-foreground">
+                    Nenhuma embalagem cadastrada ainda
+                  </p>
                 </div>
               </CardContent>
               <CardFooter>

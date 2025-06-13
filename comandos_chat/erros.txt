@@ -1,0 +1,70 @@
+Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+Login.tsx:100 Login page - Estado de autenticação: {autenticado: false, carregando: true, verificandoAuth: true}
+Login.tsx:100 Login page - Estado de autenticação: {autenticado: false, carregando: true, verificandoAuth: true}
+Login.tsx:76 🔄 Login - Verificação rápida de sessão: Com sessão
+Login.tsx:100 Login page - Estado de autenticação: {autenticado: false, carregando: true, verificandoAuth: false}
+2Login.tsx:76 🔄 Login - Verificação rápida de sessão: Com sessão
+@supabase_supabase-js.js?v=e73b2081:3900 
+            
+            
+           POST https://hjwebmpvaaeogbfqxwub.supabase.co/rest/v1/rpc/get_logged_user_data 400 (Bad Request)
+(anonymous) @ @supabase_supabase-js.js?v=e73b2081:3900
+(anonymous) @ @supabase_supabase-js.js?v=e73b2081:3921
+fulfilled @ @supabase_supabase-js.js?v=e73b2081:3873
+Promise.then
+step @ @supabase_supabase-js.js?v=e73b2081:3886
+(anonymous) @ @supabase_supabase-js.js?v=e73b2081:3888
+__awaiter6 @ @supabase_supabase-js.js?v=e73b2081:3870
+(anonymous) @ @supabase_supabase-js.js?v=e73b2081:3911
+then @ @supabase_supabase-js.js?v=e73b2081:89Understand this error
+logger.ts:109 ❌ useAuthSimple - Erro ao buscar usuário via RPC: {code: '42703', details: null, hint: null, message: 'column u.supabase_auth_id does not exist'}
+error @ logger.ts:109
+(anonymous) @ useAuthSimple.ts:223
+await in (anonymous)
+(anonymous) @ useAuthSimple.ts:465
+commitHookEffectListMount @ chunk-W6L2VRDA.js?v=e73b2081:16915
+commitPassiveMountOnFiber @ chunk-W6L2VRDA.js?v=e73b2081:18156
+commitPassiveMountEffects_complete @ chunk-W6L2VRDA.js?v=e73b2081:18129
+commitPassiveMountEffects_begin @ chunk-W6L2VRDA.js?v=e73b2081:18119
+commitPassiveMountEffects @ chunk-W6L2VRDA.js?v=e73b2081:18109
+flushPassiveEffectsImpl @ chunk-W6L2VRDA.js?v=e73b2081:19490
+flushPassiveEffects @ chunk-W6L2VRDA.js?v=e73b2081:19447
+performSyncWorkOnRoot @ chunk-W6L2VRDA.js?v=e73b2081:18868
+flushSyncCallbacks @ chunk-W6L2VRDA.js?v=e73b2081:9119
+commitRootImpl @ chunk-W6L2VRDA.js?v=e73b2081:19432
+commitRoot @ chunk-W6L2VRDA.js?v=e73b2081:19277
+finishConcurrentRender @ chunk-W6L2VRDA.js?v=e73b2081:18805
+performConcurrentWorkOnRoot @ chunk-W6L2VRDA.js?v=e73b2081:18718
+workLoop @ chunk-W6L2VRDA.js?v=e73b2081:197
+flushWork @ chunk-W6L2VRDA.js?v=e73b2081:176
+performWorkUntilDeadline @ chunk-W6L2VRDA.js?v=e73b2081:384Understand this error
+Login.tsx:100 Login page - Estado de autenticação: {autenticado: false, carregando: false, verificandoAuth: false}
+@supabase_supabase-js.js?v=e73b2081:3900 
+            
+            
+           POST https://hjwebmpvaaeogbfqxwub.supabase.co/rest/v1/rpc/get_logged_user_data 400 (Bad Request)
+(anonymous) @ @supabase_supabase-js.js?v=e73b2081:3900
+(anonymous) @ @supabase_supabase-js.js?v=e73b2081:3921
+fulfilled @ @supabase_supabase-js.js?v=e73b2081:3873
+Promise.then
+step @ @supabase_supabase-js.js?v=e73b2081:3886
+(anonymous) @ @supabase_supabase-js.js?v=e73b2081:3888
+__awaiter6 @ @supabase_supabase-js.js?v=e73b2081:3870
+(anonymous) @ @supabase_supabase-js.js?v=e73b2081:3911
+then @ @supabase_supabase-js.js?v=e73b2081:89Understand this error
+logger.ts:109 ❌ useAuthSimple - Erro ao buscar usuário via RPC: {code: '42703', details: null, hint: null, message: 'column u.supabase_auth_id does not exist'}
+error @ logger.ts:109
+(anonymous) @ useAuthSimple.ts:223
+await in (anonymous)
+(anonymous) @ useAuthSimple.ts:465
+commitHookEffectListMount @ chunk-W6L2VRDA.js?v=e73b2081:16915
+commitPassiveMountOnFiber @ chunk-W6L2VRDA.js?v=e73b2081:18156
+commitPassiveMountEffects_complete @ chunk-W6L2VRDA.js?v=e73b2081:18129
+commitPassiveMountEffects_begin @ chunk-W6L2VRDA.js?v=e73b2081:18119
+commitPassiveMountEffects @ chunk-W6L2VRDA.js?v=e73b2081:18109
+flushPassiveEffectsImpl @ chunk-W6L2VRDA.js?v=e73b2081:19490
+flushPassiveEffects @ chunk-W6L2VRDA.js?v=e73b2081:19447
+(anonymous) @ chunk-W6L2VRDA.js?v=e73b2081:19328
+workLoop @ chunk-W6L2VRDA.js?v=e73b2081:197
+flushWork @ chunk-W6L2VRDA.js?v=e73b2081:176
+performWorkUntilDeadline @ chunk-W6L2VRDA.js?v=e73b2081:384Understand this error

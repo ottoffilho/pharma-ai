@@ -365,11 +365,11 @@ export default function OrdensProducaoPage() {
 
             {/* Métricas Rápidas */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
-              <Card className="border-0 shadow-sm bg-white/60 backdrop-blur-sm">
+              <Card className="border-0 shadow-sm bg-white/60 backdrop-blur-sm dark:bg-black/60">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">Total de Ordens</p>
+                      <p className="text-sm font-medium text-muted-foreground dark:text-gray-400">Total de Ordens</p>
                       <p className="text-2xl font-bold">{totalOrdens}</p>
                     </div>
                     <ClipboardCheck className="h-8 w-8 text-purple-600" />
@@ -377,11 +377,11 @@ export default function OrdensProducaoPage() {
                 </CardContent>
               </Card>
 
-              <Card className="border-0 shadow-sm bg-white/60 backdrop-blur-sm">
+              <Card className="border-0 shadow-sm bg-white/60 backdrop-blur-sm dark:bg-black/60">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">Em Andamento</p>
+                      <p className="text-sm font-medium text-muted-foreground dark:text-gray-400">Em Andamento</p>
                       <p className="text-2xl font-bold text-blue-600">{ordensEmAndamento}</p>
                     </div>
                     <Activity className="h-8 w-8 text-blue-600" />
@@ -389,11 +389,11 @@ export default function OrdensProducaoPage() {
                 </CardContent>
               </Card>
 
-              <Card className="border-0 shadow-sm bg-white/60 backdrop-blur-sm">
+              <Card className="border-0 shadow-sm bg-white/60 backdrop-blur-sm dark:bg-black/60">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">Pendentes</p>
+                      <p className="text-sm font-medium text-muted-foreground dark:text-gray-400">Pendentes</p>
                       <p className="text-2xl font-bold text-yellow-600">{ordensPendentes}</p>
                     </div>
                     <Clock className="h-8 w-8 text-yellow-600" />
@@ -401,11 +401,11 @@ export default function OrdensProducaoPage() {
                 </CardContent>
               </Card>
 
-              <Card className="border-0 shadow-sm bg-white/60 backdrop-blur-sm">
+              <Card className="border-0 shadow-sm bg-white/60 backdrop-blur-sm dark:bg-black/60">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">Urgentes</p>
+                      <p className="text-sm font-medium text-muted-foreground dark:text-gray-400">Urgentes</p>
                       <p className="text-2xl font-bold text-red-600">{ordensUrgentes}</p>
                     </div>
                     <AlertTriangle className="h-8 w-8 text-red-600" />
@@ -418,7 +418,7 @@ export default function OrdensProducaoPage() {
 
         {/* Controles e Filtros */}
         <div className="px-6">
-          <Card className="border-0 shadow-sm">
+          <Card className="border-0 shadow-sm dark:bg-black/60">
             <CardContent className="p-6">
               <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
                 <div className="flex flex-col sm:flex-row gap-4 flex-1">
@@ -428,7 +428,7 @@ export default function OrdensProducaoPage() {
                       placeholder="Buscar ordens..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10"
+                      className="pl-10 bg-white dark:bg-black/60 dark:text-white border-gray-300 dark:border-slate-700 placeholder-gray-500 dark:placeholder-gray-400"
                     />
                   </div>
                   
@@ -478,7 +478,7 @@ export default function OrdensProducaoPage() {
 
         {/* Tabela de Ordens */}
         <div className="px-6">
-          <Card className="border-0 shadow-sm">
+          <Card className="border-0 shadow-sm dark:bg-black/60">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>

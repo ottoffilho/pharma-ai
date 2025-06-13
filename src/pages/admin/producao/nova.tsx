@@ -54,6 +54,9 @@ const ordemSchema = z.object({
 
 type OrdemFormData = z.infer<typeof ordemSchema>;
 
+// Classe de input unificada para light/dark
+const inputCls = "h-11 bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:ring-blue-600/40 dark:bg-black/60 dark:border-slate-700 dark:text-white";
+
 export default function NovaOrdemProducaoPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -274,7 +277,7 @@ export default function NovaOrdemProducaoPage() {
 
   return (
     <AdminLayout>
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-950/10 dark:to-indigo-950/10 p-6">
         <div className="max-w-6xl mx-auto">
           {/* Header */}
           <div className="mb-8">
@@ -288,8 +291,8 @@ export default function NovaOrdemProducaoPage() {
                 <ArrowLeft className="h-4 w-4" />
               </Button>
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">Nova Ordem de Produção</h1>
-                <p className="text-gray-600 mt-1">Crie uma nova ordem de produção para manipulação</p>
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Nova Ordem de Produção</h1>
+                <p className="text-gray-600 dark:text-gray-300 mt-1">Crie uma nova ordem de produção para manipulação</p>
               </div>
             </div>
 
@@ -311,7 +314,7 @@ export default function NovaOrdemProducaoPage() {
                   </div>
                   <div className="ml-3 hidden md:block">
                     <p className={`text-sm font-medium ${
-                      activeStep >= step.number ? 'text-gray-900' : 'text-gray-400'
+                      activeStep >= step.number ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-white'
                     }`}>
                       {step.title}
                     </p>
@@ -331,8 +334,8 @@ export default function NovaOrdemProducaoPage() {
               
               {/* Step 1: Informações Básicas */}
               {activeStep === 1 && (
-                <Card className="shadow-lg border-0">
-                  <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-t-lg">
+                <Card className="shadow-lg border-0 dark:bg-black/60 dark:border-slate-700/60">
+                  <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-700 text-white dark:from-blue-700/80 dark:to-indigo-700/80 rounded-t-lg">
                     <CardTitle className="flex items-center gap-2">
                       <Package className="h-5 w-5" />
                       Informações Básicas da Ordem
@@ -351,7 +354,7 @@ export default function NovaOrdemProducaoPage() {
                             </FormLabel>
                             <Select onValueChange={field.onChange} value={field.value}>
                               <FormControl>
-                                <SelectTrigger className="h-11">
+                                <SelectTrigger className={inputCls}>
                                   <SelectValue placeholder="Selecione um pedido" />
                                 </SelectTrigger>
                               </FormControl>
@@ -381,7 +384,7 @@ export default function NovaOrdemProducaoPage() {
                             <FormLabel className="text-sm font-semibold">Prioridade</FormLabel>
                             <Select onValueChange={field.onChange} value={field.value}>
                               <FormControl>
-                                <SelectTrigger className="h-11">
+                                <SelectTrigger className={inputCls}>
                                   <SelectValue />
                                 </SelectTrigger>
                               </FormControl>
@@ -417,7 +420,7 @@ export default function NovaOrdemProducaoPage() {
                             <FormControl>
                               <Input 
                                 type="datetime-local" 
-                                className="h-11"
+                                className={inputCls}
                                 {...field} 
                               />
                             </FormControl>
@@ -437,7 +440,7 @@ export default function NovaOrdemProducaoPage() {
                             </FormLabel>
                             <Select onValueChange={field.onChange} value={field.value}>
                               <FormControl>
-                                <SelectTrigger className="h-11">
+                                <SelectTrigger className={inputCls}>
                                   <SelectValue placeholder="Selecione o responsável" />
                                 </SelectTrigger>
                               </FormControl>
@@ -465,7 +468,7 @@ export default function NovaOrdemProducaoPage() {
                             <FormLabel className="text-sm font-semibold">Farmacêutico Responsável</FormLabel>
                             <Select onValueChange={field.onChange} value={field.value}>
                               <FormControl>
-                                <SelectTrigger className="h-11">
+                                <SelectTrigger className={inputCls}>
                                   <SelectValue placeholder="Selecione o farmacêutico" />
                                 </SelectTrigger>
                               </FormControl>
@@ -491,7 +494,7 @@ export default function NovaOrdemProducaoPage() {
                             <FormControl>
                               <Input 
                                 placeholder="Ex: Cápsula, Pomada, Solução..." 
-                                className="h-11"
+                                className={inputCls}
                                 {...field} 
                               />
                             </FormControl>
@@ -514,7 +517,7 @@ export default function NovaOrdemProducaoPage() {
                               <Input
                                 type="number"
                                 step="0.001"
-                                className="h-11"
+                                className={inputCls}
                                 {...field}
                                 onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                               />
@@ -533,7 +536,7 @@ export default function NovaOrdemProducaoPage() {
                             <FormControl>
                               <Input 
                                 placeholder="Ex: unidade, ml, g, kg..." 
-                                className="h-11"
+                                className={inputCls}
                                 {...field} 
                               />
                             </FormControl>
@@ -551,7 +554,7 @@ export default function NovaOrdemProducaoPage() {
                             <FormControl>
                               <Input
                                 type="number"
-                                className="h-11"
+                                className={inputCls}
                                 {...field}
                                 onChange={(e) => field.onChange(parseInt(e.target.value) || undefined)}
                               />
@@ -571,7 +574,7 @@ export default function NovaOrdemProducaoPage() {
                               <Input
                                 type="number"
                                 step="0.01"
-                                className="h-11"
+                                className={inputCls}
                                 {...field}
                                 onChange={(e) => field.onChange(parseFloat(e.target.value) || undefined)}
                               />
@@ -594,7 +597,7 @@ export default function NovaOrdemProducaoPage() {
                             <FormControl>
                               <Textarea 
                                 placeholder="Observações sobre a ordem de produção..." 
-                                className="min-h-[100px]"
+                                className="min-h-[100px] bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:ring-blue-600/40 dark:bg-black/60 dark:border-slate-700 dark:text-white"
                                 {...field} 
                               />
                             </FormControl>
@@ -612,7 +615,7 @@ export default function NovaOrdemProducaoPage() {
                             <FormControl>
                               <Textarea 
                                 placeholder="Instruções especiais de manipulação..." 
-                                className="min-h-[100px]"
+                                className="min-h-[100px] bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:ring-blue-600/40 dark:bg-black/60 dark:border-slate-700 dark:text-white"
                                 {...field} 
                               />
                             </FormControl>

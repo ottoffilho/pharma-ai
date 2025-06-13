@@ -53,48 +53,48 @@ const NovoLoteInsumoPage = () => {
 
             {/* Informações Rápidas */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
-              <Card className="border-0 shadow-sm bg-white/60 backdrop-blur-sm">
+              <Card className="border-0 shadow-sm bg-white/60 dark:bg-black/60 backdrop-blur-sm">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">Rastreabilidade</p>
-                      <p className="text-2xl font-bold">100%</p>
+                      <p className="text-sm font-medium text-muted-foreground dark:text-gray-400">Rastreabilidade</p>
+                      <p className="text-2xl font-bold dark:text-white">100%</p>
                     </div>
                     <BarChart3 className="h-8 w-8 text-teal-600" />
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="border-0 shadow-sm bg-white/60 backdrop-blur-sm">
+              <Card className="border-0 shadow-sm bg-white/60 dark:bg-black/60 backdrop-blur-sm">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">Controle de Validade</p>
-                      <p className="text-2xl font-bold text-green-600">Ativo</p>
+                      <p className="text-sm font-medium text-muted-foreground dark:text-gray-400">Controle de Validade</p>
+                      <p className="text-2xl font-bold text-green-600 dark:text-green-500">Ativo</p>
                     </div>
                     <Calendar className="h-8 w-8 text-green-600" />
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="border-0 shadow-sm bg-white/60 backdrop-blur-sm">
+              <Card className="border-0 shadow-sm bg-white/60 dark:bg-black/60 backdrop-blur-sm">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">Origem</p>
-                      <p className="text-2xl font-bold text-blue-600">Fornecedor</p>
+                      <p className="text-sm font-medium text-muted-foreground dark:text-gray-400">Origem</p>
+                      <p className="text-2xl font-bold text-blue-600 dark:text-blue-500">Fornecedor</p>
                     </div>
                     <Truck className="h-8 w-8 text-blue-600" />
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="border-0 shadow-sm bg-white/60 backdrop-blur-sm">
+              <Card className="border-0 shadow-sm bg-white/60 dark:bg-black/60 backdrop-blur-sm">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">Status</p>
-                      <p className="text-2xl font-bold text-purple-600">Novo</p>
+                      <p className="text-sm font-medium text-muted-foreground dark:text-gray-400">Status</p>
+                      <p className="text-2xl font-bold text-purple-600 dark:text-purple-500">Novo</p>
                     </div>
                     <Plus className="h-8 w-8 text-purple-600" />
                   </div>
@@ -105,8 +105,8 @@ const NovoLoteInsumoPage = () => {
         </div>
 
         {/* Formulário */}
-        <div className="px-6 w-full">
-          <Card className="border-0 shadow-sm w-full">
+        <div className="px-6 w-full mt-8 mb-12">
+          <Card className="border dark:border-slate-800 border-transparent shadow-lg bg-white dark:bg-slate-900/70 backdrop-blur-sm w-full">
             <CardHeader>
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-lg bg-gradient-to-br from-teal-100 to-cyan-100">

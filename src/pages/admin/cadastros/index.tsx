@@ -14,13 +14,16 @@ import {
   Blocks,
   Layers,
   Users,
-  ShieldCheck
+  ShieldCheck,
+  Package
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AdminLayout from '@/components/layouts/AdminLayout';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/lib/supabase';
 
 interface CadastroFeatureCard {
   title: string;
@@ -31,89 +34,146 @@ interface CadastroFeatureCard {
     label: string;
     value: number;
   };
-  lastUpdate?: string;
   status: 'ativo' | 'em-breve' | 'beta';
   gradient: string;
 }
 
-const cadastroFeatures: CadastroFeatureCard[] = [
-  {
-    title: 'Fornecedores',
-    description: 'Gerencie informações completas de fornecedores, contatos e histórico de compras.',
-    icon: <Building2 className="h-6 w-6" />,
-    href: '/admin/cadastros/fornecedores',
-    count: {
-      label: 'Fornecedores cadastrados',
-      value: 56
-    },
-    lastUpdate: 'Atualizado hoje',
-    status: 'ativo',
-    gradient: 'from-blue-500 to-indigo-500'
-  },
-  {
-    title: 'Clientes',
-    description: 'Cadastro de clientes com histórico de compras, receitas e preferências de produtos.',
-    icon: <UserRound className="h-6 w-6" />,
-    href: '/admin/cadastros/clientes',
-    count: {
-      label: 'Clientes ativos',
-      value: 842
-    },
-    lastUpdate: 'Atualizado há 2 dias',
-    status: 'em-breve',
-    gradient: 'from-purple-500 to-pink-500'
-  },
-  {
-    title: 'Médicos',
-    description: 'Base de dados de médicos prescritores com especialidades e estatísticas de receitas.',
-    icon: <Users className="h-6 w-6" />,
-    href: '/admin/cadastros/medicos',
-    count: {
-      label: 'Médicos cadastrados',
-      value: 238
-    },
-    lastUpdate: 'Atualizado há 5 dias',
-    status: 'em-breve',
-    gradient: 'from-orange-500 to-red-500'
-  },
-  {
-    title: 'Transportadoras',
-    description: 'Cadastro de transportadoras e serviços de entrega com rastreamento de remessas.',
-    icon: <Truck className="h-6 w-6" />,
-    href: '/admin/cadastros/transportadoras',
-    count: {
-      label: 'Transportadoras ativas',
-      value: 12
-    },
-    lastUpdate: 'Atualizado há 1 mês',
-    status: 'em-breve',
-    gradient: 'from-green-500 to-teal-500'
-  }
-];
-
-// Estatísticas dos cadastros
-const cadastroStats = [
-  { 
-    label: 'Total de Registros', 
-    value: '2.847', 
-    icon: <FileText className="h-5 w-5 text-blue-500" />,
-    change: 'Registros no sistema'
-  },
-  { 
-    label: 'Funcionalidades Ativas', 
-    value: '100%', 
-    icon: <PlusSquare className="h-5 w-5 text-green-500" />,
-    change: 'Sistema operacional' 
-  },
-  { 
-    label: 'Integridade de Dados', 
-    value: 'Garantida', 
-    icon: <ShieldCheck className="h-5 w-5 text-purple-500" />,
-    change: 'Validação automática'
-  }
-];
-
 export default function CadastrosOverview() {
+  // Contagens dinâmicas --------------------------------------------------
+  const { data: fornecedoresCount } = useQuery({
+    queryKey: ['fornecedoresCount'],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from('fornecedores')
+        .select('*', { head: true, count: 'exact' });
+      return count || 0;
+    }
+  });
+
+  const { data: clientesCount } = useQuery({
+    queryKey: ['clientesCount'],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from('clientes')
+        .select('*', { head: true, count: 'exact' });
+      return count || 0;
+    }
+  });
+
+  const { data: produtosCount } = useQuery({
+    queryKey: ['produtosCount'],
+    queryFn: async () => {
+      // produtos unificados
+      const { count } = await supabase
+        .from('produtos')
+        .select('*', { head: true, count: 'exact' })
+        .eq('is_deleted', false);
+      return count || 0;
+    }
+  });
+
+  const { data: embalagensCount } = useQuery({
+    queryKey: ['embalagensCount'],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from('embalagens')
+        .select('*', { head: true, count: 'exact' })
+        .eq('is_deleted', false);
+      return count || 0;
+    }
+  });
+
+  const cadastroFeatures: CadastroFeatureCard[] = [
+    {
+      title: 'Fornecedores',
+      description: 'Gerencie informações completas de fornecedores, contatos e histórico de compras.',
+      icon: <Building2 className="h-6 w-6" />,
+      href: '/admin/cadastros/fornecedores',
+      count: {
+        label: 'Fornecedores cadastrados',
+        value: fornecedoresCount ?? 0,
+      },
+      status: 'ativo',
+      gradient: 'from-blue-500 to-indigo-500'
+    },
+    {
+      title: 'Clientes',
+      description: 'Clientes e histórico de compras.',
+      icon: <UserRound className="h-6 w-6" />,
+      href: '/admin/clientes',
+      count: {
+        label: 'Clientes ativos',
+        value: clientesCount ?? 0,
+      },
+      status: 'ativo',
+      gradient: 'from-purple-500 to-pink-500'
+    },
+    {
+      title: 'Produtos & Insumos',
+      description: 'Cadastro unificado de produtos, insumos e matérias-primas.',
+      icon: <SquareStack className="h-6 w-6" />,
+      href: '/admin/estoque/produtos',
+      count: {
+        label: 'Itens ativos',
+        value: produtosCount ?? 0,
+      },
+      status: 'ativo',
+      gradient: 'from-amber-500 to-orange-500'
+    },
+    {
+      title: 'Embalagens',
+      description: 'Gerencie frascos, potes, caixas e demais embalagens.',
+      icon: <Package className="h-6 w-6" />,
+      href: '/admin/estoque/embalagens',
+      count: {
+        label: 'Embalagens cadastradas',
+        value: embalagensCount ?? 0,
+      },
+      status: 'ativo',
+      gradient: 'from-teal-500 to-cyan-500'
+    },
+    {
+      title: 'Médicos',
+      description: 'Base de prescritores (coming soon).',
+      icon: <Users className="h-6 w-6" />,
+      href: '/admin/cadastros/medicos',
+      count: { label: 'Médicos cadastrados', value: 0 },
+      status: 'em-breve',
+      gradient: 'from-orange-500 to-red-500'
+    },
+    {
+      title: 'Transportadoras',
+      description: 'Cadastro de transportadoras (coming soon).',
+      icon: <Truck className="h-6 w-6" />,
+      href: '/admin/cadastros/transportadoras',
+      count: { label: 'Transportadoras ativas', value: 0 },
+      status: 'em-breve',
+      gradient: 'from-green-500 to-teal-500'
+    },
+  ];
+
+  // Estatísticas dos cadastros
+  const cadastroStats = [
+    { 
+      label: 'Total de Registros', 
+      value: '2.847', 
+      icon: <FileText className="h-5 w-5 text-blue-500" />,
+      change: 'Registros no sistema'
+    },
+    { 
+      label: 'Funcionalidades Ativas', 
+      value: '100%', 
+      icon: <PlusSquare className="h-5 w-5 text-green-500" />,
+      change: 'Sistema operacional' 
+    },
+    { 
+      label: 'Integridade de Dados', 
+      value: 'Garantida', 
+      icon: <ShieldCheck className="h-5 w-5 text-purple-500" />,
+      change: 'Validação automática'
+    }
+  ];
+
   return (
     <AdminLayout>
       <div>
@@ -267,57 +327,42 @@ export default function CadastrosOverview() {
 
 // Componente Card para features de cadastro
 function CadastroCard({ feature }: { feature: CadastroFeatureCard }) {
+  const Wrapper: React.FC<{children: React.ReactNode}> = ({ children }) => (
+    feature.status === 'em-breve' ? <>{children}</> : <Link to={feature.href} className="block">{children}</Link>
+  );
+
   return (
-    <Card className="group relative overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-      {/* Gradient Background */}
-      <div className={`absolute inset-0 bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-300`} />
-      
-      <CardHeader>
-        <div className="flex items-start justify-between">
-          <div className={`p-3 rounded-lg bg-gradient-to-br ${feature.gradient} text-white`}>
-            {feature.icon}
+    <Wrapper>
+      <Card className="group relative overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+        {/* Gradient Background */}
+        <div className={`absolute inset-0 bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-300`} />
+        <CardHeader>
+          <div className="flex items-start justify-between">
+            <div className={`p-3 rounded-lg bg-gradient-to-br ${feature.gradient} text-white`}>
+              {feature.icon}
+            </div>
+            <Badge 
+              variant={feature.status === 'ativo' ? 'default' : feature.status === 'beta' ? 'secondary' : 'outline'}
+              className="capitalize"
+            >
+              {feature.status}
+            </Badge>
           </div>
-          <Badge 
-            variant={feature.status === 'ativo' ? 'default' : feature.status === 'beta' ? 'secondary' : 'outline'}
-            className="capitalize"
-          >
-            {feature.status}
-          </Badge>
-        </div>
-        <CardTitle className="mt-4">{feature.title}</CardTitle>
-        <CardDescription>{feature.description}</CardDescription>
-      </CardHeader>
-      
-      <CardContent>
-        <div className="mb-6">
-          <div className="flex justify-between items-center mb-1">
+          <CardTitle className="mt-4">{feature.title}</CardTitle>
+          <CardDescription>{feature.description}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="mb-6">
             <span className="text-sm text-muted-foreground">{feature.count.label}</span>
-            {feature.lastUpdate && (
-              <span className="text-xs text-muted-foreground">{feature.lastUpdate}</span>
-            )}
+            <div className="flex items-center mt-1">
+              <span className="text-2xl font-bold mr-2">{feature.count.value.toLocaleString()}</span>
+            </div>
           </div>
-          <div className="flex items-center">
-            <span className="text-2xl font-bold mr-2">{feature.count.value.toLocaleString()}</span>
-            <span className="text-xs px-2 py-0.5 bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-full">
-              {feature.status === 'ativo' ? 'Atualizado' : 'Pendente'}
-            </span>
-          </div>
-        </div>
-        
-        <Button 
-          asChild 
-          className="w-full group"
-          variant={feature.status === 'em-breve' ? 'outline' : 'default'}
-          disabled={feature.status === 'em-breve'}
-        >
-          <Link to={feature.href}>
-            {feature.status === 'em-breve' ? 'Em breve' : 'Acessar cadastro'}
-            {feature.status !== 'em-breve' && (
-              <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-            )}
-          </Link>
-        </Button>
-      </CardContent>
-    </Card>
+          {feature.status === 'em-breve' && (
+            <Button disabled variant="outline" className="w-full">Em breve</Button>
+          )}
+        </CardContent>
+      </Card>
+    </Wrapper>
   );
 } 

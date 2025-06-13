@@ -49,7 +49,7 @@ const NovoProdutoPage = () => {
 
             {/* Cards de Tipos */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-              <Card className="border-0 shadow-sm bg-white/70 backdrop-blur-sm">
+              <Card className="border-0 shadow-sm bg-white/70 dark:bg-black/60 backdrop-blur-sm">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
@@ -61,7 +61,7 @@ const NovoProdutoPage = () => {
                 </CardContent>
               </Card>
 
-              <Card className="border-0 shadow-sm bg-white/70 backdrop-blur-sm">
+              <Card className="border-0 shadow-sm bg-white/70 dark:bg-black/60 backdrop-blur-sm">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
@@ -73,7 +73,7 @@ const NovoProdutoPage = () => {
                 </CardContent>
               </Card>
 
-              <Card className="border-0 shadow-sm bg-white/70 backdrop-blur-sm">
+              <Card className="border-0 shadow-sm bg-white/70 dark:bg-black/60 backdrop-blur-sm">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
@@ -90,7 +90,7 @@ const NovoProdutoPage = () => {
 
         {/* Formulário */}
         <div className="px-6 pb-6 w-full">
-          <Card className="border-0 shadow-sm w-full">
+          <Card className="border dark:border-slate-800 border-transparent shadow-lg bg-white dark:bg-slate-900/70 backdrop-blur-sm w-full">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Package className="h-5 w-5 text-blue-600" />

@@ -48,6 +48,11 @@ const tiposTesteComuns = [
   'Análise qualitativa',
 ];
 
+// Helper para validar UUID
+const isUUID = (value?: string): boolean => {
+  return !!value && /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/.test(value);
+};
+
 export default function ControleQualidadePage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -71,8 +76,9 @@ export default function ControleQualidadePage() {
   // Buscar dados da ordem
   const { data: ordem, isLoading: isLoadingOrdem } = useQuery({
     queryKey: ['ordem-producao', id],
+    enabled: isUUID(id),
     queryFn: async () => {
-      if (!id) throw new Error('ID da ordem não fornecido');
+      if (!id || !isUUID(id)) throw new Error('ID da ordem inválido');
 
       const { data, error } = await supabase
         .from('ordens_producao')
@@ -95,7 +101,6 @@ export default function ControleQualidadePage() {
       if (error) throw error;
       return data;
     },
-    enabled: !!id,
   });
 
   // Buscar farmacêuticos

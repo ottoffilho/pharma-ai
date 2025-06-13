@@ -1,0 +1,5 @@
+
+
+http://localhost:8080/admin/producao/qa/procedimentos
+http://localhost:8080/admin/producao/qa/relatorios
+http://localhost:8080/admin/producao/controle-qualidade

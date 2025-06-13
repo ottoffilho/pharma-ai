@@ -63,6 +63,9 @@ interface OrdemRelatorio {
   } | null;
 }
 
+// Classe unificada para inputs e selects em light/dark
+const inputCls = "bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:ring-purple-600/40 dark:bg-black/60 dark:border-slate-700 dark:text-white";
+
 export default function RelatoriosProducaoPage() {
   const navigate = useNavigate();
   const [filtros, setFiltros] = useState<RelatorioFiltros>({
@@ -79,28 +82,10 @@ export default function RelatoriosProducaoPage() {
     queryFn: async () => {
       let query = supabase
         .from('ordens_producao')
-        .select(`
-          id,
-          numero_ordem,
-          status,
-          prioridade,
-          data_criacao,
-          data_inicio_producao,
-          data_finalizacao,
-          data_prevista_entrega,
-          tempo_total_minutos,
-          custo_total_real,
-          custo_total_estimado,
-          usuario_responsavel:usuarios_internos (
-            nome_completo
-          ),
-          receitas_processadas (
-            patient_name
-          )
-        `)
+        .select('id,numero_ordem,status,prioridade,data_criacao,data_finalizacao')
         .eq('is_deleted', false)
-        .gte('data_criacao', filtros.dataInicio)
-        .lte('data_criacao', filtros.dataFim + 'T23:59:59');
+        .gte('data_criacao', filtros.dataInicio + 'T00:00:00Z')
+        .lte('data_criacao', filtros.dataFim + 'T23:59:59Z');
 
       if (filtros.status !== 'todos') {
         query = query.eq('status', filtros.status);
@@ -282,7 +267,7 @@ export default function RelatoriosProducaoPage() {
         </div>
 
         {/* Filtros */}
-        <Card>
+        <Card className="border-0 shadow-sm bg-white/60 dark:bg-black/60 backdrop-blur-sm">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Filter className="h-5 w-5" />
@@ -297,6 +282,7 @@ export default function RelatoriosProducaoPage() {
                   type="date"
                   value={filtros.dataInicio}
                   onChange={(e) => setFiltros(prev => ({ ...prev, dataInicio: e.target.value }))}
+                  className={inputCls}
                 />
               </div>
               <div>
@@ -305,12 +291,13 @@ export default function RelatoriosProducaoPage() {
                   type="date"
                   value={filtros.dataFim}
                   onChange={(e) => setFiltros(prev => ({ ...prev, dataFim: e.target.value }))}
+                  className={inputCls}
                 />
               </div>
               <div>
                 <label className="text-sm font-medium mb-2 block">Status</label>
                 <Select value={filtros.status} onValueChange={(value) => setFiltros(prev => ({ ...prev, status: value }))}>
-                  <SelectTrigger>
+                  <SelectTrigger className={inputCls}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -327,7 +314,7 @@ export default function RelatoriosProducaoPage() {
               <div>
                 <label className="text-sm font-medium mb-2 block">Prioridade</label>
                 <Select value={filtros.prioridade} onValueChange={(value) => setFiltros(prev => ({ ...prev, prioridade: value }))}>
-                  <SelectTrigger>
+                  <SelectTrigger className={inputCls}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -342,7 +329,7 @@ export default function RelatoriosProducaoPage() {
               <div>
                 <label className="text-sm font-medium mb-2 block">Responsável</label>
                 <Select value={filtros.responsavel} onValueChange={(value) => setFiltros(prev => ({ ...prev, responsavel: value }))}>
-                  <SelectTrigger>
+                  <SelectTrigger className={inputCls}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -361,52 +348,52 @@ export default function RelatoriosProducaoPage() {
 
         {/* Métricas Principais */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <Card>
+          <Card className="border-0 shadow-sm bg-white/60 dark:bg-black/60 backdrop-blur-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total de Ordens</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground dark:text-gray-400">Total de Ordens</CardTitle>
               <Package className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{metricas.totalOrdens}</div>
+              <div className="text-2xl font-bold dark:text-white">{metricas.totalOrdens}</div>
               <p className="text-xs text-muted-foreground">
                 {metricas.ordensFinalizadas} finalizadas, {metricas.ordensEmAndamento} em andamento
               </p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-0 shadow-sm bg-white/60 dark:bg-black/60 backdrop-blur-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Tempo Médio</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground dark:text-gray-400">Tempo Médio</CardTitle>
               <Clock className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatarTempo(metricas.tempoMedioProducao)}</div>
+              <div className="text-2xl font-bold dark:text-white">{formatarTempo(metricas.tempoMedioProducao)}</div>
               <p className="text-xs text-muted-foreground">
                 Por ordem finalizada
               </p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-0 shadow-sm bg-white/60 dark:bg-black/60 backdrop-blur-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Custo Médio</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground dark:text-gray-400">Custo Médio</CardTitle>
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatarMoeda(metricas.custoMedioProducao)}</div>
+              <div className="text-2xl font-bold dark:text-white">{formatarMoeda(metricas.custoMedioProducao)}</div>
               <p className="text-xs text-muted-foreground">
                 Por ordem produzida
               </p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-0 shadow-sm bg-white/60 dark:bg-black/60 backdrop-blur-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Eficiência</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground dark:text-gray-400">Eficiência</CardTitle>
               <Target className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{metricas.eficienciaGeral.toFixed(1)}%</div>
+              <div className="text-2xl font-bold dark:text-white">{metricas.eficienciaGeral.toFixed(1)}%</div>
               <p className="text-xs text-muted-foreground">
                 {metricas.ordensNoPrazo} ordens no prazo
               </p>
@@ -416,7 +403,7 @@ export default function RelatoriosProducaoPage() {
 
         {/* Tabs com diferentes visualizações */}
         <Tabs defaultValue="lista" className="space-y-4">
-          <TabsList>
+          <TabsList className="dark:bg-slate-900/70">
             <TabsTrigger value="lista">Lista Detalhada</TabsTrigger>
             <TabsTrigger value="status">Por Status</TabsTrigger>
             <TabsTrigger value="prioridade">Por Prioridade</TabsTrigger>

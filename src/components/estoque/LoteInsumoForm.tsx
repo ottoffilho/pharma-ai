@@ -37,6 +37,8 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 
+const inputCls = "bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:ring-cyan-600/40 dark:bg-slate-800/80 dark:border-slate-700 dark:text-gray-100 dark:placeholder-gray-500 dark:focus:ring-cyan-600/50 rounded-md";
+
 // Zod schema for form validation
 const loteInsumoSchema = z.object({
   produto_id: z.string().min(1, "Insumo é obrigatório"),
@@ -492,7 +494,7 @@ const LoteInsumoForm = ({ initialData, isEditing = false, loteId, insumoId, xmlD
                       disabled={isEditing || !!insumoId || isLoading}
                     >
                       <FormControl>
-                        <SelectTrigger className="w-full">
+                        <SelectTrigger className={`w-full ${inputCls}`}>
                           <SelectValue placeholder="Selecione um insumo" />
                         </SelectTrigger>
                       </FormControl>
@@ -598,6 +600,7 @@ const LoteInsumoForm = ({ initialData, isEditing = false, loteId, insumoId, xmlD
                           }
                         }}
                         disabled={isLoading}
+                        className={inputCls}
                       />
                     </FormControl>
                     <FormMessage />
@@ -624,6 +627,7 @@ const LoteInsumoForm = ({ initialData, isEditing = false, loteId, insumoId, xmlD
                           field.onChange(isNaN(value) ? 0 : value);
                         }}
                         disabled={!isEditing || isLoading}
+                        className={inputCls}
                       />
                     </FormControl>
                     {!isEditing && (
@@ -694,7 +698,7 @@ const LoteInsumoForm = ({ initialData, isEditing = false, loteId, insumoId, xmlD
                       disabled={isLoading || isLoadingFornecedores}
                     >
                       <FormControl>
-                        <SelectTrigger className="w-full">
+                        <SelectTrigger className={`w-full ${inputCls}`}>
                           <SelectValue placeholder="Selecione um fornecedor (opcional)" />
                         </SelectTrigger>
                       </FormControl>
@@ -731,6 +735,7 @@ const LoteInsumoForm = ({ initialData, isEditing = false, loteId, insumoId, xmlD
                           field.onChange(value);
                         }}
                         disabled={isLoading}
+                        className={inputCls}
                       />
                     </FormControl>
                     <FormDescription>
@@ -752,7 +757,7 @@ const LoteInsumoForm = ({ initialData, isEditing = false, loteId, insumoId, xmlD
                   <FormControl>
                     <Textarea 
                       placeholder="Informações adicionais sobre este lote..." 
-                      className="min-h-[100px]"
+                      className={`${inputCls} min-h-[100px]`}
                       {...field}
                       value={field.value || ''}
                       onChange={(e) => field.onChange(e.target.value === '' ? null : e.target.value)}

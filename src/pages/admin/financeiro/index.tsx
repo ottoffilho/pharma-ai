@@ -345,69 +345,68 @@ export default function FinanceiroOverview() {
         <div className="px-6 pb-16">
           <div className="mx-auto max-w-7xl">
             <div className="grid gap-6 md:grid-cols-2">
-              {financeFeatures.map((feature, index) => (
-                <Card 
-                  key={index} 
-                  className="group relative overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
-                >
-                  {/* Gradient Background */}
-                  <div className={`absolute inset-0 bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-300`} />
-                  
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div className={`p-3 rounded-lg bg-gradient-to-br ${feature.gradient} text-white`}>
-                        {feature.icon}
-                      </div>
-                      <Badge 
-                        variant={feature.status === 'ativo' ? 'default' : feature.status === 'beta' ? 'secondary' : 'outline'}
-                        className="capitalize"
-                      >
-                        {feature.status}
-                      </Badge>
-                    </div>
-                    <CardTitle className="mt-4">{feature.title}</CardTitle>
-                    <CardDescription>{feature.description}</CardDescription>
-                  </CardHeader>
-                  
-                  <CardContent>
-                    {feature.stats && (
-                      <div className="grid grid-cols-2 gap-4 mb-6">
-                        {feature.stats.map((stat, idx) => (
-                          <div key={idx} className="space-y-1">
-                            <p className="text-sm text-muted-foreground">{stat.label}</p>
-                            <p className="text-lg font-semibold flex items-center gap-1">
-                              {stat.value}
-                              {stat.trend && (
-                                <span className={`text-xs ${
-                                  stat.trend === 'up' ? 'text-green-500' : 
-                                  stat.trend === 'down' ? 'text-red-500' : 
-                                  'text-gray-500'
-                                }`}>
-                                  {stat.trend === 'up' ? '↑' : stat.trend === 'down' ? '↓' : '→'}
-                                </span>
-                              )}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+              {financeFeatures.map((feature, index) => {
+                const card = (
+                  <Card 
+                    key={index} 
+                    className="group relative overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+                  >
+                    {/* Gradient Background */}
+                    <div className={`absolute inset-0 bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-300`} />
                     
-                    <Button 
-                      asChild 
-                      className="w-full group"
-                      variant={feature.status === 'em-breve' ? 'outline' : 'default'}
-                      disabled={feature.status === 'em-breve'}
-                    >
-                      <Link to={feature.href}>
-                        {feature.status === 'em-breve' ? 'Em breve' : 'Acessar módulo'}
-                        {feature.status !== 'em-breve' && (
-                          <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-                        )}
-                      </Link>
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
+                    <CardHeader>
+                      <div className="flex items-start justify-between">
+                        <div className={`p-3 rounded-lg bg-gradient-to-br ${feature.gradient} text-white`}>
+                          {feature.icon}
+                        </div>
+                        <Badge 
+                          variant={feature.status === 'ativo' ? 'default' : feature.status === 'beta' ? 'secondary' : 'outline'}
+                          className="capitalize"
+                        >
+                          {feature.status}
+                        </Badge>
+                      </div>
+                      <CardTitle className="mt-4">{feature.title}</CardTitle>
+                      <CardDescription>{feature.description}</CardDescription>
+                    </CardHeader>
+                    
+                    <CardContent>
+                      {feature.stats && (
+                        <div className="grid grid-cols-2 gap-4 mb-6">
+                          {feature.stats.map((stat, idx) => (
+                            <div key={idx} className="space-y-1">
+                              <p className="text-sm text-muted-foreground">{stat.label}</p>
+                              <p className="text-lg font-semibold flex items-center gap-1">
+                                {stat.value}
+                                {stat.trend && (
+                                  <span className={`text-xs ${
+                                    stat.trend === 'up' ? 'text-green-500' : 
+                                    stat.trend === 'down' ? 'text-red-500' : 
+                                    'text-gray-500'
+                                  }`}>
+                                    {stat.trend === 'up' ? '↑' : stat.trend === 'down' ? '↓' : '→'}
+                                  </span>
+                                )}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {feature.status === 'em-breve' && (
+                        <p className="text-center text-xs text-muted-foreground">Em breve</p>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+
+                return feature.status === 'em-breve' ? (
+                  <div key={index}>{card}</div>
+                ) : (
+                  <Link key={index} to={feature.href} className="block">
+                    {card}
+                  </Link>
+                );
+              })}
             </div>
 
             {/* Alerta de DRE */}

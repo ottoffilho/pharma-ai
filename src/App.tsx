@@ -25,6 +25,9 @@ import EditarLoteInsumoPage from "./pages/admin/estoque/lotes/editar/[id]";
 import DetalhesLotePage from "./pages/admin/estoque/lotes/[id]";
 import LotesPage from "./pages/admin/estoque/lotes/index";
 import ImportacaoNFPage from "./pages/admin/estoque/importacao-nf";
+import InsumosPage from "./pages/admin/estoque/insumos/index";
+import NovoInsumoPage from "./pages/admin/estoque/insumos/novo";
+import EditarInsumoPage from "./pages/admin/estoque/insumos/editar";
 import FornecedoresPage from "./pages/admin/cadastros/fornecedores/index";
 import NovoFornecedorPage from "./pages/admin/cadastros/fornecedores/novo";
 import EditarFornecedorPage from "./pages/admin/cadastros/fornecedores/[id]";
@@ -92,6 +95,10 @@ import NovoClientePage from "./pages/admin/clientes/novo";
 import EditarCliente from "./pages/admin/clientes/[id]/editar";
 import DetalhesClientePage from "./pages/admin/clientes/[id]/index";
 
+import EmbalagensListPage from "./pages/admin/estoque/embalagens/index";
+import NovoEmbalagemPage from "./pages/admin/estoque/embalagens/novo";
+import EditarEmbalagemPage from "./pages/admin/estoque/embalagens/editar";
+
 const queryClient = new QueryClient();
 
 // Componente para controlar qual chatbot mostrar
@@ -99,12 +106,12 @@ const ChatbotController = () => {
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith('/admin');
   
-  // Só mostra o chatbot de vendas na landing page (não nas rotas admin)
-  if (!isAdminRoute) {
-    return <FloatingChatbotWidget />;
-  }
-  
-  return null;
+  // Não exibir em rotas específicas públicas (ex.: /login)
+  const pathsSemWidget = ['/login'];
+
+  const deveMostrarWidget = !isAdminRoute && !pathsSemWidget.includes(location.pathname);
+
+  return deveMostrarWidget ? <FloatingChatbotWidget /> : null;
 };
 
 // Adicionar esta função de emergência antes do componente App
@@ -331,6 +338,9 @@ const App = (): JSX.Element => {
                             <Route path="estoque/produtos/novo" element={<NovoProdutoPage />} />
                             <Route path="estoque/produtos/editar/:id" element={<EditarProdutoPage />} />
                             <Route path="estoque/produtos/:id" element={<DetalhesProdutoPage />} />
+                            <Route path="estoque/insumos" element={<InsumosPage />} />
+                            <Route path="estoque/insumos/novo" element={<NovoInsumoPage />} />
+                            <Route path="estoque/insumos/editar/:id" element={<EditarInsumoPage />} />
                             <Route path="estoque/lotes" element={<LotesPage />} />
                             <Route path="estoque/lotes/novo" element={<NovoLoteInsumoPage />} />
                             <Route path="estoque/lotes/editar/:id" element={<EditarLoteInsumoPage />} />
@@ -394,6 +404,11 @@ const App = (): JSX.Element => {
                             <Route path="vendas/historico" element={<HistoricoVendas />} />
                             <Route path="vendas/caixa" element={<ControleCaixa />} />
                             <Route path="vendas/fechamento" element={<FechamentoVendas />} />
+                            
+                            {/* Rotas de Embalagens */}
+                            <Route path="estoque/embalagens" element={<EmbalagensListPage />} />
+                            <Route path="estoque/embalagens/novo" element={<NovoEmbalagemPage />} />
+                            <Route path="estoque/embalagens/editar/:id" element={<EditarEmbalagemPage />} />
                             
                             {/* Dashboard principal (roteamento automático) */}
                             <Route path="" element={<DashboardRouter />} />

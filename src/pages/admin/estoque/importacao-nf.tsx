@@ -136,15 +136,15 @@ const ImportacaoNFPage: React.FC = () => {
 
             {/* Métricas Rápidas */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
-              <Card className="border-0 shadow-sm bg-white/60 backdrop-blur-sm">
+              <Card className="border-0 shadow-sm bg-white/60 dark:bg-black/60 backdrop-blur-sm">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">NF-e Processadas</p>
+                      <p className="text-sm font-medium text-muted-foreground dark:text-gray-400">NF-e Processadas</p>
                       {isLoading ? (
                         <Skeleton className="h-8 w-16" />
                       ) : (
-                        <p className="text-2xl font-bold">{notasProcessadasFormatado}</p>
+                        <p className="text-2xl font-bold dark:text-white">{notasProcessadasFormatado}</p>
                       )}
                     </div>
                     <FileCheck className="h-8 w-8 text-indigo-600" />
@@ -152,15 +152,15 @@ const ImportacaoNFPage: React.FC = () => {
                 </CardContent>
               </Card>
 
-              <Card className="border-0 shadow-sm bg-white/60 backdrop-blur-sm">
+              <Card className="border-0 shadow-sm bg-white/60 dark:bg-black/60 backdrop-blur-sm">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">Produtos Importados</p>
+                      <p className="text-sm font-medium text-muted-foreground dark:text-gray-400">Produtos Importados</p>
                       {isLoading ? (
                         <Skeleton className="h-8 w-16" />
                       ) : (
-                        <p className="text-2xl font-bold text-green-600">{produtosImportadosFormatado}</p>
+                        <p className="text-2xl font-bold text-green-600 dark:text-green-500">{produtosImportadosFormatado}</p>
                       )}
                     </div>
                     <Package className="h-8 w-8 text-green-600" />
@@ -168,15 +168,15 @@ const ImportacaoNFPage: React.FC = () => {
                 </CardContent>
               </Card>
 
-              <Card className="border-0 shadow-sm bg-white/60 backdrop-blur-sm">
+              <Card className="border-0 shadow-sm bg-white/60 dark:bg-black/60 backdrop-blur-sm">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">Taxa de Sucesso</p>
+                      <p className="text-sm font-medium text-muted-foreground dark:text-gray-400">Taxa de Sucesso</p>
                       {isLoading ? (
                         <Skeleton className="h-8 w-16" />
                       ) : (
-                        <p className="text-2xl font-bold text-blue-600">{taxaSucessoFormatada}</p>
+                        <p className="text-2xl font-bold text-blue-600 dark:text-blue-500">{taxaSucessoFormatada}</p>
                       )}
                     </div>
                     <BarChart3 className="h-8 w-8 text-blue-600" />
@@ -184,15 +184,15 @@ const ImportacaoNFPage: React.FC = () => {
                 </CardContent>
               </Card>
 
-              <Card className="border-0 shadow-sm bg-white/60 backdrop-blur-sm">
+              <Card className="border-0 shadow-sm bg-white/60 dark:bg-black/60 backdrop-blur-sm">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">Tempo Médio</p>
+                      <p className="text-sm font-medium text-muted-foreground dark:text-gray-400">Tempo Médio</p>
                       {isLoading ? (
                         <Skeleton className="h-8 w-16" />
                       ) : (
-                        <p className="text-2xl font-bold text-purple-600">{tempoMedioFormatado}</p>
+                        <p className="text-2xl font-bold text-purple-600 dark:text-purple-500">{tempoMedioFormatado}</p>
                       )}
                     </div>
                     <Zap className="h-8 w-8 text-purple-600" />
@@ -205,7 +205,7 @@ const ImportacaoNFPage: React.FC = () => {
 
         {/* Upload Section */}
         <div className="px-6">
-          <Card className="border-0 shadow-sm">
+          <Card className="border dark:border-slate-800 border-transparent shadow-lg bg-white dark:bg-slate-900/70 backdrop-blur-sm">
             <CardHeader>
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-lg bg-gradient-to-br from-indigo-100 to-purple-100">
@@ -227,7 +227,7 @@ const ImportacaoNFPage: React.FC = () => {
 
         {/* Como Funciona */}
         <div className="px-6">
-          <Card className="border-0 shadow-sm">
+          <Card className="border dark:border-slate-800 border-transparent shadow-lg bg-white dark:bg-slate-900/70 backdrop-blur-sm">
             <CardHeader>
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-lg bg-gradient-to-br from-blue-100 to-cyan-100">

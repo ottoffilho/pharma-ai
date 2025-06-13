@@ -24,18 +24,15 @@ export function RecuperacaoTabelas() {
       // Lista de tabelas essenciais que devem existir
       const tabelasEssenciais = [
         'usuarios',
-        'perfis',
+        'perfis_usuario',
         'permissoes',
-        'perfil_permissoes',
         'fornecedores',
         'produtos',
         'insumos',
-        'lotes_insumo',
+        'lotes_insumos',
         'embalagens',
-        'receitas',
-        'itens_receita',
+        'receitas_processadas',
         'ordens_producao',
-        'etapas_producao',
         'categorias_financeiras',
         'contas_a_pagar',
         'movimentacoes_caixa'

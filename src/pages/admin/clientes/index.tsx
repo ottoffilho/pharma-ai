@@ -215,48 +215,48 @@ const GestaoClientes: React.FC = () => {
 
               {/* Métricas Rápidas */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
-                <Card className="border-0 shadow-sm bg-white/60 backdrop-blur-sm">
+                <Card className="border-0 shadow-sm bg-white/60 dark:bg-black/60 backdrop-blur-sm">
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm font-medium text-muted-foreground">Total de Clientes</p>
-                        <p className="text-2xl font-bold">{totalClientes}</p>
+                        <p className="text-sm font-medium text-muted-foreground dark:text-gray-400">Total de Clientes</p>
+                        <p className="text-2xl font-bold dark:text-white">{totalClientes}</p>
                       </div>
                       <Users className="h-8 w-8 text-blue-600" />
                     </div>
                   </CardContent>
                 </Card>
 
-                <Card className="border-0 shadow-sm bg-white/60 backdrop-blur-sm">
+                <Card className="border-0 shadow-sm bg-white/60 dark:bg-black/60 backdrop-blur-sm">
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm font-medium text-muted-foreground">Clientes Ativos</p>
-                        <p className="text-2xl font-bold text-green-600">{clientesAtivos}</p>
+                        <p className="text-sm font-medium text-muted-foreground dark:text-gray-400">Clientes Ativos</p>
+                        <p className="text-2xl font-bold text-green-600 dark:text-green-500">{clientesAtivos}</p>
                       </div>
                       <CheckCircle className="h-8 w-8 text-green-600" />
                     </div>
                   </CardContent>
                 </Card>
 
-                <Card className="border-0 shadow-sm bg-white/60 backdrop-blur-sm">
+                <Card className="border-0 shadow-sm bg-white/60 dark:bg-black/60 backdrop-blur-sm">
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm font-medium text-muted-foreground">Clientes Inativos</p>
-                        <p className="text-2xl font-bold text-red-600">{clientesInativos}</p>
+                        <p className="text-sm font-medium text-muted-foreground dark:text-gray-400">Clientes Inativos</p>
+                        <p className="text-2xl font-bold text-red-600 dark:text-red-500">{clientesInativos}</p>
                       </div>
                       <AlertCircle className="h-8 w-8 text-red-600" />
                     </div>
                   </CardContent>
                 </Card>
 
-                <Card className="border-0 shadow-sm bg-white/60 backdrop-blur-sm">
+                <Card className="border-0 shadow-sm bg-white/60 dark:bg-black/60 backdrop-blur-sm">
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm font-medium text-muted-foreground">Satisfação Média</p>
-                        <p className="text-2xl font-bold text-yellow-600">4.6</p>
+                        <p className="text-sm font-medium text-muted-foreground dark:text-gray-400">Satisfação Média</p>
+                        <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-500">4.6</p>
                       </div>
                       <Star className="h-8 w-8 text-yellow-600" />
                     </div>
@@ -268,7 +268,7 @@ const GestaoClientes: React.FC = () => {
         
           {/* Controles e Filtros */}
           <div className="px-6">
-            <Card className="border-0 shadow-sm">
+            <Card className="border dark:border-slate-800 border-transparent shadow-lg bg-white dark:bg-slate-900/70 backdrop-blur-sm">
               <CardContent className="p-6">
                 <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
                   <div className="flex flex-col sm:flex-row gap-4 flex-1">
@@ -304,7 +304,7 @@ const GestaoClientes: React.FC = () => {
 
           {/* Tabela de Clientes */}
           <div className="px-6">
-            <Card className="border-0 shadow-sm">
+            <Card className="border dark:border-slate-800 border-transparent shadow-lg bg-white dark:bg-slate-900/70 backdrop-blur-sm">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>

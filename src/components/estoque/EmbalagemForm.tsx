@@ -28,6 +28,8 @@ import {
 } from '@/components/ui/select';
 import { CampoMarkup } from '@/components/markup/CampoMarkup';
 
+const inputCls = "bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:ring-emerald-600/40 dark:bg-black/60 dark:border-slate-700 dark:text-white";
+
 // Schema de validação Zod para o formulário de embalagens
 const embalagemSchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório'),
@@ -169,9 +171,9 @@ const EmbalagemForm: React.FC<EmbalagemFormProps> = ({
             name="nome"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Nome</FormLabel>
+                <FormLabel className="dark:text-gray-300">Nome</FormLabel>
                 <FormControl>
-                  <Input placeholder="Nome da embalagem" {...field} />
+                  <Input className={inputCls} placeholder="Nome da embalagem" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -184,13 +186,13 @@ const EmbalagemForm: React.FC<EmbalagemFormProps> = ({
             name="tipo"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Tipo</FormLabel>
+                <FormLabel className="dark:text-gray-300">Tipo</FormLabel>
                 <Select
                   onValueChange={field.onChange}
                   defaultValue={field.value}
                 >
                   <FormControl>
-                    <SelectTrigger>
+                    <SelectTrigger className={inputCls}>
                       <SelectValue placeholder="Selecione um tipo" />
                     </SelectTrigger>
                   </FormControl>
@@ -211,9 +213,9 @@ const EmbalagemForm: React.FC<EmbalagemFormProps> = ({
             name="volume_capacidade"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Volume/Capacidade</FormLabel>
+                <FormLabel className="dark:text-gray-300">Volume/Capacidade</FormLabel>
                 <FormControl>
-                  <Input placeholder="Ex: 10ml, 30g" {...field} value={field.value || ''} />
+                  <Input className={inputCls} placeholder="Ex: 10ml, 30g" {...field} value={field.value || ''} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -226,9 +228,9 @@ const EmbalagemForm: React.FC<EmbalagemFormProps> = ({
             name="custo_unitario"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Custo Unitário</FormLabel>
+                <FormLabel className="dark:text-gray-300">Custo Unitário</FormLabel>
                 <FormControl>
-                  <Input type="number" step="0.01" {...field} />
+                  <Input type="number" step="0.01" className={inputCls} {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -265,13 +267,13 @@ const EmbalagemForm: React.FC<EmbalagemFormProps> = ({
             name="fornecedor_id"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Fornecedor</FormLabel>
+                <FormLabel className="dark:text-gray-300">Fornecedor</FormLabel>
                 <Select
                   onValueChange={field.onChange}
                   defaultValue={field.value?.toString()}
                 >
                   <FormControl>
-                    <SelectTrigger>
+                    <SelectTrigger className={inputCls}>
                       {isFornecedoresLoading ? (
                         <div className="flex items-center">
                           <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -302,9 +304,9 @@ const EmbalagemForm: React.FC<EmbalagemFormProps> = ({
             name="estoque_atual"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Estoque Atual</FormLabel>
+                <FormLabel className="dark:text-gray-300">Estoque Atual</FormLabel>
                 <FormControl>
-                  <Input type="number" {...field} />
+                  <Input type="number" className={inputCls} {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -317,9 +319,9 @@ const EmbalagemForm: React.FC<EmbalagemFormProps> = ({
             name="estoque_minimo"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Estoque Mínimo</FormLabel>
+                <FormLabel className="dark:text-gray-300">Estoque Mínimo</FormLabel>
                 <FormControl>
-                  <Input type="number" {...field} />
+                  <Input type="number" className={inputCls} {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -332,9 +334,9 @@ const EmbalagemForm: React.FC<EmbalagemFormProps> = ({
             name="estoque_maximo"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Estoque Máximo</FormLabel>
+                <FormLabel className="dark:text-gray-300">Estoque Máximo</FormLabel>
                 <FormControl>
-                  <Input type="number" {...field} value={field.value || ''} />
+                  <Input type="number" className={inputCls} {...field} value={field.value || ''} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -347,9 +349,9 @@ const EmbalagemForm: React.FC<EmbalagemFormProps> = ({
             name="descricao"
             render={({ field }) => (
               <FormItem className="col-span-2">
-                <FormLabel>Descrição</FormLabel>
+                <FormLabel className="dark:text-gray-300">Descrição</FormLabel>
                 <FormControl>
-                  <Textarea placeholder="Descrição da embalagem" {...field} value={field.value || ''} />
+                  <Textarea rows={3} className={inputCls} placeholder="Descrição da embalagem" {...field} value={field.value || ''} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

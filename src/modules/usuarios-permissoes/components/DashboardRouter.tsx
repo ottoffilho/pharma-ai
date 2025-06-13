@@ -3,13 +3,15 @@
 
 import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import { useAuthSimple } from '../hooks/useAuthSimple';
-import DashboardAdministrativo from './DashboardAdministrativo';
+import DashboardMinimo from './DashboardMinimo';
+import AdminDashboard from '@/pages/admin/index';
 import { AcessoNegado } from './ProtectedComponent';
 import { PerfilUsuario, type TipoDashboard } from '../types';
 import { AlertCircle, RefreshCw, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { log, error as logError } from '@/lib/logger';
 
 /**
  * Router principal para dashboards baseado no perfil do usuário
@@ -37,7 +39,7 @@ export const DashboardRouter: React.FC = () => {
 
   // Debug logs
   useEffect(() => {
-    console.log('📊 DashboardRouter - Estado:', {
+    log('📊 DashboardRouter - Estado:', {
       carregando,
       autenticado,
       usuario: usuario ? 'presente' : 'ausente',
@@ -138,7 +140,7 @@ export const DashboardRouter: React.FC = () => {
 
   // Not authenticated
   if (!autenticado || !usuario) {
-    console.log('❌ DashboardRouter - Não autenticado ou sem usuário');
+    log('❌ DashboardRouter - Não autenticado ou sem usuário');
     return (
       <AcessoNegado
         titulo="Acesso Não Autorizado"
@@ -150,7 +152,7 @@ export const DashboardRouter: React.FC = () => {
 
   // Verificação de integridade dos dados do usuário
   if (!usuario.usuario || !usuario.usuario.perfil) {
-    console.error('❌ DashboardRouter - Dados de usuário incompletos:', usuario);
+    logError('❌ DashboardRouter - Dados de usuário incompletos:', usuario);
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <Card className="w-full max-w-md border-amber-200">
@@ -195,19 +197,11 @@ export const DashboardRouter: React.FC = () => {
   const { dashboard: tipoDashboard, usuario: usuarioData, permissoes } = usuario;
   const perfilUsuario = usuarioData.perfil?.tipo;
 
-  console.log('🎯 DashboardRouter - Dashboard:', tipoDashboard, 'Perfil:', perfilUsuario);
+  log('🎯 DashboardRouter - Dashboard:', tipoDashboard, 'Perfil:', perfilUsuario);
 
-  // NOVA ABORDAGEM: Dashboard Administrativo Unificado
-  // Proprietários têm acesso total, outros perfis têm acesso baseado em permissões
-  console.log('📋 DashboardRouter - Carregando dashboard administrativo unificado');
-  console.log(perfilUsuario === PerfilUsuario.PROPRIETARIO ? '👑 Usuário é proprietário - acesso total' : '👤 Usuário comum - acesso baseado em permissões');
-  
-  return (
-    <DashboardAdministrativo 
-      usuario={usuarioData} 
-      permissoes={permissoes} 
-    />
-  );
+  // Por enquanto direcionamos todos os perfis para o dashboard administrativo completo.
+  // Caso queira lógica por perfil, adaptar aqui.
+  return <AdminDashboard />;
 };
 
 /**

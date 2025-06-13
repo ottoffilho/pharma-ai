@@ -3,17 +3,7 @@
 
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
-
-interface CreateUserRequest {
-  email: string;
-  password: string;
-  userData: {
-    nome: string;
-    telefone?: string;
-    perfil_id: string;
-    ativo: boolean;
-  };
-}
+import { validateCreateUserRequest } from '../_shared/validators.ts'
 
 serve(async (req) => {
   // CORS headers
@@ -39,19 +29,24 @@ serve(async (req) => {
       })
     }
 
-    // Obter dados da requisição
-    const { email, password, userData } = await req.json() as CreateUserRequest
-
-    // Verificar parâmetros obrigatórios
-    if (!email || !password || !userData || !userData.nome || !userData.perfil_id) {
-      return new Response(JSON.stringify({ error: 'Parâmetros obrigatórios ausentes' }), {
-        status: 400,
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*'
+    // Obter e validar dados da requisição
+    const payload = await req.json()
+    try {
+      validateCreateUserRequest(payload)
+    } catch (validationError) {
+      return new Response(
+        JSON.stringify({ error: 'Payload inválido', detalhes: validationError instanceof Error ? validationError.message : validationError }),
+        {
+          status: 400,
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*'
+          }
         }
-      })
+      )
     }
+
+    const { email, password, userData } = payload
 
     // Criar cliente Supabase com chave de serviço
     const supabaseAdmin = createClient(

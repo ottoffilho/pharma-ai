@@ -617,6 +617,7 @@ export default function ControleCaixa() {
                           <Progress 
                             value={resumoVendas?.total_vendas ? (resumoVendas.vendas_dinheiro / resumoVendas.total_vendas) * 100 : 0} 
                             className="h-2" 
+                            indicatorColor="bg-emerald-500"
                           />
                         </div>
                         <div>
@@ -629,6 +630,7 @@ export default function ControleCaixa() {
                           <Progress 
                             value={resumoVendas?.total_vendas ? (resumoVendas.vendas_cartao / resumoVendas.total_vendas) * 100 : 0} 
                             className="h-2" 
+                            indicatorColor="bg-blue-500"
                           />
                         </div>
                         <div>
@@ -641,6 +643,7 @@ export default function ControleCaixa() {
                           <Progress 
                             value={resumoVendas?.total_vendas ? (resumoVendas.vendas_pix / resumoVendas.total_vendas) * 100 : 0} 
                             className="h-2" 
+                            indicatorColor="bg-purple-500"
                           />
                         </div>
                       </div>
@@ -753,21 +756,21 @@ export default function ControleCaixa() {
                       <span className="text-sm font-medium">Eficiência de Vendas</span>
                       <span className="text-sm text-muted-foreground">85%</span>
                     </div>
-                    <Progress value={85} className="h-2" />
+                    <Progress value={85} className="h-2" indicatorColor="bg-emerald-500" />
                   </div>
                   <div>
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-sm font-medium">Controle de Movimento</span>
                       <span className="text-sm text-muted-foreground">92%</span>
                     </div>
-                    <Progress value={92} className="h-2" />
+                    <Progress value={92} className="h-2" indicatorColor="bg-blue-500" />
                   </div>
                   <div>
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-sm font-medium">Acuracidade do Caixa</span>
                       <span className="text-sm text-muted-foreground">98%</span>
                     </div>
-                    <Progress value={98} className="h-2" />
+                    <Progress value={98} className="h-2" indicatorColor="bg-purple-500" />
                   </div>
                 </div>
               </CardContent>
