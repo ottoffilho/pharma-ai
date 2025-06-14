@@ -26,3 +26,19 @@ dist-ssr
 
 # Supabase
 supabase/config.toml 
+
+# ---------- Project cleanup (do not version) ----------
+# Build / coverage artifacts
+coverage/
+test-results/
+playwright-report/
+
+# Local AI & rule helpers
+.cursor/
+.trae/
+.claude/
+
+# Docs, command logs and other internal notes (kept outside production build)
+docs/
+comandos_chat/
+# End of custom ignores 
