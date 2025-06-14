@@ -56,8 +56,8 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",
-    "date-fns": "^4.1.0",
-    "date-fns-tz": "^3.2.0",
+    "date-fns": "^2.30.0",
+    "date-fns-tz": "^2.0.0",
     "dotenv": "^16.5.0",
     "embla-carousel-react": "^8.3.0",
     "input-otp": "^1.2.4",
@@ -96,7 +96,7 @@
     "@vitest/ui": "^3.1.4",
     "autoprefixer": "^10.4.20",
     "cross-env": "^7.0.3",
-    "eslint": "^9.9.0",
+    "eslint": "^8.57.0",
     "eslint-plugin-react-hooks": "^5.1.0-rc.0",
     "eslint-plugin-react-refresh": "^0.4.9",
     "globals": "^15.9.0",
@@ -112,5 +112,9 @@
     "vite": "^5.4.1",
     "vitest": "^3.1.4",
     "wait-on": "^8.0.3"
+  },
+  "overrides": {
+    "date-fns": "2.30.0",
+    "date-fns-tz": "2.0.0"
   }
 }
