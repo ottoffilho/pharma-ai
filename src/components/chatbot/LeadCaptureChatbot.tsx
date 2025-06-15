@@ -10,8 +10,9 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, X, Loader2, User, Bot } from 'lucide-react';
+import { Send, X, Loader2, User } from 'lucide-react';
 import pharmaLogo from '@/assets/logo/phama-horizon.png';
+import bubbleLogo from '@/assets/logo/pharma-image.png';
 // import { supabase } from '@/integrations/supabase/client'; // Temporariamente removido
 
 // URL do Webhook n8n – padrão produção. Em desenvolvimento, defina VITE_N8N_LEAD_WEBHOOK_URL para apontar ao endpoint de teste.
@@ -309,7 +310,7 @@ Posso explicar:
                 nextStep = 'collecting_email';
             } else if (conversationStep === 'collecting_email') {
                 // Adicionar validação de email simples aqui se desejar
-                botResponse = `Perfeito. E qual o seu telefone? (opcional)`;
+                botResponse = `Perfeito. E qual o seu telefone?`;
                 extracted.email = userMessageText;
                 nextStep = 'collecting_phone';
             } else if (conversationStep === 'collecting_phone') {
@@ -418,7 +419,7 @@ Digite **SIM** se quiser saber mais sobre o Pharma.AI ou **OBRIGADO** para final
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[700px] w-[95vw] p-0 flex flex-col max-h-[85vh] [&>button]:hidden">
+      <DialogContent className="sm:max-w-[700px] w-[95vw] p-0 flex flex-col max-h-[85vh] rounded-2xl shadow-xl border bg-emerald-50 text-gray-900 dark:bg-emerald-50 dark:text-gray-900 [&>button]:hidden">
         <DialogHeader className="p-6 pb-16 relative">
           <DialogTitle className="sr-only">
             Assistente Virtual Pharma.AI
@@ -427,7 +428,7 @@ Digite **SIM** se quiser saber mais sobre o Pharma.AI ou **OBRIGADO** para final
             <img 
               src={pharmaLogo} 
               alt="Pharma.AI Logo" 
-              className="w-18 h-14 object-contain"
+              className="h-14 w-auto object-contain"
             />
           </div>
           <DialogDescription className="text-center mt-2">
@@ -444,33 +445,40 @@ Digite **SIM** se quiser saber mais sobre o Pharma.AI ou **OBRIGADO** para final
           </Button>
         </DialogHeader>
         
-        <ScrollArea className="flex-grow p-6 pt-0" ref={scrollAreaRef}>
+        <ScrollArea className="flex-grow p-6 pt-0 max-h-[calc(85vh-200px)] overflow-y-auto" ref={scrollAreaRef}>
           <div className="space-y-4">
             {messages.map((msg) => (
               <div 
                 key={msg.id} 
-                className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in`}
               >
                 <div 
                   className={`max-w-[75%] p-3 rounded-lg text-sm ${ 
                     msg.sender === 'user' 
-                      ? 'bg-homeo-blue text-white rounded-br-none' 
+                      ? 'bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-br-none' 
                       : msg.sender === 'bot' 
-                      ? 'bg-gray-100 text-gray-800 rounded-bl-none'
-                      : 'bg-yellow-100 text-yellow-800 text-xs italic text-center w-full' /* System message styling */
+                      ? 'bg-gradient-to-br from-emerald-100 to-emerald-50 border border-emerald-200 text-gray-800 dark:from-emerald-100 dark:to-emerald-50 dark:border-emerald-200 dark:text-gray-800 rounded-bl-none'
+                      : 'bg-amber-50 dark:bg-amber-800 text-amber-800 dark:text-amber-50 text-xs italic text-center w-full' /* System message styling */
                   }`}
                 >
-                  {msg.sender === 'user' && <User className="w-4 h-4 inline mr-1 mb-0.5" />}
-                  {msg.sender === 'bot' && <Bot className="w-4 h-4 inline mr-1 mb-0.5" />}
+                  {msg.sender === 'user' && (
+                    <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center mr-2 mb-0.5 inline-block">
+                      <User className="w-3 h-3 text-white" />
+                    </div>
+                  )}
+                  {msg.sender === 'bot' && (
+                    <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 border border-emerald-300 dark:border-emerald-300">
+                      <img src={bubbleLogo} alt="Pharma.AI bot" className="object-contain w-full h-full" />
+                    </div>
+                  )}
                   {msg.text}
                 </div>
               </div>
             ))}
             {isLoading && (
-              <div className="flex justify-start">
-                <div className="max-w-[75%] p-3 rounded-lg bg-gray-100 text-gray-800 rounded-bl-none flex items-center">
-                  <Loader2 className="h-5 w-5 animate-spin mr-2" />
-                  Digitando...
+              <div className="flex justify-start items-end gap-2">
+                <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 border border-emerald-300 dark:border-emerald-300">
+                  <img src={bubbleLogo} alt="Pharma.AI bot" className="object-contain w-full h-full" />
                 </div>
               </div>
             )}
@@ -492,12 +500,18 @@ Digite **SIM** se quiser saber mais sobre o Pharma.AI ou **OBRIGADO** para final
                 placeholder="Digite sua mensagem..." 
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
-                className="flex-1"
+                className="flex-1 bg-white dark:bg-emerald-100 text-gray-900 placeholder-gray-500 border border-emerald-300 focus:ring-emerald-500"
                 disabled={isLoading}
                 autoFocus
                 onBlur={ensureInputFocus} // Refocar quando perder o foco
               />
-              <Button type="submit" size="icon" disabled={isLoading || inputValue.trim() === ''} className="bg-homeo-blue hover:bg-homeo-blue/90">
+              <Button 
+                type="submit" 
+                size="icon" 
+                disabled={isLoading || inputValue.trim() === ''} 
+                className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                aria-label="Enviar mensagem"
+              >
                 <Send className="h-5 w-5" />
                 <span className="sr-only">Enviar</span>
               </Button>
@@ -514,4 +528,4 @@ Digite **SIM** se quiser saber mais sobre o Pharma.AI ou **OBRIGADO** para final
   );
 };
 
-export default LeadCaptureChatbot; 
+export default LeadCaptureChatbot;
