@@ -161,32 +161,27 @@ const LeadCaptureChatbot: React.FC<LeadCaptureChatbotProps> = ({ isOpen, onClose
       // Enviar para n8n (por enquanto, até configurar Supabase)
       console.log("Enviando dados para n8n:", finalLeadData);
       
-      // Converte o payload para x-www-form-urlencoded para evitar pre-flight CORS
-      const payload = {
-        ...finalLeadData,
-        messages_transcription: conversationTranscript.map(m => ({
-          sender: m.sender,
-          text: m.text,
-          timestamp: m.timestamp,
-        })).slice(0, 20),
-        origem: 'chatbot_landing',
-        timestamp: new Date().toISOString(),
-        // Informações adicionais
-        user_agent: navigator.userAgent,
-        page_url: window.location.href,
-      } as Record<string, unknown>;
-
-      const body = new URLSearchParams();
-      Object.entries(payload).forEach(([k, v]) => {
-        body.append(k, typeof v === 'object' ? JSON.stringify(v) : String(v ?? ''));
+      // Converte o payload para FormData para evitar pre-flight CORS (multipart/form-data simple request)
+      const formData = new FormData();
+      Object.entries(finalLeadData).forEach(([k, v]) => {
+        formData.append(k, typeof v === 'object' ? JSON.stringify(v) : String(v ?? ''));
       });
+
+      formData.append('messages_transcription', JSON.stringify(conversationTranscript.map(m => ({
+        sender: m.sender,
+        text: m.text,
+        timestamp: m.timestamp,
+      })).slice(0, 20)));
+
+      formData.append('origem', 'chatbot_landing');
+      formData.append('timestamp', new Date().toISOString());
+      formData.append('user_agent', navigator.userAgent);
+      formData.append('page_url', window.location.href);
 
       const n8nResponse = await fetch(N8N_WEBHOOK_URL, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
-        },
-        body,
+        // Não envie cabeçalhos; o navegador definirá o Content-Type automaticamente
+        body: formData,
       });
 
       if (!n8nResponse.ok) {
