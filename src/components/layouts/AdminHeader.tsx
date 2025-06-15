@@ -60,7 +60,7 @@ export function AdminHeader({ user, onLogout, onMenuClick }: AdminHeaderProps) {
             <Breadcrumb>
               <BreadcrumbList>
                 {breadcrumbs.map((breadcrumb, index) => (
-                  <div key={index} data-lov-id={breadcrumb.id} style={{ display: 'contents' }}>
+                  <div key={index} style={{ display: 'contents' }}>
                     <BreadcrumbItem>
                       {breadcrumb.isCurrentPage ? (
                         <BreadcrumbPage>{breadcrumb.label}</BreadcrumbPage>
