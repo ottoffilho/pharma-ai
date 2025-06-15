@@ -14,8 +14,8 @@ import { Send, X, Loader2, User, Bot } from 'lucide-react';
 import pharmaLogo from '@/assets/logo/phama-horizon.png';
 // import { supabase } from '@/integrations/supabase/client'; // Temporariamente removido
 
-// URL do Webhook do n8n (deve vir de uma variável de ambiente)
-const N8N_WEBHOOK_URL = import.meta.env.VITE_N8N_LEAD_WEBHOOK_URL || "https://ottoffilho.app.n8n.cloud/webhook/pharma-ai";
+// URL do Webhook n8n – padrão produção. Em desenvolvimento, defina VITE_N8N_LEAD_WEBHOOK_URL para apontar ao endpoint de teste.
+const N8N_WEBHOOK_URL = import.meta.env.VITE_N8N_LEAD_WEBHOOK_URL || "https://pharma-ai.app.n8n.cloud/webhook/pharma-ai";
 // URL do Handler do LLM (deve vir de uma variável de ambiente)
 const CHATBOT_LLM_HANDLER_URL = import.meta.env.VITE_CHATBOT_LLM_HANDLER_URL;
 // URL da Edge Function AI Agent
@@ -161,24 +161,32 @@ const LeadCaptureChatbot: React.FC<LeadCaptureChatbotProps> = ({ isOpen, onClose
       // Enviar para n8n (por enquanto, até configurar Supabase)
       console.log("Enviando dados para n8n:", finalLeadData);
       
+      // Converte o payload para x-www-form-urlencoded para evitar pre-flight CORS
+      const payload = {
+        ...finalLeadData,
+        messages_transcription: conversationTranscript.map(m => ({
+          sender: m.sender,
+          text: m.text,
+          timestamp: m.timestamp,
+        })).slice(0, 20),
+        origem: 'chatbot_landing',
+        timestamp: new Date().toISOString(),
+        // Informações adicionais
+        user_agent: navigator.userAgent,
+        page_url: window.location.href,
+      } as Record<string, unknown>;
+
+      const body = new URLSearchParams();
+      Object.entries(payload).forEach(([k, v]) => {
+        body.append(k, typeof v === 'object' ? JSON.stringify(v) : String(v ?? ''));
+      });
+
       const n8nResponse = await fetch(N8N_WEBHOOK_URL, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
         },
-        body: JSON.stringify({ 
-          ...finalLeadData,
-          messages_transcription: conversationTranscript.map(m => ({
-            sender: m.sender, 
-            text: m.text, 
-            timestamp: m.timestamp 
-          })).slice(0, 20),
-          origem: 'chatbot_landing',
-          timestamp: new Date().toISOString(),
-          // Informações adicionais
-          user_agent: navigator.userAgent,
-          page_url: window.location.href
-        }),
+        body,
       });
 
       if (!n8nResponse.ok) {
